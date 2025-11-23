@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="WarZone Warriors Run-and-Gun action onchain" />
+    <link rel="icon" type="image/svg+xml" href="./src/assets/images/abc3.png" />
+    <link rel="apple-touch-icon" href="/logo192.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>WarZone Warriors</title>
+    <!-- Polyfills for older browsers -->
+    <script>
+      // Fix for globalThis in older browsers
+      (function() {
+        if (typeof globalThis === 'object') return;
+        Object.defineProperty(Object.prototype, '__magic__', {
+          get: function() {
+            return this;
+          },
+          configurable: true
+        });
+        __magic__.globalThis = __magic__;
+        delete Object.prototype.__magic__;
+      }());
+
+      // Buffer polyfill is now handled by Vite's polyfills
+
+      // Process polyfill
+      if (typeof globalThis.process === 'undefined') {
+        globalThis.process = { env: {} };
+      }
+    </script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

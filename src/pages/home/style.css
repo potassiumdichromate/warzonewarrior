@@ -1,0 +1,777 @@
+.home-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  z-index: 0;
+  background: center / cover no-repeat fixed;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ===== Festival overlay (Gaming Party) ===== */
+.festival-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* keep UI clickable */
+  z-index: 10;
+}
+
+.festival-star-sky {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  background:
+    radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.9), rgba(255,255,255,0) 70%),
+    radial-gradient(1px 1px at 80% 60%, rgba(255,255,255,0.7), rgba(255,255,255,0) 70%),
+    radial-gradient(1px 1px at 40% 80%, rgba(255,255,255,0.6), rgba(255,255,255,0) 70%);
+  animation: twinkle 3.2s ease-in-out infinite alternate;
+  opacity: 0.45;
+}
+
+@keyframes twinkle {
+  0% { opacity: 0.18; filter: blur(0px); }
+  100% { opacity: 0.45; filter: blur(0.3px); }
+}
+
+.festival-header {
+  position: absolute;
+  top: 64px; /* raised since stripe removed */
+  left: 16px; /* offset to avoid edge clipping */
+  transform: none;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  opacity: 0;
+  z-index: 1200; /* keep above name/buttons/overlays */
+  filter: drop-shadow(0 6px 22px rgba(0,0,0,0.55));
+  animation: headerBounceIn 700ms cubic-bezier(.2,.75,.2,1.1) 120ms forwards;
+}
+
+.festival-ribbon {
+  height: 126px;
+  margin: 20px 20px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 16px rgba(0,0,0,0.5));
+}
+
+.festival-title {
+  font-weight: 900;
+  font-size: 32px;
+  letter-spacing: 2px;
+  padding: 4px 10px;
+  position: relative;
+  background-image:
+    radial-gradient(120% 180% at 50% 120%, rgba(255,200,0,0.95), rgba(255,90,0,0.75) 55%, rgba(0,0,0,0) 70%),
+    radial-gradient(110% 170% at 20% 120%, rgba(255,180,0,0.85), rgba(255,70,0,0.6) 60%, rgba(0,0,0,0) 72%),
+    radial-gradient(110% 170% at 80% 120%, rgba(255,180,0,0.85), rgba(255,70,0,0.6) 60%, rgba(0,0,0,0) 72%),
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,120,0,0.18));
+  background-size: 200% 200%;
+  background-position: 50% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px rgba(255,120,0,0.45), 0 0 24px rgba(255,60,0,0.25);
+  animation: titleFire 2.1s ease-in-out infinite alternate;
+}
+
+@keyframes titleFire {
+  0%   { background-position: 50% 100%; filter: brightness(1); }
+  100% { background-position: 50% 0%;   filter: brightness(1.1); }
+}
+
+.festival-right-strip {
+  position: absolute;
+  left: 12px; /* move to left-most */
+  top: 64px;  /* sit below the name chip */
+  transform: none;
+  background: linear-gradient(90deg, rgba(255,215,128,0.15), rgba(255,255,255,0.08));
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #FFE7A8;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
+  opacity: 0;
+  z-index: 200; /* ensure above buttons */
+  animation: fadeSlideInLeft 800ms ease-out 220ms forwards, stripPulse 1600ms ease-out 220ms forwards;
+}
+
+@media (max-width: 767px) {
+  .festival-header { top: 58px; left: 12px; }
+  .festival-ribbon { height: 144px; }
+  .festival-title { font-size: 24px; letter-spacing: 1.6px; }
+}
+
+/* Entrance animations */
+@keyframes fadeSlideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeSlideInLeft {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes headerBounceIn {
+  0%   { opacity: 0; transform: translateY(-12px) scale(0.96); }
+  60%  { opacity: 1; transform: translateY(0) scale(1.04); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes stripPulse {
+  0%   { transform: translateX(0) scale(0.98); filter: brightness(0.95); }
+  35%  { transform: translateX(0) scale(1.02); filter: brightness(1.1); }
+  100% { transform: translateX(0) scale(1.0); filter: brightness(1.0); }
+}
+
+/* Shimmer sweep across the GAMING PARTY text */
+.festival-title::after {
+  content: '';
+  position: absolute;
+  top: -20%;
+  left: -40%;
+  width: 180%;
+  height: 160%;
+  background: linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0) 100%);
+  transform: skewX(-20deg);
+  filter: blur(0.6px);
+  opacity: 0.0;
+  animation: shineSweep 2.6s ease-in-out 400ms infinite;
+  pointer-events: none;
+}
+
+@keyframes shineSweep {
+  0%   { transform: translateX(-30%) skewX(-20deg); opacity: 0; }
+  20%  { opacity: 0.5; }
+  50%  { transform: translateX(30%) skewX(-20deg); opacity: 0.35; }
+  100% { transform: translateX(60%) skewX(-20deg); opacity: 0; }
+}
+
+/* Subtle fire/embers animation at bottom-left */
+.festival-fire {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 32vw;
+  max-width: 420px;
+  height: 18vh;
+  pointer-events: none;
+  background: radial-gradient(60% 100% at 20% 100%, rgba(255,140,0,0.35), rgba(255,69,0,0.12) 40%, rgba(0,0,0,0) 70%),
+              radial-gradient(40% 80% at 35% 100%, rgba(255,200,120,0.25), rgba(0,0,0,0) 60%);
+  filter: blur(1px) saturate(1.05);
+  animation: flamePulse 1.8s ease-in-out infinite;
+}
+
+.festival-fire .ember {
+  position: absolute;
+  bottom: 4vh;
+  left: 8vw;
+  width: 6px;
+  height: 6px;
+  background: radial-gradient(circle, rgba(255,220,160,0.9), rgba(255,120,0,0.4) 60%, rgba(0,0,0,0) 70%);
+  border-radius: 50%;
+  opacity: 0;
+}
+.festival-fire .e1 { animation: emberRise 2.6s linear 0.2s infinite; left: 6vw; }
+.festival-fire .e2 { animation: emberRise 2.9s linear 0.6s infinite; left: 10vw; }
+.festival-fire .e3 { animation: emberRise 3.1s linear 1.0s infinite; left: 14vw; }
+
+@keyframes flamePulse {
+  0%, 100% { filter: blur(1px) brightness(1); }
+  50%      { filter: blur(1.2px) brightness(1.15); }
+}
+
+@keyframes emberRise {
+  0%   { transform: translateY(0) scale(0.8); opacity: 0; }
+  10%  { opacity: 0.8; }
+  80%  { opacity: 0.6; }
+  100% { transform: translateY(-16vh) scale(1.1); opacity: 0; }
+}
+
+/* Subtle flame behind left strips */
+.festival-flame {
+  position: absolute;
+  left: 6px;
+  top: 64px; /* align with strip */
+  width: 260px;
+  height: 84px;
+  pointer-events: none;
+  z-index: 9; /* behind strips */
+  background: radial-gradient(60% 120% at 10% 100%, rgba(255,140,0,0.27), rgba(255,69,0,0.1) 50%, rgba(0,0,0,0) 75%),
+              radial-gradient(45% 100% at 30% 100%, rgba(255,200,120,0.18), rgba(0,0,0,0) 60%);
+  filter: blur(0.6px) saturate(1.05);
+  animation: flamePulse 2.1s ease-in-out infinite;
+}
+
+.festival-flame .flame-ember {
+  position: absolute;
+  bottom: 8px;
+  left: 24px;
+  width: 4px;
+  height: 4px;
+  background: radial-gradient(circle, rgba(255,220,160,0.9), rgba(255,120,0,0.4) 60%, rgba(0,0,0,0) 70%);
+  border-radius: 50%;
+  opacity: 0;
+}
+.festival-flame .fe1 { animation: emberRiseSmall 1.8s linear 0.1s infinite; left: 18px; }
+.festival-flame .fe2 { animation: emberRiseSmall 2.0s linear 0.4s infinite; left: 52px; }
+.festival-flame .fe3 { animation: emberRiseSmall 2.3s linear 0.8s infinite; left: 86px; }
+
+@keyframes emberRiseSmall {
+  0%   { transform: translateY(0) scale(0.7); opacity: 0; }
+  10%  { opacity: 0.9; }
+  80%  { opacity: 0.6; }
+  100% { transform: translateY(-48px) scale(1); opacity: 0; }
+}
+
+/* Default background for desktop */
+.home-container {
+  background-image: var(--desktop-bg);
+  background-size: 100% 100%;
+  /* background-position: center; */
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-color: #000; /* Fallback color */
+}
+
+/* Ensure the background covers the viewport without overflow */
+.home-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: inherit;
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  z-index: -1;
+}
+
+/* Mobile styles - Portrait mode only */
+@media (max-width: 767px) and (orientation: portrait) {
+  .home-container {
+    background-image: var(--mobile-bg);
+    background-size: 100% 100%;
+    background-position: center;
+    background-attachment: fixed;
+  }
+  
+  /* When connected on mobile, use the mobile after-connect background */
+  .home-container.connected {
+    background-image: var(--mobile-bg);
+  }
+  
+  .home-container::before {
+    background-image: var(--mobile-bg);
+  }
+}
+
+/* Landscape mode - use desktop background */
+@media (orientation: landscape) {
+  .home-container {
+    background-image: var(--desktop-bg);
+    background-size: 100% 100%;
+    background-position: center;
+    background-attachment: fixed;
+  }
+  
+  .home-container::before {
+    background-image: var(--desktop-bg);
+  }
+}
+
+/* Mobile Landscape Mode */
+
+@media screen and (max-width: 950px) and (orientation: landscape) {
+  .button-group-container {
+    max-width: 200px !important;
+    right: 7% !important;
+    top: 14% !important;
+    bottom: auto !important;
+    gap: 0.5px !important;
+    padding: 2px 0 !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
+  
+  .button-group-container .btn {
+    width: 90% !important;
+    min-height: 8vh !important;
+    height: 8vh !important;
+    max-height: 8vh !important;
+    font-size: 1rem !important;
+    padding: 0 18px !important;
+    margin: 1px 0 !important;
+    line-height: 1.4 !important;
+    border-radius: 9px !important;
+    border-width: 2.5px !important;
+  }
+  
+  .button-group-container .btn img {
+    max-height: 5.5vh !important;
+    width: auto !important;
+    margin-right: 12px !important;
+  }
+}
+
+/* Hide scrollbar for WebKit browsers */
+.home-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Button container styles */
+.button-group-container {
+  position: fixed;
+  right: 5%; /* Use percentage for better responsiveness */
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* Align buttons to the right */
+  gap: 10px; /* Reduced gap between buttons */
+  z-index: 100;
+  width: auto;
+  max-width: 350px;
+  padding: 20px;
+  /* background: rgba(0, 0, 0, 0.3); */
+  border-radius: 15px;
+  /* box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); */
+}
+
+/* ======================
+   Button Styles
+   ====================== */
+
+/* Button Container Base Styles */
+.connect-button-container,
+.play-game-container,
+.leaderboard-btn-container,
+.mint-nft-container,
+.game-manual-container,
+.disconnect-container {
+  width: 100%;
+  max-width: 300px;
+  margin: 15px auto;
+}
+
+.name-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: 5px auto;
+  color: white;
+  position: absolute;
+  z-index: 1000;
+}
+
+.name-tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+
+.name-tooltip {
+  visibility: hidden;
+  width: 150px;
+  background-color: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  text-align: center;
+  border-radius: 8px;
+  padding: 8px;
+  position: absolute;
+  z-index: 1001; /* Higher than other elements */
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-10px);
+  opacity: 0;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  font-weight: normal;
+  pointer-events: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.name-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #333 transparent transparent transparent;
+}
+
+.name-tooltip-container:hover .name-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Special case for Connect button */
+.connect-button-container {
+  max-width: 350px;
+  margin: 0 0 10px 0;
+}
+
+/* Move Connect button up on mobile */
+@media (max-width: 767px) {
+  .connect-button-container {
+    margin-top: 0; /* Reset any previous negative margin */
+    margin-bottom: 5px !important; /* Add some space below connect button */
+  }
+  
+  /* Ensure button images are responsive */
+  .mobile-connect-button,
+  .mobile-play-button,
+  .mobile-leaderboard-button,
+  .mobile-mint-nft-button,
+  .mobile-game-manual-button,
+  .mobile-disconnect-button {
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+  }
+}
+
+/* Game Manual and Disconnect buttons - match width with other buttons */
+.disconnect-container,
+.game-manual-container {
+  max-width: 350px;
+  margin: 0 0 10px 0;
+  width: 100%;
+}
+
+/* Mobile Button Images (default) */
+.mobile-connect-button,
+.mobile-play-button,
+.mobile-leaderboard-button,
+.mobile-mint-nft-button,
+.mobile-game-manual-button,
+.mobile-disconnect-button {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Desktop Button Images (hidden by default) */
+.desktop-connect-button,
+.desktop-play-button,
+.desktop-leaderboard-button,
+.desktop-mint-nft-button,
+.desktop-game-manual-button,
+.desktop-disconnect-button {
+  display: none;
+  width: 100%;
+  height: auto;
+}
+
+/* ======================
+   Desktop Styles (768px and up)
+   ====================== */
+@media (min-width: 768px) {
+  /* Hide all mobile buttons on desktop */
+  .mobile-connect-button,
+  .mobile-play-button,
+  .mobile-leaderboard-button,
+  .mobile-mint-nft-button,
+  .mobile-game-manual-button,
+  .mobile-disconnect-button {
+    display: none;
+  }
+  
+  /* Show all desktop buttons */
+  .desktop-connect-button,
+  .desktop-play-button,
+  .desktop-leaderboard-button,
+  .desktop-mint-nft-button,
+  .desktop-game-manual-button,
+  .desktop-disconnect-button {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 0; /* Remove all margins */
+    position: relative;
+  }
+  
+  /* Container adjustments for desktop */
+  .connect-button-container,
+  .play-game-container,
+  .leaderboard-btn-container,
+  .mint-nft-container,
+  .game-manual-container,
+  .disconnect-container {
+    width: 100%;
+    max-width: 350px;
+    margin: 0 0 10px 0; /* Remove auto margins, only bottom margin */
+  }
+  
+  /* Button group container adjustments for desktop */
+  .button-group-container {
+    right: 10%;
+    top: 53%;
+    gap: 5px; /* Further reduced gap for desktop */
+    transform: translateY(-50%) scale(0.95); /* Slightly scale down the entire group */
+    transform-origin: right center; /* Scale from the right side */
+    /* position: relative; */
+  }
+  
+  /* Special adjustments for Connect button */
+  .connect-button-container {
+    width: 100%;
+    padding: 15px 0;
+    margin: 0 auto;
+    transform: scale(1.5);
+    transform-origin: center;
+  }
+  
+  .connect-wallet-button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    width: 100%;
+    display: block;
+  }
+  
+  .connect-wallet-image {
+    width: 100%;
+    height: auto;
+    max-width: 400px;
+    display: block;
+    margin: 0 auto;
+  }
+  
+  /* Game Manual and Disconnect buttons - match width with other buttons */
+  .game-manual-container,
+  .disconnect-container {
+    max-width: 350px;
+    width: 100%;
+  }
+}
+
+/* Button styles */
+.btn {
+  width: 250px;
+  height: 70px;
+  margin: 10px 0;
+  padding: 0 25px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(145deg, rgba(74, 74, 138, 0.7), rgba(58, 58, 106, 0.7));
+  border: 2px solid #ff4500;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 0 #5c2d06, 0 0 20px rgba(139, 69, 19, 0.6);
+  text-shadow: 0 0 5px rgba(230, 180, 34, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #5c2d06, 0 0 25px rgba(139, 69, 19, 0.8);
+}
+
+.btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 0 #5c2d06, 0 0 15px rgba(139, 69, 19, 0.6);
+}
+
+/* Mobile styles */
+@media (max-width: 767px) {
+  .name-container{
+    display: flex;
+    justify-content:flex-end;
+    width: 100%;
+    margin: 5px auto;
+    color: white;
+    position:absolute;
+    z-index:1000
+  }
+  .button-group-container {
+    position: fixed;
+    left: 50%;
+    right: 5%;
+    bottom: 11vh; /* Reduced from 4vh */
+    top: auto;
+    transform: translateX(-50%);
+    flex-direction: column;
+    align-items: center;
+    width: 85%; /* Slightly reduced width */
+    max-width: 250px; /* Reduced from 300px */
+    padding: 0.5vh 1vw; /* Reduced padding */
+    gap: 0.3vh; /* Reduced gap */
+    margin: 0;
+    z-index: 1000;
+  }
+  
+  .btn {
+    width: 100%;
+    max-width: 100%;
+    height: auto; /* Make height flexible */
+    min-height: 5vh; /* Reduced from 7vh */
+    max-height: 8vh; /* Reduced from 10vh */
+    margin: 0.2vh 0; /* Reduced margin */
+    font-size: 0.8rem; /* Fixed smaller font size */
+    padding: 0.5vh 1vw; /* Reduced padding */
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Button container adjustments for mobile */
+  .connect-button-container,
+  .play-game-container,
+  .leaderboard-btn-container,
+  .mint-nft-container,
+  .game-manual-container,
+  .disconnect-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0.3vh 0 !important; /* Responsive margin */
+    padding: 0 1vw; /* Responsive padding */
+    box-sizing: border-box;
+  }
+  
+  /* Make button images fully responsive */
+  .mobile-connect-button,
+  .mobile-play-button,
+  .mobile-leaderboard-button,
+  .mobile-mint-nft-button,
+  .mobile-game-manual-button,
+  .mobile-disconnect-button {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Maintain aspect ratio */
+  }
+}
+
+/* Specific styles for 360x640 resolution */
+@media (max-width: 376px) {
+  .button-group-container {
+    max-width: 200px; /* Slightly narrower for 360px width */
+    bottom: 9vh; /* Adjusted position */
+    padding: 0.3vh 0.5vw;
+  }
+  
+  .btn {
+    min-height: 5vh; /* Slightly taller for better touch targets */
+    font-size: 0.75rem; /* Slightly smaller font */
+  }
+  
+  /* Adjust specific button images if needed */
+  .mobile-connect-button,
+  .mobile-play-button,
+  .mobile-leaderboard-button,
+  .mobile-mint-nft-button,
+  .mobile-game-manual-button,
+  .mobile-disconnect-button {
+    max-height: 7vh; /* Slightly larger images */
+  }
+}
+
+@media (min-width: 377px) and (max-width: 435px) {
+  .home-container.connected {
+    background-position: center 40%; /* Move background image up slightly */
+  }
+  
+  .home-container.connected::before {
+    background-size: 100% 94%;
+    background-position: center 0%;   /* Match the background position for the pseudo-element */
+   
+  }
+  
+  .button-group-container {
+    max-width: 240px; /* Slightly narrower for 360px width */
+    bottom: 17vh;/* Adjusted position */
+    padding: 0.3vh 0.5vw;
+  }
+  
+  .btn {
+    min-height: 7vh; /* Slightly taller for better touch targets */
+    font-size: 0.75rem; /* Slightly smaller font */
+  }
+  
+  /* Adjust specific button images if needed */
+  .mobile-connect-button,
+  .mobile-play-button,
+  .mobile-leaderboard-button,
+  .mobile-mint-nft-button,
+  .mobile-game-manual-button,
+  .mobile-disconnect-button {
+    max-height: 7vh; /* Slightly larger images */
+  }
+}
+.global-fire {
+  position: absolute;
+  inset: 0;
+  z-index: 8; /* behind labels */
+  pointer-events: none;
+  background:
+    radial-gradient(100% 60% at 50% 100%, rgba(255, 94, 0, 0.22), rgba(0,0,0,0) 60%),
+    radial-gradient(80% 40% at 50% 0%, rgba(255, 160, 64, 0.10), rgba(0,0,0,0) 60%),
+    radial-gradient(50% 50% at 0% 100%, rgba(255, 120, 40, 0.18), rgba(0,0,0,0) 60%),
+    radial-gradient(50% 50% at 100% 100%, rgba(255, 120, 40, 0.18), rgba(0,0,0,0) 60%);
+  animation: globalFlameFlicker 2.2s ease-in-out infinite alternate;
+}
+
+@keyframes globalFlameFlicker {
+  0%   { filter: brightness(1) saturate(1); opacity: 0.40; }
+  50%  { filter: brightness(1.25) saturate(1.12); opacity: 0.65; }
+  100% { filter: brightness(1.08) saturate(1.02); opacity: 0.52; }
+}
+
+.global-fire .global-ember {
+  position: absolute;
+  bottom: -2vh;
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle, rgba(255,220,160,0.9), rgba(255,120,0,0.45) 60%, rgba(0,0,0,0) 70%);
+  border-radius: 50%;
+  opacity: 0;
+}
+.global-fire .ge1  { left: 10%; animation: emberRiseTall 6.0s linear 0.2s infinite; }
+.global-fire .ge2  { left: 22%; animation: emberRiseTall 6.6s linear 0.6s infinite; }
+.global-fire .ge3  { left: 34%; animation: emberRiseTall 7.0s linear 0.9s infinite; }
+.global-fire .ge4  { left: 46%; animation: emberRiseTall 6.2s linear 1.2s infinite; }
+.global-fire .ge5  { left: 58%; animation: emberRiseTall 6.9s linear 0.4s infinite; }
+.global-fire .ge6  { left: 70%; animation: emberRiseTall 6.1s linear 1.0s infinite; }
+.global-fire .ge7  { left: 82%; animation: emberRiseTall 6.5s linear 1.4s infinite; }
+.global-fire .ge8  { left: 16%; animation: emberRiseTall 7.3s linear 0.7s infinite; }
+.global-fire .ge9  { left: 28%; animation: emberRiseTall 6.7s linear 0.3s infinite; }
+.global-fire .ge10 { left: 52%; animation: emberRiseTall 7.1s linear 0.8s infinite; }
+.global-fire .ge11 { left: 64%; animation: emberRiseTall 6.3s linear 1.1s infinite; }
+.global-fire .ge12 { left: 76%; animation: emberRiseTall 7.5s linear 0.5s infinite; }
+.global-fire .ge13 { left: 4%;  animation: emberRiseTall 6.8s linear 0.9s infinite; }
+.global-fire .ge14 { left: 88%; animation: emberRiseTall 7.2s linear 0.6s infinite; }
+
+@keyframes emberRiseTall {
+  0%   { transform: translateY(4vh) translateX(0) scale(0.75); opacity: 0; }
+  10%  { opacity: 0.9; }
+  30%  { transform: translateY(-30vh) translateX(-2vw) scale(0.95); }
+  60%  { transform: translateY(-60vh) translateX(1.8vw)  scale(1.05); opacity: 0.75; }
+  100% { transform: translateY(-96vh) translateX(0.8vw)  scale(1.15); opacity: 0; }
+}

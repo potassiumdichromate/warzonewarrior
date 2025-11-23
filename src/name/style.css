@@ -1,0 +1,176 @@
+/* Transparent Glass Popup Theme */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  background: url('../../assets/images/Rectangle 3.png') center/cover no-repeat;
+  padding: 2.5rem 2rem;
+  border-radius: 15px;
+  width: 90%;
+  max-width: 420px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  position: relative;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: modalFadeIn 0.3s ease-out;
+  overflow: hidden;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.close-button {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #fff;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+}
+
+.close-button:hover {
+  background: rgba(255, 0, 0, 0.6);
+  transform: rotate(90deg);
+  border-color: #fff;
+  color: white;
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+}
+
+h2 {
+  margin: 0 0 1.8rem 0;
+  text-align: center;
+  color: #fff;
+  font-family: 'Arial', sans-serif;
+  font-weight: 700;
+  font-size: 1.8rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.5px;
+  -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.3);
+}
+
+.form-group {
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.warrior-input {
+  width: 100%;
+  padding: 1rem 1.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 8px;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  font-family: 'Arial', sans-serif;
+  backdrop-filter: blur(5px);
+}
+
+.warrior-input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.warrior-input:focus {
+  border-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+}
+
+.error-message {
+  color: #ff6b6b;
+  margin-top: 0.6rem;
+  font-size: 0.85rem;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  display: inline-block;
+  backdrop-filter: blur(5px);
+}
+
+.submit-button {
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  margin-top: 1rem;
+}
+
+.submit-button img {
+  width: 100%;
+  height: auto;
+  max-width: 200px;
+  display: block;
+  margin: 0 auto;
+}
+
+.submit-button:hover {
+  transform: scale(1.05);
+}
+
+.submit-button:active {
+  transform: scale(0.98);
+}
+
+.submit-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .modal-content {
+    padding: 1.8rem 1.5rem;
+    width: 90%;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .warrior-input {
+    padding: 0.9rem 1rem;
+  }
+  
+  .submit-button {
+    padding: 0.9rem;
+    font-size: 1rem;
+  }
+}

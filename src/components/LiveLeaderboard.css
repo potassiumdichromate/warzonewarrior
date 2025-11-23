@@ -1,0 +1,367 @@
+/* Live Leaderboard Container */
+.live-leaderboard {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+}
+
+/* Leaderboard Header */
+.leaderboard-header {
+  padding: 15px 0;
+  border-bottom: 2px solid rgba(236, 201, 75, 0.3);
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.leaderboard-title {
+  margin: 0 0 0 80px;
+  font-size: 20px;
+  font-weight: 900;
+  color: #ecc94b;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Rajdhani', sans-serif;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  line-height: 1;
+}
+
+.title-icon {
+  font-size: 24px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  animation: iconPulse 2s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+
+@keyframes iconPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.last-update {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.update-dot {
+  width: 6px;
+  height: 6px;
+  background: #4ade80;
+  border-radius: 50%;
+  animation: dotPulse 2s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+  0%, 100% { 
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+  }
+  50% { 
+    opacity: 0.5;
+    box-shadow: 0 0 0 4px rgba(74, 222, 128, 0);
+  }
+}
+
+/* Leaderboard List */
+.leaderboard-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 5px;
+}
+
+.leaderboard-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.leaderboard-list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 0;
+}
+
+.leaderboard-list::-webkit-scrollbar-thumb {
+  background: rgba(236, 201, 75, 0.4);
+  border-radius: 0;
+}
+
+.leaderboard-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(236, 201, 75, 0.6);
+}
+
+/* Leaderboard Item */
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 0;
+  border: 1px solid rgba(236, 201, 75, 0.2);
+  transition: all 0.3s ease;
+  animation: itemFadeIn 0.4s ease-out backwards;
+}
+
+@keyframes itemFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.leaderboard-item:hover {
+  background: rgba(236, 201, 75, 0.1);
+  border-color: rgba(236, 201, 75, 0.4);
+  transform: translateX(5px);
+}
+
+/* Top 3 Styling */
+.leaderboard-item.rank-1 {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(0, 0, 0, 0.3));
+  border-color: rgba(255, 215, 0, 0.5);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
+}
+
+.leaderboard-item.rank-2 {
+  background: linear-gradient(135deg, rgba(192, 192, 192, 0.15), rgba(0, 0, 0, 0.3));
+  border-color: rgba(192, 192, 192, 0.5);
+  box-shadow: 0 4px 15px rgba(192, 192, 192, 0.2);
+}
+
+.leaderboard-item.rank-3 {
+  background: linear-gradient(135deg, rgba(205, 127, 50, 0.15), rgba(0, 0, 0, 0.3));
+  border-color: rgba(205, 127, 50, 0.5);
+  box-shadow: 0 4px 15px rgba(205, 127, 50, 0.2);
+}
+
+/* Rank Section */
+.rank-section {
+  flex: 0 0 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.medal {
+  font-size: 28px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  animation: medalShine 3s ease-in-out infinite;
+}
+
+@keyframes medalShine {
+  0%, 100% { filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)) brightness(1); }
+  50% { filter: drop-shadow(0 2px 8px rgba(255, 215, 0, 0.6)) brightness(1.2); }
+}
+
+.rank-number {
+  font-size: 16px;
+  font-weight: 900;
+  color: rgba(236, 201, 75, 0.6);
+  font-family: 'Rajdhani', sans-serif;
+}
+
+/* Player Section */
+.player-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.player-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 0;
+  background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+  border: 2px solid #ecc94b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 900;
+  color: #ecc94b;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.player-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.player-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.player-exp {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+}
+
+/* Coins Section */
+.coins-section {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(236, 201, 75, 0.1);
+  padding: 6px 10px;
+  border-radius: 0;
+  border: 1px solid rgba(236, 201, 75, 0.3);
+}
+
+.coins-icon {
+  font-size: 18px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+.coins-value {
+  font-size: 14px;
+  font-weight: 900;
+  color: #ecc94b;
+  font-family: 'Rajdhani', sans-serif;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Loading State */
+.leaderboard-loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(236, 201, 75, 0.2);
+  border-top-color: #ecc94b;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.leaderboard-loading p {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* No Data State */
+.no-data {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .leaderboard-title {
+    font-size: 18px;
+  }
+
+  .leaderboard-item {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .rank-section {
+    flex: 0 0 35px;
+  }
+
+  .medal {
+    font-size: 24px;
+  }
+
+  .rank-number {
+    font-size: 14px;
+  }
+
+  .player-avatar {
+    width: 35px;
+    height: 35px;
+    font-size: 16px;
+  }
+
+  .player-name {
+    font-size: 13px;
+  }
+
+  .player-exp {
+    font-size: 10px;
+  }
+
+  .coins-value {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .leaderboard-item {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .player-avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+
+  .player-name {
+    font-size: 12px;
+  }
+
+  .coins-section {
+    padding: 4px 8px;
+  }
+
+  .coins-value {
+    font-size: 12px;
+  }
+}

@@ -1,0 +1,495 @@
+/* Profile Card Container */
+.profile-card-container {
+  width: 100%;
+  max-width: 600px;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Profile Card - ID Card Style */
+.profile-card {
+  width: 100%;
+  background: linear-gradient(135deg, 
+    rgba(30, 41, 59, 0.95) 0%,
+    rgba(15, 23, 42, 0.98) 50%,
+    rgba(30, 41, 59, 0.95) 100%
+  );
+  border-radius: 0;
+  border: 3px solid #ecc94b;
+  box-shadow: 
+    0 0 30px rgba(236, 201, 75, 0.3),
+    0 10px 40px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  position: relative;
+  backdrop-filter: blur(10px);
+  animation: cardEntrance 0.6s ease-out;
+}
+
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Card Header */
+.card-header {
+  background: linear-gradient(135deg, #ecc94b 0%, #d69e2e 100%);
+  padding: 15px 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.header-stripe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.6) 50%, 
+    transparent 100%
+  );
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.card-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: #1a202c;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  font-family: 'Rajdhani', 'Arial Black', sans-serif;
+}
+
+.card-number {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(26, 32, 44, 0.7);
+  letter-spacing: 1px;
+  font-family: 'Courier New', monospace;
+}
+
+/* Main Content */
+.card-content {
+  padding: 25px 20px;
+  display: flex;
+  gap: 20px;
+  position: relative;
+}
+
+.card-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(236, 201, 75, 0.3) 50%, 
+    transparent 100%
+  );
+}
+
+/* Left Side - Avatar and Info */
+.profile-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  flex: 0 0 180px;
+}
+
+.avatar-container {
+  position: relative;
+}
+
+.avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 0;
+  background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+  border: 3px solid #ecc94b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.avatar::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 70%
+  );
+  animation: avatarShine 3s ease-in-out infinite;
+}
+
+@keyframes avatarShine {
+  0%, 100% { transform: rotate(0deg) translateX(-100%); }
+  50% { transform: rotate(0deg) translateX(100%); }
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+.avatar-text {
+  font-size: 42px;
+  font-weight: 900;
+  color: #ecc94b;
+  text-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.5),
+    0 0 10px rgba(236, 201, 75, 0.3);
+  font-family: 'Rajdhani', sans-serif;
+  z-index: 1;
+}
+
+.avatar-badge {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #ecc94b 0%, #d69e2e 100%);
+  padding: 4px 12px;
+  border-radius: 0;
+  border: 2px solid #1a202c;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.avatar-badge span {
+  font-size: 12px;
+  font-weight: 900;
+  color: #1a202c;
+  letter-spacing: 1px;
+}
+
+.profile-info {
+  text-align: center;
+  width: 100%;
+}
+
+.warrior-name {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #ecc94b;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: 1px;
+  word-wrap: break-word;
+  font-family: 'Rajdhani', sans-serif;
+}
+
+.wallet-address {
+  margin: 0;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.5px;
+}
+
+/* Right Side - Stats */
+.profile-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.resources-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+}
+
+.resource-item {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 0;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(236, 201, 75, 0.2);
+  transition: all 0.3s ease;
+}
+
+.resource-item:hover {
+  background: rgba(236, 201, 75, 0.1);
+  border-color: rgba(236, 201, 75, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(236, 201, 75, 0.2);
+}
+
+.resource-icon {
+  font-size: 28px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.resource-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.resource-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.resource-value {
+  font-size: 18px;
+  font-weight: 900;
+  color: #ecc94b;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  font-family: 'Rajdhani', sans-serif;
+}
+
+/* Achievements Section */
+.achievements-section {
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 2px solid rgba(236, 201, 75, 0.2);
+}
+
+.achievements-title {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #ecc94b;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Rajdhani', sans-serif;
+}
+
+.title-icon {
+  font-size: 20px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.achievement-item {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 0;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(236, 201, 75, 0.15);
+  transition: all 0.3s ease;
+}
+
+.achievement-item:hover {
+  background: rgba(236, 201, 75, 0.1);
+  border-color: rgba(236, 201, 75, 0.3);
+  transform: translateY(-2px);
+}
+
+.achievement-icon {
+  font-size: 24px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.achievement-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.achievement-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.achievement-value {
+  font-size: 16px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  font-family: 'Rajdhani', sans-serif;
+}
+
+/* Card Footer */
+.card-footer {
+  padding: 15px 20px;
+  background: linear-gradient(135deg, rgba(236, 201, 75, 0.1) 0%, rgba(214, 158, 46, 0.05) 100%);
+  border-top: 1px solid rgba(236, 201, 75, 0.2);
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-pattern {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0px,
+    rgba(236, 201, 75, 0.3) 5px,
+    transparent 10px
+  );
+}
+
+.security-features {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.hologram {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(45deg, 
+    rgba(236, 201, 75, 0.3),
+    rgba(214, 158, 46, 0.2),
+    rgba(236, 201, 75, 0.3)
+  );
+  border-radius: 50%;
+  position: relative;
+  animation: hologramPulse 2s ease-in-out infinite;
+}
+
+@keyframes hologramPulse {
+  0%, 100% { 
+    opacity: 0.5;
+    box-shadow: 0 0 10px rgba(236, 201, 75, 0.3);
+  }
+  50% { 
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(236, 201, 75, 0.6);
+  }
+}
+
+.verification-stamp {
+  font-size: 11px;
+  font-weight: 900;
+  color: #4ade80;
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .profile-card-container {
+    padding: 10px;
+  }
+
+  .card-content {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .profile-left {
+    flex: none;
+  }
+
+  .profile-right {
+    width: 100%;
+  }
+
+  .resources-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .achievements-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .card-title {
+    font-size: 16px;
+    letter-spacing: 2px;
+  }
+
+  .avatar {
+    width: 100px;
+    height: 100px;
+  }
+
+  .avatar-text {
+    font-size: 36px;
+  }
+
+  .warrior-name {
+    font-size: 18px;
+  }
+
+  .resources-grid {
+    gap: 8px;
+  }
+
+  .resource-item {
+    padding: 10px 8px;
+  }
+
+  .resource-icon {
+    font-size: 24px;
+  }
+
+  .resource-value {
+    font-size: 16px;
+  }
+
+  .achievements-grid {
+    gap: 8px;
+  }
+}
