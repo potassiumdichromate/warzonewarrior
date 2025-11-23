@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './PlayerProfileCard.css';
 
 const PlayerProfileCard = ({ playerData }) => {
-  const [avatarError, setAvatarError] = useState(false);
-
   if (!playerData) return null;
 
   const {
@@ -66,16 +64,7 @@ const PlayerProfileCard = ({ playerData }) => {
           <div className="profile-left">
             <div className="avatar-container">
               <div className="avatar">
-                {!avatarError ? (
-                  <img 
-                    src="/assets/warrior-avatar.png" 
-                    alt="Warrior Avatar"
-                    className="avatar-image"
-                    onError={() => setAvatarError(true)}
-                  />
-                ) : (
-                  <span className="avatar-text">{avatarInitials}</span>
-                )}
+                <span className="avatar-text">{avatarInitials}</span>
               </div>
               <div className="avatar-badge">
                 <span>LVL {PlayerProfile?.level || 1}</span>
