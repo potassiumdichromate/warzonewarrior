@@ -92,7 +92,7 @@
 /* Left Section - IAP */
 .left-section {
   background: linear-gradient(145deg, rgba(26, 38, 64, 0.85), rgba(15, 23, 42, 0.9));
-  border-radius: 0;
+  border-radius: 15px;
   border: 2px solid rgba(236, 201, 75, 0.3);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(10px);
@@ -112,7 +112,7 @@
 /* Right Section - Leaderboard */
 .right-section {
   background: linear-gradient(145deg, rgba(26, 38, 64, 0.85), rgba(15, 23, 42, 0.9));
-  border-radius: 0;
+  border-radius: 15px;
   border: 2px solid rgba(236, 201, 75, 0.3);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(10px);
@@ -128,7 +128,6 @@
   width: 100%;
   max-width: 500px;
   align-items: center;
-  padding-bottom: 20px;
 }
 
 .action-button {
@@ -138,7 +137,6 @@
   cursor: pointer;
   transition: transform 0.2s ease, filter 0.2s ease;
   width: 100%;
-  overflow: visible;
 }
 
 .action-button:hover {
@@ -154,7 +152,6 @@
   width: 100%;
   height: auto;
   display: block;
-  object-fit: contain;
 }
 
 .play-button {
@@ -218,13 +215,13 @@
 .left-section::-webkit-scrollbar-track,
 .right-section::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 0;
+  border-radius: 10px;
 }
 
 .left-section::-webkit-scrollbar-thumb,
 .right-section::-webkit-scrollbar-thumb {
   background: rgba(236, 201, 75, 0.5);
-  border-radius: 0;
+  border-radius: 10px;
 }
 
 .left-section::-webkit-scrollbar-thumb:hover,
