@@ -58,12 +58,12 @@
 
 .iap-categories::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 10px;
+  border-radius: 0;
 }
 
 .iap-categories::-webkit-scrollbar-thumb {
   background: rgba(236, 201, 75, 0.4);
-  border-radius: 10px;
+  border-radius: 0;
 }
 
 .iap-categories::-webkit-scrollbar-thumb:hover {
@@ -73,7 +73,7 @@
 /* Category Card */
 .iap-category-card {
   background: rgba(0, 0, 0, 0.3);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 15px;
   display: flex;
   align-items: center;
@@ -116,7 +116,7 @@
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.3);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 8px;
   position: relative;
   z-index: 1;
