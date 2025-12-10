@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import { PrivyProvider } from '@privy-io/react-auth';
-import { config } from './wagmi.config';
+import { config, somniaTestnet } from './wagmi.config';
 import { OptionsController } from '@reown/appkit-controllers';
 import '@rainbow-me/rainbowkit/styles.css';
 import './index.css';
@@ -38,6 +38,8 @@ export const privyConfig = {
     createOnLogin: 'users-without-wallets',
   },
   loginMethods: ['wallet', 'email', 'google'],
+  supportedChains: [somniaTestnet],
+  defaultChain: somniaTestnet,
 };
 
 if (!walletConnectProjectId) {

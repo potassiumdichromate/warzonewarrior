@@ -22,14 +22,14 @@ import gun1Image from '../../assets/images/gun1.png';
 import gun2Image from '../../assets/images/gun2.png';
 import gun3Image from '../../assets/images/gun3.png';
 import gun4Image from '../../assets/images/gun4.png';
-import b1Image from '../../assets/images/b1.png';
-import b2Image from '../../assets/images/b2.png';
-import b3Image from '../../assets/images/b3.png';
-import b4Image from '../../assets/images/b4.png';
-import b5Image from '../../assets/images/b5.png';
-import b6Image from '../../assets/images/b6.png';
-import e1Image from '../../assets/images/E1.png';
-import e2Image from '../../assets/images/E2.png';
+// import b1Image from '../../assets/images/b1.png';
+// import b2Image from '../../assets/images/b2.png';
+// import b3Image from '../../assets/images/b3.png';
+// import b4Image from '../../assets/images/b4.png';
+// import b5Image from '../../assets/images/b5.png';
+// import b6Image from '../../assets/images/b6.png';
+// import e1Image from '../../assets/images/E1.png';
+// import e2Image from '../../assets/images/E2.png';
 import coin100Image from '../../assets/images/100-coins.png';
 import coin500Image from '../../assets/images/500-coins.png';
 import coin1000Image from '../../assets/images/1000-coins.png';
@@ -47,22 +47,25 @@ import gun5Image from '../../assets/images/gun5.png';
 import gun6Image from '../../assets/images/gun6.png';
 import gun5ImageDetail from '../../assets/images/gunn5.png';
 import gun6ImageDetail from '../../assets/images/gunn6.png';
-import essen1ImageDetail from '../../assets/images/essen1.png';
-import essen2ImageDetail from '../../assets/images/essen2.png';
-import boos1ImageDetail from '../../assets/images/boos1.png';
-import boos2ImageDetail from '../../assets/images/boos2.png';
-import boos3ImageDetail from '../../assets/images/boos3.png';
-import boos4ImageDetail from '../../assets/images/boos4.png';
-import boos5ImageDetail from '../../assets/images/boos5.png';
-import boos6ImageDetail from '../../assets/images/boos6.png';
+// import essen1ImageDetail from '../../assets/images/essen1.png';
+// import essen2ImageDetail from '../../assets/images/essen2.png';
+// import boos1ImageDetail from '../../assets/images/boos1.png';
+// import boos2ImageDetail from '../../assets/images/boos2.png';
+// import boos3ImageDetail from '../../assets/images/boos3.png';
+// import boos4ImageDetail from '../../assets/images/boos4.png';
+// import boos5ImageDetail from '../../assets/images/boos5.png';
+// import boos6ImageDetail from '../../assets/images/boos6.png';
 import buyButtonImage from '../../assets/images/buy-button.png';
 import './iap.css';
 import { getPlayerProfile, updateMarketplaceData } from '../../utils/api';
 import { useAccount, useChainId, useWaitForTransactionReceipt, useWalletClient } from 'wagmi';
 import { useWallet } from '../../contexts/WalletContext';
 import { somniaTestnet } from '../../wagmi.config';
+import { getAllowedChainFromEnv } from '../../lib/chain';
 import { encodeFunctionData, keccak256, parseEther, stringToBytes } from 'viem';
 import contractAbi from '../../abi/WarzoneInAppPurchase.json';
+import { usePrivyWalletTools } from '../../hooks/usePrivyWalletTools';
+import PrivyWalletWidget from '../../components/PrivyWalletWidget';
 
 // Simple price map for Guns (SOMI)
 const GUN_PRICES_ETH = {
@@ -113,11 +116,53 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
     hash: txHash,
   });
   const { switchToSomnia } = useWallet();
+  const {
+    privyReady,
+    privyAuthenticated,
+    canUsePrivy,
+    activeWallet,
+    sendPrivyTransaction,
+    allowedChain,
+  } = usePrivyWalletTools();
   const [showSuccess, setShowSuccess] = useState(false);
   const currentChainId = useChainId();
 
   // Contract configuration (Somnia mainnet)
   const contractAddress = import.meta.env.VITE_IAP_CONTRACT_ADDRESS;
+
+  // Use the same allowed chain config as the login flow (LoginModal)
+  const effectiveAllowedChain = allowedChain || getAllowedChainFromEnv() || {
+    caip2: 'eip155:5031',
+    decimalChainId: 5031,
+    hexChainId: '0x13a7',
+    chainName: 'Somnia Mainnet',
+    rpcUrls: ['https://api.infra.mainnet.somnia.network'],
+    blockExplorerUrls: ['https://explorer.somnia.network'],
+  };
+
+
+  //     console.log("privy Ready ",privyReady);
+  // console.log("privy Authenticated ",privyAuthenticated);
+  // console.log("canUsePrivy ",canUsePrivy);
+  // console.log("currentChainId ",currentChainId);
+  // console.log("isConnected ",isConnected);
+  // console.log("isSending ",isSending);
+  // console.log("isConfirming ",isConfirming);
+  // console.log("isConfirmed ",isConfirmed);
+  // console.log("waitError ",waitError);
+  // console.log("sendError ",sendError);
+  // console.log("pendingOrder ",pendingOrder);
+  // console.log("txHash ",txHash);
+  // console.log("showSuccess ",showSuccess);
+  // console.log("contractAddress ",contractAddress);
+  // console.log("address ",address);
+  // console.log("walletClient ",walletClient);
+  // console.log("type ",type);
+  // console.log("value ",value);
+  // console.log("onPurchased ",onPurchased);
+  // console.log("onClose ",onClose);
+  // console.log("coinImage ",coinImage);
+  
 
   useEffect(() => {
     // After confirmation, call backend to finalize purchase
@@ -206,8 +251,8 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
         }
       }
 
-      // Enforce Somnia network only
-      if (currentChainId !== somniaTestnet.id) {
+      // Enforce allowed network only (same as login flow)
+      if (currentChainId !== allowedChain.decimalChainId) {
         try {
           const switched = await switchToSomnia();
           if (!switched) {
@@ -307,6 +352,135 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
     }
   };
 
+  const handleBuyWithPrivy = async () => {
+    try {
+      if (isSending || isConfirming) {
+        alert('Please wait for the current transaction to finish.');
+        return;
+      }
+      setShowSuccess(false);
+      setSendError(null);
+
+      if (!privyReady) {
+        alert('Wallet is still loading, please wait.');
+        return;
+      }
+
+      if (!privyAuthenticated || !canUsePrivy || !activeWallet?.address) {
+        alert('Please log in with Privy and create / connect a wallet first.');
+        return;
+      }
+
+      if (!contractAddress) {
+        alert('Purchase contract address is not configured.');
+        return;
+      }
+
+      // Guard: prevent purchasing a gun that's already owned (local cache)
+      if (type === 'Guns') {
+        try {
+          const addr = localStorage.getItem('walletAddress');
+          if (addr) {
+            const owned = JSON.parse(localStorage.getItem(`ownedGuns:${addr.toLowerCase()}`) || '[]');
+            if (owned.includes(String(value))) {
+              alert('You already own this gun.');
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn('Owned guns cache read failed:', e);
+        }
+      }
+
+      let priceEth;
+      if (type === 'Guns') {
+        priceEth = GUN_PRICES_ETH[value];
+      } else if (type === 'Coins') {
+        priceEth = COIN_PRICES_ETH[value];
+      } else if (type === 'Gems') {
+        priceEth = GEM_PRICES_ETH[value];
+      }
+
+      if (!priceEth) {
+        alert('Unknown product/price.');
+        return;
+      }
+
+      const walletForPrivy = activeWallet;
+      const orderId =
+        (typeof crypto !== 'undefined' && crypto.randomUUID?.()) ||
+        `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const orderHash = keccak256(stringToBytes(orderId));
+
+      setPendingOrder({ orderId, orderHash, submitted: false });
+      setIsSending(true);
+
+      const data = encodeFunctionData({
+        abi: contractAbi,
+        functionName: 'purchase',
+        args: [type, value, orderHash],
+      });
+
+      const valueWei = parseEther(priceEth);
+      let valueHex = valueWei.toString(16);
+      if (valueHex.length % 2) {
+        valueHex = `0${valueHex}`;
+      }
+      const valueHexStr = valueWei === 0n ? '0x0' : `0x${valueHex}`;
+
+      // Send transaction via Privy's embedded wallet.
+      // `useSendTransaction` returns an EVM-style TransactionReceipt.
+      const receipt = await sendPrivyTransaction(
+        {
+          // If a contract address is configured, send to contract;
+          to: contractAddress,
+          value: valueHexStr,
+          data,
+          chainId: effectiveAllowedChain.decimalChainId,
+        },
+        {
+          // Keep Privy UI minimal (we already show status locally).
+          showWalletUIs: false,
+        },
+        undefined,
+        walletForPrivy?.address,
+      );
+
+      const txHashFromReceipt =
+        typeof receipt === 'string'
+          ? receipt
+          : receipt?.transactionHash || receipt?.hash;
+
+      if (!txHashFromReceipt) {
+        throw new Error('Unable to determine transaction hash from Privy receipt');
+      }
+
+      setTxHash(txHashFromReceipt);
+    } catch (err) {
+      setSendError(err);
+      setPendingOrder(null);
+      setTxHash(undefined);
+      const msg = err?.shortMessage || err?.message || '';
+      const code = err?.code ?? err?.cause?.code;
+      console.error('Privy payment or purchase failed:', err);
+
+      if (code === 4001 || /rejected/i.test(msg)) {
+        alert('Transaction rejected in wallet.');
+      } else if (/insufficient funds/i.test(msg)) {
+        alert('Insufficient SOMI for this purchase (including gas).');
+      } else if (/chain|network|mismatch/i.test(msg) || err?.name === 'ChainMismatchError') {
+        alert('Wrong network selected. Please switch to Somnia and try again.');
+      } else if (/GunAlreadyPurchased/i.test(msg)) {
+        alert('You already own this gun.');
+      } else {
+        alert(msg || 'Transaction failed. Please try again.');
+      }
+      return;
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   return (
     <div className="coin-detail-container">
       {showSuccess && (
@@ -367,22 +541,42 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
       )}
       <div className="coin-detail-content">
         <img src={coinImage} alt="Coins" className="coin-detail-image" />
-        <button 
-          className="buy-button" 
-          onClick={handleBuyNow}
-          disabled={isSending || isConfirming || currentChainId !== somniaTestnet.id}
-          title={
-            currentChainId !== somniaTestnet.id
-              ? 'Switch to Somnia to purchase'
-              : isSending
-              ? 'Waiting for wallet'
-              : isConfirming
-              ? 'Waiting for confirmation'
-              : 'Buy Now'
-          }
-        >
-          <img src={buyButtonImage} alt="Buy Now" className="buy-button-image" />
-        </button>
+        <div className="buy-buttons-stack">
+          <button 
+            className="buy-button" 
+            onClick={handleBuyNow}
+            disabled={isSending || isConfirming || currentChainId !== somniaTestnet.id}
+            title={
+              currentChainId !== somniaTestnet.id
+                ? 'Switch to Somnia to purchase'
+                : isSending
+                ? 'Waiting for wallet'
+                : isConfirming
+                ? 'Waiting for confirmation'
+                : 'Buy Now'
+            }
+          >
+            <img src={buyButtonImage} alt="Buy Now" className="buy-button-image" />
+          </button>
+          <span className="buy-or-label">or</span>
+          <button
+            type="button"
+            className="privy-buy-button"
+            onClick={handleBuyWithPrivy}
+            disabled={isSending || isConfirming || !canUsePrivy}
+            title={
+              !canUsePrivy
+                ? 'Log in with Privy and connect a wallet to use this option'
+                : isSending
+                ? 'Waiting for wallet'
+                : isConfirming
+                ? 'Waiting for confirmation'
+                : 'Buy using Privy'
+            }
+          >
+            Buy using Privy
+          </button>
+        </div>
         <div className="purchase-meta">
           {(type === 'Guns' || type === 'Coins' || type === 'Gems') && (
             <div className="price-badge">
@@ -426,6 +620,7 @@ const IAP = () => {
   });
   const [ownedGuns, setOwnedGuns] = useState([]);
   const totalPages = 3; // Total number of pages (coins, gems, guns, essentials, boosters)
+  const [isMobile, setIsMobile] = useState(false);
   
   // Load owned guns for the connected wallet from localStorage
   useEffect(() => {
@@ -489,6 +684,17 @@ const IAP = () => {
       setOwnedGuns([]);
     }
   }, [isConnected]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (typeof window !== 'undefined') {
+        setIsMobile(window.innerWidth <= 768);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Coins data
   const coinsData = [
@@ -684,21 +890,6 @@ const IAP = () => {
     setCurrentPage(pageIndex);
   };
 
-  // Render navigation dots for carousel
-  const renderDots = (count, current, type) => {
-    return (
-      <div className="carousel-dots">
-        {Array.from({ length: count }).map((_, index) => (
-          <span 
-            key={index}
-            className={`dot ${index === current ? 'active' : ''}`}
-            onClick={() => handleDotClick(index)}
-          />
-        ))}
-      </div>
-    );
-  };
-
   // Render item with buy button or Owned badge
   const renderItem = (item) => {
     const owned = item.type === 'Guns' && ownedGuns.includes(String(item.value));
@@ -754,18 +945,35 @@ const IAP = () => {
     );
   };
 
-  // Get visible items for the current page
+  // Get visible items for the current page (simple carousel)
   const getVisibleItems = (items, currentIdx) => {
-    const visibleItems = [];
     const itemCount = items.length;
-    
-    // Always show 3 items if possible
-    for (let i = 0; i < 3; i++) {
-      const index = (currentIdx + i) % itemCount;
-      visibleItems.push(items[index]);
+    if (!itemCount) return [];
+
+    const visibleCount = isMobile ? 1 : 3;
+    if (itemCount <= visibleCount) return items;
+
+    const result = [];
+    for (let i = 0; i < visibleCount; i++) {
+      const idx = (currentIdx + i + itemCount) % itemCount;
+      result.push(items[idx]);
     }
-    
-    return visibleItems;
+    return result;
+  };
+
+  // Render navigation dots for carousel
+  const renderDots = (count, current) => {
+    return (
+      <div className="carousel-dots">
+        {Array.from({ length: count }).map((_, index) => (
+          <span
+            key={index}
+            className={`dot ${index === current ? 'active' : ''}`}
+            onClick={() => handleDotClick(index)}
+          />
+        ))}
+      </div>
+    );
   };
 
   // Render page content with navigation
@@ -785,91 +993,39 @@ const IAP = () => {
       currentData = gunsData;
       currentIndexValue = currentIndex.guns;
       type = 'Guns';
+    } else {
+      currentData = [];
+      currentIndexValue = 0;
+      type = '';
     }
+
+    const visibleItems = getVisibleItems(currentData, currentIndexValue);
 
     return (
       <div className="display-container">
-        <img 
-          src={leftArrow} 
-          alt="Previous" 
-          className="left-arrow" 
+        <img
+          src={leftArrow}
+          alt="Previous"
+          className="left-arrow"
           onClick={handlePrevious}
-          style={{ opacity: currentIndexValue === 0 ? 0.5 : 1, cursor: currentIndexValue === 0 ? 'default' : 'pointer' }}
         />
-        <img 
-          src={rightArrow} 
-          alt="Next" 
-          className="right-arrow" 
+        <img
+          src={rightArrow}
+          alt="Next"
+          className="right-arrow"
           onClick={handleNext}
-          style={{ opacity: currentIndexValue === currentData.length - 1 ? 0.5 : 1, cursor: currentIndexValue === currentData.length - 1 ? 'default' : 'pointer' }}
         />
-        
+
         <div className="carousel-container">
           <div className="carousel-items">
-            {getVisibleItems(currentData, currentIndexValue).map((item, idx) => (
+            {visibleItems.map((item, idx) => (
               <div key={`${type}-${item.id}-${idx}`} className="carousel-item-wrapper">
                 {renderItem(item)}
               </div>
             ))}
           </div>
-          {renderDots(currentData.length, currentIndexValue, type.toLowerCase())}
+          {renderDots(currentData.length, currentIndexValue)}
         </div>
-        {/* {currentPage === 3 && (
-          <div className="essentials-container" data-page="3">
-            <img 
-              src={e1Image} 
-              alt="Essential 1" 
-              className="essential-image"
-              onClick={() => setDetailView({ show: true, image: essen1ImageDetail, type: 'essential' })}
-            />
-            <img 
-              src={e2Image} 
-              alt="Essential 2" 
-              className="essential-image"
-              onClick={() => setDetailView({ show: true, image: essen2ImageDetail, type: 'essential' })}
-            />
-          </div>
-        )}
-        {currentPage === 4 && (
-          <div className="items-container" data-page="4">
-            <img 
-              src={b1Image} 
-              alt="Booster 1" 
-              className="item-image"
-              onClick={() => setDetailView({ show: true, image: boos1ImageDetail, type: 'booster' })}
-            />
-            <img 
-              src={b2Image} 
-              alt="Booster 2" 
-              className="item-image"
-              onClick={() => setDetailView({ show: true, image: boos2ImageDetail, type: 'booster' })}
-            />
-            <img 
-              src={b3Image} 
-              alt="Booster 3" 
-              className="item-image"
-              onClick={() => setDetailView({ show: true, image: boos3ImageDetail, type: 'booster' })}
-            />
-            <img 
-              src={b4Image} 
-              alt="Booster 4" 
-              className="item-image"
-              onClick={() => setDetailView({ show: true, image: boos4ImageDetail, type: 'booster' })}
-            />
-            <img 
-              src={b5Image} 
-              alt="Booster 5" 
-              className="item-image"
-              onClick={() => setDetailView({ show: true, image: boos5ImageDetail, type: 'booster' })}
-            />
-            <img 
-              src={b6Image} 
-              alt="Booster 6" 
-              className="item-image"
-              onClick={() => setDetailView({ show: true, image: boos6ImageDetail, type: 'booster' })}
-            />
-          </div>
-        )} */}
       </div>
     );
   };
@@ -883,6 +1039,7 @@ const IAP = () => {
         <div className="marketplace-header">
           <img src={marketplaceHeader} alt="Marketplace" />
         </div>
+        <PrivyWalletWidget />
         <CoinDetail 
           coinImage={detailView.image} 
           type={detailView.type}
