@@ -69,7 +69,7 @@
   100% { transform: translateY(-96vh) translateX(0.8vw)  scale(1.15); opacity: 0; }
 }
 
-/* Dashboard Content - Three Column Layout */
+/* Dashboard Content - Three Column Layout (DESKTOP) */
 .dashboard-content {
   position: relative;
   z-index: 10;
@@ -89,10 +89,8 @@
   overflow: hidden;
 }
 
-/* Left Section - IAP */
 .left-section {
   background: linear-gradient(145deg, rgba(26, 38, 64, 0.85), rgba(15, 23, 42, 0.9));
-  border-radius: 0;
   border: 2px solid rgba(236, 201, 75, 0.3);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(10px);
@@ -100,7 +98,6 @@
   overflow-y: auto;
 }
 
-/* Center Section - Profile Card */
 .center-section {
   display: flex;
   flex-direction: column;
@@ -112,27 +109,13 @@
   max-height: 100%;
 }
 
-.center-section::-webkit-scrollbar {
-  width: 6px;
-}
+.center-section::-webkit-scrollbar { width: 6px; }
+.center-section::-webkit-scrollbar-track { background: transparent; }
+.center-section::-webkit-scrollbar-thumb { background: rgba(236, 201, 75, 0.3); border-radius: 3px; }
+.center-section::-webkit-scrollbar-thumb:hover { background: rgba(236, 201, 75, 0.5); }
 
-.center-section::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.center-section::-webkit-scrollbar-thumb {
-  background: rgba(236, 201, 75, 0.3);
-  border-radius: 3px;
-}
-
-.center-section::-webkit-scrollbar-thumb:hover {
-  background: rgba(236, 201, 75, 0.5);
-}
-
-/* Right Section - Leaderboard */
 .right-section {
   background: linear-gradient(145deg, rgba(26, 38, 64, 0.85), rgba(15, 23, 42, 0.9));
-  border-radius: 0;
   border: 2px solid rgba(236, 201, 75, 0.3);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(10px);
@@ -162,28 +145,14 @@
   width: 100%;
   overflow: visible;
   position: relative;
+  min-height: 44px;
 }
 
-.action-button:hover {
-  transform: scale(1.05);
-  filter: brightness(1.1);
-}
+.action-button:hover { transform: scale(1.05); filter: brightness(1.1); }
+.action-button:active { transform: scale(0.98); }
+.action-button img { width: 100%; height: auto; display: block; object-fit: contain; }
 
-.action-button:active {
-  transform: scale(0.98);
-}
-
-.action-button img {
-  width: 100%;
-  height: auto;
-  display: block;
-  object-fit: contain;
-  max-width: 100%;
-}
-
-.play-button {
-  max-width: 380px;
-}
+.play-button { max-width: 380px; }
 
 .secondary-buttons {
   display: flex;
@@ -200,11 +169,9 @@
   min-width: 140px;
 }
 
-/* CSS-Styled Buttons (Alternative to Images) */
 .styled-button {
   width: 100%;
   padding: 18px 32px;
-  border: none;
   border-radius: 0;
   font-size: 18px;
   font-weight: 900;
@@ -221,211 +188,143 @@
   position: relative;
   overflow: hidden;
   border: 3px solid transparent;
+  min-height: 48px;
 }
 
 .styled-button::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
   transition: left 0.5s ease;
 }
+.styled-button:hover::before { left: 100%; }
 
-.styled-button:hover::before {
-  left: 100%;
-}
+.button-icon { font-size: 24px; }
+.button-text { font-size: 18px; }
 
-.button-icon {
-  font-size: 24px;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-}
-
-.button-text {
-  font-size: 18px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-/* Play Game Button */
 .play-game-btn {
   background: linear-gradient(135deg, #ecc94b 0%, #d69e2e 100%);
-  color: #1a202c;
-  border-color: #f6e05e;
-  max-width: 400px;
+  color: #1a202c; border-color: #f6e05e; max-width: 400px;
 }
-
 .play-game-btn:hover {
   background: linear-gradient(135deg, #f6e05e 0%, #ecc94b 100%);
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(236, 201, 75, 0.5);
+  transform: translateY(-4px); box-shadow: 0 8px 25px rgba(236,201,75,0.5);
 }
 
-.play-game-btn:active {
-  transform: translateY(-2px);
-}
-
-/* Manual Button */
 .manual-btn {
   background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
-  color: #fff;
-  border-color: #63b3ed;
-  flex: 1;
+  color: #fff; border-color: #63b3ed; flex: 1;
 }
-
-.manual-btn:hover {
-  background: linear-gradient(135deg, #63b3ed 0%, #4299e1 100%);
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(66, 153, 225, 0.5);
-}
-
-.manual-btn:active {
-  transform: translateY(-2px);
-}
-
-/* Disconnect Button */
 .disconnect-btn {
   background: linear-gradient(135deg, #fc8181 0%, #e53e3e 100%);
-  color: #fff;
-  border-color: #feb2b2;
-  flex: 1;
-}
-
-.disconnect-btn:hover {
-  background: linear-gradient(135deg, #feb2b2 0%, #fc8181 100%);
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(252, 129, 129, 0.5);
-}
-
-.disconnect-btn:active {
-  transform: translateY(-2px);
+  color: #fff; border-color: #feb2b2; flex: 1;
 }
 
 /* Loading State */
 .dashboard-loading {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  color: #fff;
-  z-index: 9999;
+  color: #fff; z-index: 9999;
 }
-
 .loading-spinner {
-  width: 60px;
-  height: 60px;
-  border: 4px solid rgba(236, 201, 75, 0.2);
-  border-top-color: #ecc94b;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 20px;
+  width: 60px; height: 60px;
+  border: 4px solid rgba(236,201,75,0.2); border-top-color: #ecc94b;
+  border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;
 }
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
+@keyframes spin { to { transform: rotate(360deg); } }
 .dashboard-loading p {
-  font-size: 18px;
-  font-weight: 600;
-  color: #ecc94b;
-  text-transform: uppercase;
-  letter-spacing: 2px;
+  font-size: 18px; font-weight: 600; color: #ecc94b;
+  text-transform: uppercase; letter-spacing: 2px;
 }
 
-/* Scrollbar Styling */
-.left-section::-webkit-scrollbar,
-.right-section::-webkit-scrollbar {
-  width: 8px;
-}
+/* Scrollbar */
+.left-section::-webkit-scrollbar, .right-section::-webkit-scrollbar { width: 8px; }
+.left-section::-webkit-scrollbar-track, .right-section::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+.left-section::-webkit-scrollbar-thumb, .right-section::-webkit-scrollbar-thumb { background: rgba(236,201,75,0.5); }
+.left-section::-webkit-scrollbar-thumb:hover, .right-section::-webkit-scrollbar-thumb:hover { background: rgba(236,201,75,0.7); }
 
-.left-section::-webkit-scrollbar-track,
-.right-section::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 0;
-}
-
-.left-section::-webkit-scrollbar-thumb,
-.right-section::-webkit-scrollbar-thumb {
-  background: rgba(236, 201, 75, 0.5);
-  border-radius: 0;
-}
-
-.left-section::-webkit-scrollbar-thumb:hover,
-.right-section::-webkit-scrollbar-thumb:hover {
-  background: rgba(236, 201, 75, 0.7);
-}
-
-/* Tablet Layout */
+/* Tablet */
 @media (max-width: 1200px) {
-  .dashboard-content {
-    grid-template-columns: 250px 1fr 250px;
-    gap: 15px;
-    padding: 15px;
-  }
+  .dashboard-content { grid-template-columns: 250px 1fr 250px; gap: 15px; padding: 15px; }
 }
 
-/* Mobile Layout */
+/* =============================================
+   MOBILE — key fix: scrollable single column
+   ============================================= */
 @media (max-width: 768px) {
-  .dashboard-container {
-    background-image: var(--mobile-bg);
-  }
 
-  .dashboard-content {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
-    gap: 15px;
-    padding: 10px;
-    overflow-y: auto;
+  /* Switch from fixed+hidden to relative+scrollable */
+  .dashboard-container {
+    position: relative;
     height: auto;
     min-height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background-image: var(--mobile-bg);
+    /* 'fixed' background-attachment breaks on iOS Safari */
+    background-attachment: scroll;
+    background-size: cover;
+    background-position: center top;
   }
 
+  /* Single column, auto heights */
+  .dashboard-content {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    height: auto;
+    min-height: unset;
+    gap: 12px;
+    padding: 12px;
+    padding-bottom: 28px;
+  }
+
+  .dashboard-section {
+    height: auto;
+    overflow: visible;
+  }
+
+  /* Profile card first on mobile */
+  .center-section {
+    order: -1;
+    max-height: unset;
+    overflow: visible;
+    padding: 0;
+  }
+
+  /* Panels: natural height, no clipping */
   .left-section,
   .right-section {
-    max-height: 400px;
+    max-height: none;
+    height: auto;
+    overflow: visible;
   }
 
-  .center-section {
-    order: -1; /* Move profile card to top on mobile */
-    padding: 0 5px;
-  }
-
+  /* Action buttons: full width, no scale transform */
   .action-buttons {
+    transform: none;
     max-width: 100%;
-    padding: 10px 0 20px 0;
+    padding: 8px 0 16px;
   }
+  .play-button { max-width: 100%; }
 
   .secondary-buttons {
-    flex-direction: column;
-    gap: 10px;
+    flex-direction: row;
+    gap: 8px;
   }
-
-  .manual-button,
-  .disconnect-button {
-    max-width: 100%;
-    min-width: auto;
+  .manual-button, .disconnect-button {
+    max-width: 50%; min-width: 0; flex: 1;
   }
-
-  .play-button {
-    max-width: 100%;
-  }
+  .action-button { min-height: 52px; }
 }
 
 /* Small Mobile */
 @media (max-width: 480px) {
-  .dashboard-content {
-    padding: 5px;
-    gap: 10px;
-  }
-
-  .left-section,
-  .right-section {
-    padding: 10px;
-    max-height: 300px;
-  }
+  .dashboard-content { padding: 8px; gap: 10px; }
+  .left-section, .right-section { padding: 10px; }
+  .secondary-buttons { flex-direction: column; gap: 8px; }
+  .manual-button, .disconnect-button { max-width: 100%; }
 }

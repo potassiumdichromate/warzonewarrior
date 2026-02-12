@@ -495,3 +495,51 @@
     gap: 8px;
   }
 }
+
+/* ========================
+   MOBILE OVERRIDES
+   ======================== */
+@media (max-width: 768px) {
+  /* Remove the scale transform that shrinks the card */
+  .profile-card-container {
+    transform: none;
+    padding: 0;
+    max-width: 100%;
+  }
+
+  /* Stack card content vertically and center */
+  .card-content {
+    flex-direction: column;
+    align-items: center;
+    padding: 12px;
+  }
+
+  .profile-left {
+    flex: none;
+    width: 100%;
+    align-items: center;
+  }
+
+  .profile-right {
+    width: 100%;
+  }
+
+  /* Resources 2 columns stays fine */
+  .resources-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Single column achievements on mobile */
+  .achievements-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .card-title { font-size: 16px; letter-spacing: 2px; }
+  .warrior-name { font-size: 17px; }
+}
+
+@media (max-width: 480px) {
+  .achievements-grid { grid-template-columns: 1fr; }
+  .resources-grid { grid-template-columns: 1fr 1fr; }
+  .card-number { display: none; } /* avoid overflow on tiny screens */
+}

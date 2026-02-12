@@ -25,7 +25,15 @@ const Dashboard = () => {
   const [playerData, setPlayerData] = useState(null);
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const navigate = useNavigate();
+
+  // Keep isMobile in sync with viewport (fixes orientation changes)
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Fetch player data
   useEffect(() => {
@@ -140,7 +148,7 @@ const Dashboard = () => {
               {/* Play Game Button */}
               <button onClick={handlePlayGame} className="action-button play-button">
                 <img 
-                  src={window.innerWidth < 768 ? playGameImage : playGameDesktopImage} 
+                  src={isMobile ? playGameImage : playGameDesktopImage} 
                   alt="Play Game" 
                 />
               </button>
@@ -149,14 +157,14 @@ const Dashboard = () => {
               <div className="secondary-buttons">
                 <button onClick={openGameManual} className="action-button manual-button">
                   <img 
-                    src={window.innerWidth < 768 ? gameManualButtonImage : gameManualDesktopImage} 
+                    src={isMobile ? gameManualButtonImage : gameManualDesktopImage} 
                     alt="Game Manual" 
                   />
                 </button>
                 
                 <button onClick={handleDisconnect} className="action-button disconnect-button">
                   <img 
-                    src={window.innerWidth < 768 ? disconnectImage : disconnectDesktopImage} 
+                    src={isMobile ? disconnectImage : disconnectDesktopImage} 
                     alt="Disconnect" 
                   />
                 </button>
