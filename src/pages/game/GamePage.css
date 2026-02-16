@@ -1,316 +1,166 @@
-/* Game Page Container */
-.game-page-container {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  background: #000;
-  overflow: hidden;
-}
+/* ============================================
+   GAME PAGE — clean, game-only layout
+   ============================================ */
 
-/* Loading Background */
-.loading-background {
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.center-image {
-  max-width: 80%;
-  max-height: 60vh;
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-.center-image-content {
-  max-width: 100%;
-  max-height: 60vh;
-  height: auto;
-  filter: drop-shadow(0 10px 30px rgba(236, 201, 75, 0.3));
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
-}
-
-.loading-text {
-  font-size: 32px;
-  font-weight: 900;
-  color: #ecc94b;
-  text-transform: uppercase;
-  letter-spacing: 4px;
-  font-family: 'Rajdhani', sans-serif;
-  text-shadow: 0 0 20px rgba(236, 201, 75, 0.5);
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
-
-.top-right-container {
-  position: fixed;
-  right: 2%;
-  top: 2%;
-  display: flex;
-  gap: 1vw;
-  align-items: flex-start;
-  z-index: 1001;
-}
-
-.top-image {
-  width: 100%;
-  height: auto;
-  display: block;
-  max-width: 10vw;
-  min-width: 60px;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
-}
-
-/* ======================================
-   DESKTOP: Three-column layout
-   ====================================== */
-.game-layout {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: grid;
-  grid-template-columns: 280px 1fr 350px;
-  gap: 0;
-  background: #000;
-}
-
-.game-section {
-  height: 100%;
-  overflow: hidden;
-}
-
-.game-section.left-section {
-  background: linear-gradient(145deg, rgba(26, 38, 64, 0.95), rgba(15, 23, 42, 0.98));
-  border-right: 2px solid rgba(236, 201, 75, 0.3);
-  padding: 20px 15px;
-  overflow-y: auto;
-  box-shadow: 2px 0 20px rgba(0, 0, 0, 0.5);
-}
-
-.game-section.center-section {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #000;
-  padding: 20px;
-}
-
-.game-section.right-section {
-  background: linear-gradient(145deg, rgba(26, 38, 64, 0.95), rgba(15, 23, 42, 0.98));
-  border-left: 2px solid rgba(236, 201, 75, 0.3);
-  padding: 20px 15px;
-  overflow-y: auto;
-  box-shadow: -2px 0 20px rgba(0, 0, 0, 0.5);
-}
-
-/* Game Iframe Container */
-.game-iframe-wrapper {
-  position: relative;
-  width: 100%;
-  max-width: 900px;
-  aspect-ratio: 3 / 2;
-  background: #000;
-  border: 3px solid rgba(236, 201, 75, 0.5);
-  box-shadow: 0 0 30px rgba(236, 201, 75, 0.3);
-}
-
-.game-iframe {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  border: none;
-  opacity: 0;
-  transition: opacity 0.5s ease-in;
-  background: #000;
-}
-
-.game-iframe.loaded { opacity: 1; }
-
-/* Back to Home Button */
-.back-to-home-button {
-  position: absolute;
-  top: 20px; left: 20px;
-  z-index: 100;
-  padding: 12px 24px;
-  background: linear-gradient(135deg, rgba(236,201,75,0.9), rgba(214,158,46,0.9));
-  border: 2px solid rgba(255,255,255,0.3);
-  color: #1a202c;
-  font-size: 14px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-  font-family: 'Rajdhani', sans-serif;
-  min-height: 44px;
-}
-
-.back-to-home-button:hover {
-  background: linear-gradient(135deg, #ecc94b, #d69e2e);
-  transform: translateY(-2px);
-}
-
-/* Mobile tab toggles (hidden on desktop) */
-.mobile-panel-tabs {
-  display: none;
-}
-
-/* Scrollbar */
-.game-section.left-section::-webkit-scrollbar,
-.game-section.right-section::-webkit-scrollbar { width: 8px; }
-.game-section.left-section::-webkit-scrollbar-track,
-.game-section.right-section::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
-.game-section.left-section::-webkit-scrollbar-thumb,
-.game-section.right-section::-webkit-scrollbar-thumb { background: rgba(236,201,75,0.5); }
-
-/* Tablet */
-@media (max-width: 1400px) {
-  .game-layout { grid-template-columns: 250px 1fr 300px; }
-  .game-iframe-wrapper { max-width: 800px; }
-}
-@media (max-width: 1200px) {
-  .game-layout { grid-template-columns: 220px 1fr 250px; }
-  .game-section.left-section, .game-section.right-section { padding: 15px 10px; }
-  .game-iframe-wrapper { max-width: 700px; }
-}
-
-/* Tablet landscape */
-@media (max-width: 1024px) and (orientation: landscape) {
-  .game-layout { grid-template-columns: 200px 1fr 200px; }
-  .game-section.center-section { padding: 10px; }
-  .game-iframe-wrapper { max-width: 600px; }
-  .back-to-home-button { top: 10px; left: 10px; padding: 8px 16px; font-size: 12px; }
-}
-
-/* ======================================
-   MOBILE PORTRAIT — game takes full screen
-   with collapsible side panels as tabs
-   ====================================== */
-@media (max-width: 768px) {
-
-  .game-page-container {
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-
-  /* Tab toggle buttons */
-  .mobile-panel-tabs {
-    display: flex;
+   .game-page-container {
     position: fixed;
-    bottom: 0;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  /* ── Loading screen ── */
+  .loading-background {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+  }
+  
+  .center-image {
+    max-width: 80%;
+    max-height: 55vh;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  
+  .center-image-content {
+    max-width: 100%;
+    max-height: 55vh;
+    height: auto;
+    filter: drop-shadow(0 10px 30px rgba(236, 201, 75, 0.3));
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-16px); }
+  }
+  
+  .loading-text {
+    font-size: 28px;
+    font-weight: 900;
+    color: #ecc94b;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    font-family: 'Rajdhani', sans-serif;
+    text-shadow: 0 0 20px rgba(236, 201, 75, 0.5);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.6; }
+  }
+  
+  /* ── Top bar (back + fullscreen) ── */
+  .game-topbar {
+    position: absolute;
+    top: 0;
     left: 0;
     right: 0;
-    z-index: 200;
-    background: rgba(15, 23, 42, 0.96);
-    border-top: 2px solid rgba(236, 201, 75, 0.4);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.75) 0%, transparent 100%);
+    pointer-events: none; /* children override */
   }
-
-  .mobile-tab-btn {
-    flex: 1;
-    padding: 12px 8px;
-    background: none;
-    border: none;
-    color: rgba(255,255,255,0.6);
-    font-size: 11px;
-    font-weight: 700;
+  
+  .back-to-home-button,
+  .fullscreen-button {
+    pointer-events: all;
+    background: linear-gradient(135deg, rgba(236,201,75,0.92), rgba(214,158,46,0.92));
+    border: 2px solid rgba(255,255,255,0.25);
+    color: #1a202c;
+    font-size: 13px;
+    font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 1px;
     cursor: pointer;
+    padding: 9px 18px;
+    font-family: 'Rajdhani', sans-serif;
     transition: all 0.2s ease;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 4px;
-    min-height: 56px; /* touch target */
+    gap: 6px;
+    min-height: 44px;   /* touch target */
+    min-width: 44px;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
-
-  .mobile-tab-btn.active {
-    color: #ecc94b;
-    background: rgba(236,201,75,0.1);
+  
+  .back-to-home-button:hover,
+  .fullscreen-button:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
   }
-
-  .mobile-tab-btn .tab-icon { font-size: 20px; }
-
-  /* Stack layout */
-  .game-layout {
-    display: flex;
-    flex-direction: column;
-    height: auto;
-    min-height: 100vh;
-    padding-bottom: 56px; /* space for tab bar */
+  
+  .back-to-home-button:active,
+  .fullscreen-button:active {
+    transform: translateY(1px);
+    filter: brightness(0.95);
   }
-
-  /* Game fills full width, 16:9 ratio for mobile */
-  .game-section.center-section {
-    order: 1;
-    width: 100%;
-    height: auto;
-    padding: 0;
-    flex-shrink: 0;
-  }
-
+  
+  /* ── Iframe fills everything ── */
   .game-iframe-wrapper {
-    max-width: 100%;
+    position: absolute;
+    inset: 0;
     width: 100%;
-    /* 9:16 tall? No — keep landscape 16:9 so game controls work */
-    aspect-ratio: 16 / 10;
+    height: 100%;
+  }
+  
+  .game-iframe {
+    width: 100%;
+    height: 100%;
     border: none;
-    border-bottom: 2px solid rgba(236,201,75,0.3);
+    opacity: 0;
+    transition: opacity 0.4s ease-in;
+    background: #000;
+    display: block;
   }
-
-  /* Side panels: hidden by default, shown when tab active */
-  .game-section.left-section,
-  .game-section.right-section {
-    order: 2;
-    height: auto;
-    max-height: none;
-    overflow: visible;
-    border: none;
-    border-top: 2px solid rgba(236,201,75,0.2);
-    padding: 12px;
-    box-shadow: none;
-    /* hidden until tab selected */
-    display: none;
+  
+  .game-iframe.loaded {
+    opacity: 1;
   }
-
-  .game-section.left-section.panel-open,
-  .game-section.right-section.panel-open {
-    display: flex;
-    flex-direction: column;
+  
+  /* ── Fullscreen state: hide topbar until hover ── */
+  .game-page-container.is-fullscreen .game-topbar {
+    opacity: 0;
+    transition: opacity 0.3s ease;
   }
-
-  /* Back button: smaller, stays in game area */
-  .back-to-home-button {
-    top: 8px; left: 8px;
-    padding: 8px 14px;
-    font-size: 11px;
-    min-height: 36px;
+  .game-page-container.is-fullscreen:hover .game-topbar,
+  .game-page-container.is-fullscreen:focus-within .game-topbar {
+    opacity: 1;
   }
-
-  .loading-text {
-    font-size: 22px;
-    letter-spacing: 2px;
+  
+  /* ── Mobile ── */
+  @media (max-width: 768px) {
+    .loading-text {
+      font-size: 20px;
+      letter-spacing: 2px;
+    }
+  
+    .game-topbar {
+      padding: 8px 10px;
+    }
+  
+    .back-to-home-button,
+    .fullscreen-button {
+      font-size: 11px;
+      padding: 8px 12px;
+      letter-spacing: 0.5px;
+    }
   }
-}
-
-@media (max-width: 480px) {
-  .loading-text { font-size: 18px; }
-  .game-iframe-wrapper { aspect-ratio: 16 / 11; }
-}
+  

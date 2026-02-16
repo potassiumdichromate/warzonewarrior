@@ -430,88 +430,18 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .profile-card-container {
-    padding: 10px;
-  }
-
-  .card-content {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .profile-left {
-    flex: none;
-  }
-
-  .profile-right {
-    width: 100%;
-  }
-
-  .resources-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .achievements-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 480px) {
-  .card-title {
-    font-size: 16px;
-    letter-spacing: 2px;
-  }
-
-  .avatar {
-    width: 100px;
-    height: 100px;
-  }
-
-  .avatar-text {
-    font-size: 36px;
-  }
-
-  .warrior-name {
-    font-size: 18px;
-  }
-
-  .resources-grid {
-    gap: 8px;
-  }
-
-  .resource-item {
-    padding: 10px 8px;
-  }
-
-  .resource-icon {
-    font-size: 24px;
-  }
-
-  .resource-value {
-    font-size: 16px;
-  }
-
-  .achievements-grid {
-    gap: 8px;
-  }
-}
-
-/* ========================
-   MOBILE OVERRIDES
-   ======================== */
-@media (max-width: 768px) {
-  /* Remove the scale transform that shrinks the card */
+  /* No scale transform — card fills the column naturally */
   .profile-card-container {
     transform: none;
     padding: 0;
     max-width: 100%;
   }
 
-  /* Stack card content vertically and center */
   .card-content {
     flex-direction: column;
     align-items: center;
     padding: 12px;
+    gap: 12px;
   }
 
   .profile-left {
@@ -524,22 +454,26 @@
     width: 100%;
   }
 
-  /* Resources 2 columns stays fine */
   .resources-grid {
     grid-template-columns: 1fr 1fr;
+    gap: 10px;
   }
 
-  /* Single column achievements on mobile */
   .achievements-grid {
     grid-template-columns: 1fr 1fr;
+    gap: 8px;
   }
 
-  .card-title { font-size: 16px; letter-spacing: 2px; }
-  .warrior-name { font-size: 17px; }
+  .card-title       { font-size: 16px; letter-spacing: 2px; }
+  .warrior-name     { font-size: 17px; }
+  .resource-value   { font-size: 17px; }
+  .achievement-value{ font-size: 15px; }
 }
 
 @media (max-width: 480px) {
   .achievements-grid { grid-template-columns: 1fr; }
-  .resources-grid { grid-template-columns: 1fr 1fr; }
-  .card-number { display: none; } /* avoid overflow on tiny screens */
+  .card-number { display: none; }
+  .card-title  { font-size: 14px; letter-spacing: 1px; }
+  .avatar { width: 84px; height: 84px; }
+  .avatar-text { font-size: 30px; }
 }

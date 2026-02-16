@@ -8,177 +8,167 @@ import IAPSection from '../../components/IAPSection';
 import { usePrivy } from '@privy-io/react-auth';
 import './Dashboard.css';
 
-// Import assets
-import connectedBackgroundImage from '../../assets/images/Desktop - After connect.png';
-import mobileAfterConnectImage from '../../assets/images/After-mobile.png';
-import playGameImage from '../../assets/images/Play-game.png';
-import playGameDesktopImage from '../../assets/images/PlayGame-Desktop.png';
-import gameManualButtonImage from '../../assets/images/Mobile-Game-manual-button .png';
-import gameManualDesktopImage from '../../assets/images/GameManual-Desktop.png';
-import disconnectImage from '../../assets/images/disconnect-button.png';
-import disconnectDesktopImage from '../../assets/images/Disconnect-Desktop.png';
-import gameManualPdf from '../../assets/images/Game-manual.pdf';
+// Assets
+import connectedBackgroundImage  from '../../assets/images/Desktop - After connect.png';
+import mobileAfterConnectImage   from '../../assets/images/After-mobile.png';
+import playGameImage             from '../../assets/images/Play-game.png';
+import playGameDesktopImage      from '../../assets/images/PlayGame-Desktop.png';
+import gameManualButtonImage     from '../../assets/images/Mobile-Game-manual-button .png';
+import gameManualDesktopImage    from '../../assets/images/GameManual-Desktop.png';
+import disconnectImage           from '../../assets/images/disconnect-button.png';
+import disconnectDesktopImage    from '../../assets/images/Disconnect-Desktop.png';
+import gameManualPdf             from '../../assets/images/Game-manual.pdf';
+
+// Tab IDs
+const TAB_PROFILE     = 'profile';
+const TAB_IAP         = 'iap';
+const TAB_LEADERBOARD = 'leaderboard';
 
 const Dashboard = () => {
   const { disconnect, isConnected, address } = useWallet();
-  const { ready: privyReady, authenticated: privyAuthenticated } = usePrivy();
-  const [playerData, setPlayerData] = useState(null);
-  const [leaderboardData, setLeaderboardData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const { ready: privyReady } = usePrivy();
   const navigate = useNavigate();
 
-  // Keep isMobile in sync with viewport (fixes orientation changes)
+  const [playerData,     setPlayerData]     = useState(null);
+  const [leaderboardData,setLeaderboardData] = useState([]);
+  const [loading,        setLoading]        = useState(true);
+  const [isMobile,       setIsMobile]       = useState(window.innerWidth <= 768);
+  // mobile: which tab is selected — default to profile
+  const [activeTab,      setActiveTab]      = useState(TAB_PROFILE);
+
+  /* ── Track viewport ── */
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const onResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // Fetch player data
+  /* ── Data fetching ── */
   useEffect(() => {
-    const fetchPlayerData = async () => {
-      if (!address) return;
-      
-      try {
-        setLoading(true);
-        const data = await getPlayerProfile(address);
-        setPlayerData(data);
-      } catch (error) {
-        console.error('Failed to fetch player data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPlayerData();
+    if (!address) return;
+    setLoading(true);
+    getPlayerProfile(address)
+      .then(setPlayerData)
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, [address]);
 
-  // Fetch leaderboard data
   useEffect(() => {
-    const fetchLeaderboard = async () => {
-      try {
-        const data = await getLeaderboard();
-        setLeaderboardData(data);
-      } catch (error) {
-        console.error('Failed to fetch leaderboard:', error);
-      }
-    };
-
-    fetchLeaderboard();
-    // Refresh leaderboard every 30 seconds
-    const interval = setInterval(fetchLeaderboard, 30000);
-    return () => clearInterval(interval);
+    const fetch = () => getLeaderboard().then(setLeaderboardData).catch(console.error);
+    fetch();
+    const id = setInterval(fetch, 30000);
+    return () => clearInterval(id);
   }, []);
 
-  const handlePlayGame = () => {
-    navigate('/game');
-  };
+  /* ── Handlers ── */
+  const handlePlayGame = () => navigate('/game');
 
   const handleDisconnect = async () => {
     try {
       await disconnect();
-      localStorage.removeItem('walletConnected');
-      localStorage.removeItem('walletAddress');
-      localStorage.removeItem('token');
+      ['walletConnected', 'walletAddress', 'token'].forEach(k => localStorage.removeItem(k));
       navigate('/');
-    } catch (error) {
-      console.error("Disconnection error:", error);
+    } catch (e) {
+      console.error('Disconnect error:', e);
     }
   };
 
-  const openGameManual = () => {
-    window.open(gameManualPdf, '_blank');
-  };
+  const openGameManual = () => window.open(gameManualPdf, '_blank');
 
-  if (!isConnected) {
-    navigate('/');
-    return null;
-  }
+  /* ── Guards ── */
+  if (!isConnected) { navigate('/'); return null; }
 
   if (loading) {
     return (
       <div className="dashboard-loading">
-        <div className="loading-spinner"></div>
-        <p>Loading Dashboard...</p>
+        <div className="loading-spinner" />
+        <p>Loading Dashboard…</p>
       </div>
     );
   }
 
+  /* ── Responsive image helper (reactive, not one-shot) ── */
+  const img = (mobile, desktop) => isMobile ? mobile : desktop;
+
+  /* ── Render ── */
   return (
-    <div 
+    <div
       className="dashboard-container"
-      style={{ 
+      style={{
         '--desktop-bg': `url(${connectedBackgroundImage})`,
-        '--mobile-bg': `url(${mobileAfterConnectImage})`
+        '--mobile-bg':  `url(${mobileAfterConnectImage})`,
       }}
     >
-        {/* Festival overlay */}
-        <div className="festival-overlay" aria-hidden="true">
-          <div className="global-fire">
-            <span className="global-ember ge1" />
-            <span className="global-ember ge2" />
-            <span className="global-ember ge3" />
-            <span className="global-ember ge4" />
-            <span className="global-ember ge5" />
-            <span className="global-ember ge6" />
-            <span className="global-ember ge7" />
-            <span className="global-ember ge8" />
-            <span className="global-ember ge9" />
-            <span className="global-ember ge10" />
-            <span className="global-ember ge11" />
-            <span className="global-ember ge12" />
-            <span className="global-ember ge13" />
-            <span className="global-ember ge14" />
-          </div>
-        </div>
-
-        <div className="dashboard-content">
-          {/* Left Section - IAP */}
-          <div className="dashboard-section left-section">
-            <IAPSection />
-          </div>
-
-          {/* Center Section - Player Profile Card */}
-          <div className="dashboard-section center-section">
-            <PlayerProfileCard playerData={playerData} />
-            
-            {/* Action Buttons */}
-            <div className="action-buttons">
-              {/* Play Game Button */}
-              <button onClick={handlePlayGame} className="action-button play-button">
-                <img 
-                  src={isMobile ? playGameImage : playGameDesktopImage} 
-                  alt="Play Game" 
-                />
-              </button>
-              
-              {/* Secondary Buttons - Manual & Disconnect */}
-              <div className="secondary-buttons">
-                <button onClick={openGameManual} className="action-button manual-button">
-                  <img 
-                    src={isMobile ? gameManualButtonImage : gameManualDesktopImage} 
-                    alt="Game Manual" 
-                  />
-                </button>
-                
-                <button onClick={handleDisconnect} className="action-button disconnect-button">
-                  <img 
-                    src={isMobile ? disconnectImage : disconnectDesktopImage} 
-                    alt="Disconnect" 
-                  />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Section - Live Leaderboard */}
-          <div className="dashboard-section right-section">
-            <LiveLeaderboard data={leaderboardData} />
-          </div>
+      {/* Fire overlay */}
+      <div className="festival-overlay" aria-hidden="true">
+        <div className="global-fire">
+          {[...Array(14)].map((_, i) => (
+            <span key={i} className={`global-ember ge${i + 1}`} />
+          ))}
         </div>
       </div>
-    );
-  };
-  
-  export default Dashboard;
+
+      {/* ── Main content ── */}
+      <div className="dashboard-content">
+
+        {/* LEFT — IAP/Marketplace */}
+        <div className={`dashboard-section left-section${isMobile && activeTab === TAB_IAP ? ' tab-active' : ''}`}>
+          <IAPSection />
+        </div>
+
+        {/* CENTER — Profile + Action Buttons */}
+        <div className="dashboard-section center-section">
+          <PlayerProfileCard playerData={playerData} />
+
+          <div className="action-buttons">
+            <button onClick={handlePlayGame} className="action-button play-button">
+              <img src={img(playGameImage, playGameDesktopImage)} alt="Play Game" />
+            </button>
+            <div className="secondary-buttons">
+              <button onClick={openGameManual} className="action-button manual-button">
+                <img src={img(gameManualButtonImage, gameManualDesktopImage)} alt="Game Manual" />
+              </button>
+              <button onClick={handleDisconnect} className="action-button disconnect-button">
+                <img src={img(disconnectImage, disconnectDesktopImage)} alt="Disconnect" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT — Leaderboard */}
+        <div className={`dashboard-section right-section${isMobile && activeTab === TAB_LEADERBOARD ? ' tab-active' : ''}`}>
+          <LiveLeaderboard data={leaderboardData} />
+        </div>
+      </div>
+
+      {/* ── Mobile bottom tab bar ── */}
+      {isMobile && (
+        <nav className="mobile-dashboard-tabs" aria-label="Dashboard sections">
+          <button
+            className={`dash-tab-btn${activeTab === TAB_IAP ? ' active' : ''}`}
+            onClick={() => setActiveTab(TAB_IAP)}
+          >
+            <span className="tab-icon">🛒</span>
+            SHOP
+          </button>
+          <button
+            className={`dash-tab-btn${activeTab === TAB_PROFILE ? ' active' : ''}`}
+            onClick={() => setActiveTab(TAB_PROFILE)}
+          >
+            <span className="tab-icon">⚔️</span>
+            PROFILE
+          </button>
+          <button
+            className={`dash-tab-btn${activeTab === TAB_LEADERBOARD ? ' active' : ''}`}
+            onClick={() => setActiveTab(TAB_LEADERBOARD)}
+          >
+            <span className="tab-icon">🏆</span>
+            RANKS
+          </button>
+        </nav>
+      )}
+    </div>
+  );
+};
+
+export default Dashboard;
