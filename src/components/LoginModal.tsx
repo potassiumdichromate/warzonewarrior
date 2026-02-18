@@ -237,7 +237,32 @@ function CodeForm({
   )
 }
 
-type WalletId = 'metamask' | 'coinbase_wallet' | 'okx_wallet' | 'zerion'
+type WalletId =
+  | 'metamask'
+  | 'coinbase_wallet'
+  | 'base_account'
+  | 'rainbow'
+  | 'phantom'
+  | 'zerion'
+  | 'cryptocom'
+  | 'uniswap'
+  | 'okx_wallet'
+  | 'bitget_wallet'
+  | 'universal_profile'
+
+const walletOptions: Array<{ id: WalletId; label: string; hint: string }> = [
+  { id: 'metamask', label: 'MetaMask', hint: 'Browser Extension' },
+  { id: 'coinbase_wallet', label: 'Coinbase Wallet', hint: 'App / Extension' },
+  { id: 'base_account', label: 'Base Account', hint: 'App / Embedded' },
+  { id: 'rainbow', label: 'Rainbow', hint: 'App / Extension' },
+  { id: 'phantom', label: 'Phantom', hint: 'App / Extension' },
+  { id: 'zerion', label: 'Zerion', hint: 'App / Extension' },
+  { id: 'cryptocom', label: 'Crypto.com', hint: 'App / Extension' },
+  { id: 'uniswap', label: 'Uniswap Wallet', hint: 'App / Extension' },
+  { id: 'okx_wallet', label: 'OKX Wallet', hint: 'App / Extension' },
+  { id: 'bitget_wallet', label: 'Bitget Wallet', hint: 'App / Extension' },
+  { id: 'universal_profile', label: 'Universal Profile', hint: 'Universal Profile' },
+]
 
 function WalletRow({
   label,
@@ -283,10 +308,14 @@ function WalletPickerScrollable({
           .wallet-scroll:hover::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.35); }
         `}</style>
         <div className="wallet-scroll grid gap-2">
-          <WalletRow label="MetaMask" hint="Browser Extension" onClick={() => connectWith('metamask')} />
-          <WalletRow label="Coinbase Wallet" hint="App / Extension" onClick={() => connectWith('coinbase_wallet')} />
-          <WalletRow label="OKX" hint="App / Extension" onClick={() => connectWith('okx_wallet')} />
-          <WalletRow label="Zerion" hint="App / Extension" onClick={() => connectWith('zerion')} />
+          {walletOptions.map((wallet) => (
+            <WalletRow
+              key={wallet.id}
+              label={wallet.label}
+              hint={wallet.hint}
+              onClick={() => connectWith(wallet.id)}
+            />
+          ))}
         </div>
       </div>
 
@@ -355,10 +384,9 @@ function CreateWalletPanel({
       {/* Keep other paths disabled while creating wallet is required */}
       <div className="grid gap-2 opacity-60">
         <div className="grid gap-2">
-          <WalletRow label="MetaMask" />
-          <WalletRow label="Coinbase Wallet" />
-          <WalletRow label="OKX" />
-          <WalletRow label="Zerion" />
+          {walletOptions.map((wallet) => (
+            <WalletRow key={wallet.id} label={wallet.label} hint={wallet.hint} />
+          ))}
         </div>
         <GoogleButton onClick={() => {}} disabled />
       </div>

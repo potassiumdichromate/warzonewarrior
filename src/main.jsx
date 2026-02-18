@@ -21,15 +21,18 @@ export const privyConfig = {
   appearance: {
     theme: 'dark',
     walletChainType: 'ethereum-only',
+    showWalletLoginFirst: true,
     walletList: [
       'metamask',
       'coinbase_wallet',
+      'base_account',
       'rainbow',
       'phantom',
       'zerion',
       'cryptocom',
       'uniswap',
       'okx_wallet',
+      'bitget_wallet',
       'universal_profile',
     ],
   },
