@@ -188,14 +188,14 @@ const Dashboard = () => {
         <section className={`dash-section leaderboards-section ${activeTab === TAB_LEADERBOARDS ? 'active' : ''}`}>
           {/* Leaderboard Tabs */}
           <div className="lb-tabs">
-            <button
+            {/* <button
               className={`lb-tab ${activeLbTab === LB_GLOBAL ? 'active' : ''}`}
               onClick={() => setActiveLbTab(LB_GLOBAL)}
             >
                <span className="lb-tab-icon">🎮</span>
               <span>Friday Games Arena</span>
               <span className="event-live-dot"></span>
-            </button>
+            </button> */}
             <button
               className={`lb-tab ${activeLbTab === LB_EVENT ? 'active' : ''}`}
               onClick={() => setActiveLbTab(LB_EVENT)}
@@ -207,7 +207,7 @@ const Dashboard = () => {
 
           {/* Leaderboard Content */}
           <div className="lb-content">
-            {activeLbTab === LB_GLOBAL ? (
+            {/* {activeLbTab === LB_GLOBAL ? (
               
               <LiveLeaderboard
                 key={LB_EVENT}
@@ -215,14 +215,14 @@ const Dashboard = () => {
                 refreshInterval={30000}
                 eventName="Friday Gamers Arena"
               />
-            ) : (
+            ) : ( */}
               <LiveLeaderboard
                 key={LB_GLOBAL}
                 autoRefresh={true}
                 refreshInterval={30000}
                 isEvent={true}
               />
-             )}
+             {/* )} */}
           </div>
         </section>
       </main>
