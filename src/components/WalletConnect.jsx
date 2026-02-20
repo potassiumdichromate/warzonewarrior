@@ -4,6 +4,7 @@ import { Box, Snackbar, Alert } from '@mui/material';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, useDisconnect } from 'wagmi';
 import { AuthContext } from '../contexts/AuthContext';
+import { buildApiUrl } from '../config/api';
 
 const WalletConnect = () => {
   const { setAuthState } = useContext(AuthContext);
@@ -43,7 +44,7 @@ const WalletConnect = () => {
             
             // Verify the token is still valid
             try {
-              const response = await fetch('https://api.warzonewarriors.xyz/warzone/verify-token', {
+              const response = await fetch(buildApiUrl('/verify-token'), {
                 headers: {
                   'Authorization': `Bearer ${loginResult.token}`
                 }

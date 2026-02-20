@@ -1,7 +1,6 @@
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 
-const API_BASE_URL = 'https://api.warzonewarriors.xyz/warzone'; // Update this with your actual API base URL
-// const API_BASE_URL = "http://localhost:3300/warzone"
 // Create an axios instance with default config
 const api = axios.create({
   baseURL: API_BASE_URL,

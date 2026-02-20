@@ -1,30 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import { getLeaderboard } from '../utils/api';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { getLeaderboard, getAllTimeLeaderboard } from '../utils/api';
 import './LiveLeaderboard.css';
 
-const LiveLeaderboard = ({ data, autoRefresh = false, refreshInterval = 30000 }) => {
-  const [leaderboardData, setLeaderboardData] = useState(data || []);
+const LiveLeaderboard = ({
+  data,
+  autoRefresh = false,
+  refreshInterval = 30000,
+  isEvent = false,
+  eventName = 'Global Leaderboard'
+}) => {
+  const [globalData, setGlobalData] = useState([]);
+  const [eventData, setEventData] = useState([]);
   const [loading, setLoading] = useState(!data);
+  const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(new Date());
+  const requestIdRef = useRef(0);
+  const mode = isEvent ? 'event' : 'global';
+
+  const leaderboardData = useMemo(
+    () => (mode === 'event' ? eventData : globalData),
+    [mode, eventData, globalData]
+  );
 
   useEffect(() => {
     if (data) {
-      setLeaderboardData(data);
+      if (mode === 'event') {
+        setEventData(data);
+      } else {
+        setGlobalData(data);
+      }
       setLoading(false);
+      setError(null);
     }
-  }, [data]);
+  }, [data, mode]);
 
   useEffect(() => {
     if (!autoRefresh) return;
 
+    let isAlive = true;
     const fetchLeaderboard = async () => {
+      const requestId = ++requestIdRef.current;
       try {
-        const freshData = await getLeaderboard();
-        setLeaderboardData(freshData);
+        setLoading(true);
+        setError(null);
+        const freshData = isEvent ? await getAllTimeLeaderboard() : await getLeaderboard();
+
+        // Ignore late/stale responses after tab switch or effect cleanup
+        if (!isAlive || requestId !== requestIdRef.current) return;
+
+        if (mode === 'event') {
+          setEventData(freshData);
+        } else {
+          setGlobalData(freshData);
+        }
         setLastUpdate(new Date());
-        setLoading(false);
       } catch (error) {
+        if (!isAlive || requestId !== requestIdRef.current) return;
         console.error('Failed to fetch leaderboard:', error);
+        if (mode === 'event') {
+          setEventData([]);
+        } else {
+          setGlobalData([]);
+        }
+        setError('Unable to load leaderboard data.');
+      } finally {
+        if (!isAlive || requestId !== requestIdRef.current) return;
+        setLoading(false);
       }
     };
 
@@ -36,14 +77,16 @@ const LiveLeaderboard = ({ data, autoRefresh = false, refreshInterval = 30000 })
     // Set up interval for auto-refresh
     const interval = setInterval(fetchLeaderboard, refreshInterval);
 
-    return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval, data]);
+    return () => {
+      isAlive = false;
+      clearInterval(interval);
+    };
+  }, [autoRefresh, refreshInterval, data, isEvent, mode]);
 
-  // Sort and limit to top 10
+  // Sort data by coins; render full list and let the container scroll
   const sortedData = leaderboardData
     .slice()
-    .sort((a, b) => (b.PlayerResources?.coin || 0) - (a.PlayerResources?.coin || 0))
-    .slice(0, 10);
+    .sort((a, b) => (b.PlayerResources?.coin || 0) - (a.PlayerResources?.coin || 0));
 
   const getMedalEmoji = (rank) => {
     if (rank === 1) return '🥇';
@@ -53,19 +96,20 @@ const LiveLeaderboard = ({ data, autoRefresh = false, refreshInterval = 30000 })
   };
 
   return (
-    <div className="live-leaderboard">
-      <div className="leaderboard-header">
+    <div className={`live-leaderboard${isEvent ? ' event-leaderboard' : ''}`}>
+      <div className="leaderboard-header" style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px'}}>
         <h3 className="leaderboard-title">
-          <span className="title-icon">🏆</span>
-          Live Leaderboard
+          <span className="title-icon">{isEvent ? '🎮' : '🏆'}</span>
+          {isEvent ? eventName : 'Live Leaderboard'}
         </h3>
+
         {autoRefresh && (
           <div className="last-update">
             <span className="update-dot"></span>
             <span className="update-text">
-              {lastUpdate.toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
+              {lastUpdate.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
               })}
             </span>
           </div>
@@ -77,8 +121,12 @@ const LiveLeaderboard = ({ data, autoRefresh = false, refreshInterval = 30000 })
           <div className="loading-spinner"></div>
           <p>Loading...</p>
         </div>
+      ) : error ? (
+        <div className="leaderboard-loading">
+          <p>{error}</p>
+        </div>
       ) : (
-        <div className="leaderboard-list">
+        <div className="leaderboard-list" style={{maxHeight:"400px",overflowX:'hidden'}}>
           {sortedData.map((player, index) => {
             const rank = index + 1;
             const medal = getMedalEmoji(rank);

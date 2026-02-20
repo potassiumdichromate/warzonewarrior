@@ -4,6 +4,7 @@ import { mainnet, polygon, optimism, arbitrum, base, zora } from 'wagmi/chains';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { loginUser } from '../utils/api';
 import { createPublicClient, http } from 'viem';
+import { buildApiUrl } from '../config/api';
 
 // Somnia Network Configuration (Mainnet)
 export const somniaTestnet = {
@@ -376,7 +377,7 @@ export const WalletProvider = ({ children }) => {
       const token = localStorage.getItem('token');
       if (!token) return null;
       
-      const response = await fetch(`https://api.warzonewarriors.xyz/warzone/name?walletAddress=${walletAddress}`, {
+      const response = await fetch(buildApiUrl(`/name?walletAddress=${walletAddress}`), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
