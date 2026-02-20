@@ -1,5 +1,5 @@
-// const DEFAULT_API_ORIGIN = 'https://api.warzonewarriors.xyz';
-const DEFAULT_API_ORIGIN = 'http://localhost:3300';
+const DEFAULT_API_ORIGIN = 'https://api.warzonewarriors.xyz';
+// const DEFAULT_API_ORIGIN = 'http://localhost:3300';
 const API_PATH_PREFIX = '/warzone';
 
 export const API_ORIGIN = import.meta.env.VITE_API_ORIGIN || DEFAULT_API_ORIGIN;
