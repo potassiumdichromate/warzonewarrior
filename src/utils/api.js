@@ -191,6 +191,18 @@ export const updateMarketplaceData = async ({ type, value, orderId, txHash }) =>
   }
 };
 
+export const getMarketplacePurchaseStatus = async ({ orderId, txHash }) => {
+  try {
+    const response = await api.get('/iap/purchase-status', {
+      params: { orderId, txHash },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Marketplace purchase status failed:', error?.response?.data || error);
+    throw error;
+  }
+};
+
 export const getPlayerProfile = async (walletAddress) => {
   if (!walletAddress) throw new Error('walletAddress is required');
   try {

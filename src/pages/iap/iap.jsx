@@ -57,7 +57,7 @@ import gun6ImageDetail from '../../assets/images/gunn6.png';
 // import boos6ImageDetail from '../../assets/images/boos6.png';
 import buyButtonImage from '../../assets/images/buy-button.png';
 import './iap.css';
-import { getPlayerProfile, updateMarketplaceData } from '../../utils/api';
+import { getMarketplacePurchaseStatus, getPlayerProfile, updateMarketplaceData } from '../../utils/api';
 import { useAccount, useChainId, useWaitForTransactionReceipt, useWalletClient } from 'wagmi';
 import { useWallet } from '../../contexts/WalletContext';
 import { somniaTestnet } from '../../wagmi.config';
@@ -180,9 +180,13 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
 
       try {
         const response = await updateMarketplaceData(payload);
-        console.log('Purchase finalized:', response);
-        // If a gun was purchased, cache ownership locally and notify parent
-        if (type === 'Guns') {
+        console.log('Purchase accepted:', response);
+        const purchase = response?.data?.purchase || null;
+        const isDelivered =
+          purchase?.delivered === true || purchase?.status === 'completed';
+
+        // If backend already delivered, cache ownership locally and notify parent
+        if (type === 'Guns' && isDelivered) {
           try {
             const addr = localStorage.getItem('walletAddress');
             if (addr) {
@@ -197,6 +201,36 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
             console.warn('Failed to update owned guns cache:', e);
           }
           onPurchased?.(value);
+        }
+
+        // If delivery is still pending, poll status briefly in background.
+        if (!isDelivered && orderSnapshot?.orderId) {
+          setTimeout(async () => {
+            try {
+              const statusResponse = await getMarketplacePurchaseStatus({
+                orderId: orderSnapshot.orderId,
+                txHash,
+              });
+              const statusPurchase = statusResponse?.data?.purchase || null;
+              const completed =
+                statusPurchase?.delivered === true ||
+                statusPurchase?.status === 'completed';
+
+              if (type === 'Guns' && completed) {
+                const addr = localStorage.getItem('walletAddress');
+                if (addr) {
+                  const key = `ownedGuns:${addr.toLowerCase()}`;
+                  const existing = JSON.parse(localStorage.getItem(key) || '[]');
+                  if (!existing.includes(String(value))) {
+                    localStorage.setItem(key, JSON.stringify([...existing, String(value)]));
+                  }
+                }
+                onPurchased?.(value);
+              }
+            } catch (pollErr) {
+              console.warn('Purchase status polling failed:', pollErr);
+            }
+          }, 6000);
         }
       } catch (e) {
         console.error('Failed to finalize purchase:', e);
