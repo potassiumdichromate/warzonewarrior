@@ -6,6 +6,7 @@ import { Leaderboard } from "./pages/leaderboard/index";
 import IAP from "./pages/iap/iap";
 import { WalletProvider } from './contexts/WalletContext';
 import { useWallet } from './contexts/WalletContext';
+import IntraverseTestPage from './pages/intraverse/IntraverseTestPage';
 import '@rainbow-me/rainbowkit/styles.css';
 import './App.css';
 
@@ -40,6 +41,7 @@ function App() {
             />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/iap" element={<IAP />} />
+            <Route path="/intraverse-test" element={<IntraverseTestPage />} />
           </Routes>
         </div>
       </Router>
