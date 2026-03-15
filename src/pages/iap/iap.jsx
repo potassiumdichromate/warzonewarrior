@@ -69,12 +69,12 @@ import PrivyWalletWidget from '../../components/PrivyWalletWidget';
 
 // Simple price map for Guns (SOMI)
 const GUN_PRICES_ETH = {
-  'Shotgun': '0.4',
-  'Bullpup': '0.8',
-  'ScarH': '1',
-  'Sniper Rifle': '1.2',
-  'Tesla Mini': '1.5',
-  'AWP': '2',
+  'Shotgun': '0.8',
+  'Bullpup': '1.6',
+  'ScarH': '2',
+  'Sniper Rifle': '2.4',
+  'Tesla Mini': '3',
+  'AWP': '4',
 };
 
 const GUN_IDS = {
