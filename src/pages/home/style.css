@@ -361,6 +361,7 @@
 
 /* Button Container Base Styles */
 .connect-button-container,
+.intraverse-entry-container,
 .play-game-container,
 .leaderboard-btn-container,
 .mint-nft-container,
@@ -429,11 +430,55 @@
   margin: 0 0 10px 0;
 }
 
+.intraverse-entry-container {
+  width: 100%;
+  max-width: 350px;
+  margin: 4px 0 0;
+}
+
+.intraverse-entry-button {
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(245, 158, 11, 0.38);
+  background: linear-gradient(145deg, rgba(18, 24, 36, 0.9), rgba(8, 12, 21, 0.94));
+  color: #f8fafc;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.intraverse-entry-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(245, 158, 11, 0.62);
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.96), rgba(12, 18, 29, 0.98));
+}
+
+.intraverse-entry-button:disabled {
+  opacity: 0.72;
+  cursor: wait;
+}
+
 /* Move Connect button up on mobile */
 @media (max-width: 767px) {
   .connect-button-container {
     margin-top: 0; /* Reset any previous negative margin */
     margin-bottom: 5px !important; /* Add some space below connect button */
+  }
+
+  .intraverse-entry-container {
+    margin-top: 6px;
+  }
+
+  .intraverse-entry-button {
+    min-height: 46px;
+    font-size: 13px;
+    letter-spacing: 1.1px;
   }
   
   /* Ensure button images are responsive */
@@ -513,6 +558,7 @@
   
   /* Container adjustments for desktop */
   .connect-button-container,
+  .intraverse-entry-container,
   .play-game-container,
   .leaderboard-btn-container,
   .mint-nft-container,

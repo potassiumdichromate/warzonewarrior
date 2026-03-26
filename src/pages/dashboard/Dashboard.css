@@ -2,6 +2,74 @@
    DASHBOARD - Modern Redesign
    ============================================= */
 
+/* Tournament Banner */
+.tournament-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #0f2a1a 0%, #0a1628 100%);
+  border: 1px solid #22c55e55;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  gap: 12px;
+  transition: border-color 0.2s;
+}
+.tournament-banner:hover { border-color: #22c55e; }
+.tournament-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.tournament-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.tournament-status-dot.live {
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+  animation: pulse-dot 1.5s infinite;
+}
+.tournament-status-dot.upcoming { background: #f59e0b; }
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.tournament-status-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #22c55e;
+  flex-shrink: 0;
+}
+.tournament-status-dot.upcoming + .tournament-status-label { color: #f59e0b; }
+.tournament-banner-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tournament-banner-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.tournament-banner-rounds {
+  font-size: 12px;
+  color: #64748b;
+}
+.tournament-banner-cta {
+  font-size: 12px;
+  font-weight: 600;
+  color: #38bdf8;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -395,6 +463,10 @@
   gap: 12px;
 }
 
+.tournament-action-row {
+  margin-top: 12px;
+}
+
 .btn-play {
   flex: 1;
   display: flex;
@@ -442,6 +514,10 @@
 
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.15);
+}
+
+.btn-tournament-desktop {
+  width: 100%;
 }
 
 /* ── Shop Section ── */
@@ -753,6 +829,7 @@
 .home-icon::before { content: '🏠'; }
 .shop-icon::before { content: '🛒'; }
 .trophy-icon::before { content: '🏆'; }
+.tournament-icon::before { content: '🎯'; }
 
 /* =============================================
    RESPONSIVE DESIGN
@@ -817,6 +894,7 @@
 
   .mobile-nav {
     display: flex;
+    gap: 8px;
   }
 
   .profile-hero {
@@ -866,6 +944,10 @@
 
   .action-row {
     flex-direction: column;
+  }
+
+  .tournament-action-row {
+    display: none;
   }
 
   .btn-play {

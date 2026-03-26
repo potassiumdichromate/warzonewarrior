@@ -6,7 +6,9 @@ import { Leaderboard } from "./pages/leaderboard/index";
 import IAP from "./pages/iap/iap";
 import { WalletProvider } from './contexts/WalletContext';
 import { useWallet } from './contexts/WalletContext';
-import IntraverseTestPage from './pages/intraverse/IntraverseTestPage';
+import InterversePlayPage from './pages/intraverse/InterversePlayPage';
+import IntraverseLogin from './pages/intraverse/IntraverseLogin';
+import IntraverseLoginButton from './pages/intraverse/IntraverseLoginButton';
 import '@rainbow-me/rainbowkit/styles.css';
 import './App.css';
 
@@ -41,7 +43,10 @@ function App() {
             />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/iap" element={<IAP />} />
-            <Route path="/intraverse-test" element={<IntraverseTestPage />} />
+            <Route path="/interverse-play" element={<InterversePlayPage />} />
+            <Route path="/auth" element={<IntraverseLoginButton />} />
+            <Route path="/auth/callback/intraverse/callback/:idToken" element={<IntraverseLogin />} />
+            <Route path="/intraverse-auth/callback/*" element={<IntraverseLogin />} />
           </Routes>
         </div>
       </Router>

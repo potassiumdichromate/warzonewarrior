@@ -145,6 +145,81 @@
     opacity: 1;
   }
   
+/* ── Round picker overlay ── */
+.round-picker-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+
+.round-picker-card {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 20px;
+  padding: 32px 28px;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+}
+
+.round-picker-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 26px;
+  font-weight: 900;
+  color: #ecc94b;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+}
+
+.round-picker-subtitle {
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 24px;
+}
+
+.round-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.round-picker-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: #0a0f1e;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  color: #e2e8f0;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: 'Rajdhani', sans-serif;
+}
+
+.round-picker-item:hover {
+  border-color: #ecc94b;
+  background: #1a1f2e;
+}
+
+.round-picker-name {
+  text-align: left;
+}
+
+.round-picker-arrow {
+  color: #ecc94b;
+  font-size: 18px;
+}
+
   /* ── Mobile ── */
   @media (max-width: 768px) {
     .loading-text {

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useWallet } from '../../contexts/WalletContext';
 import { getPlayerProfile } from '../../utils/api';
 import IAPSection from '../../components/IAPSection';
 import LiveLeaderboard from '../../components/LiveLeaderboard';
 import { usePrivy } from '@privy-io/react-auth';
+import { buildApiUrl } from '../../config/api';
 import './Dashboard.css';
 
 import gameManualPdf from '../../assets/images/Game-manual.pdf';
@@ -24,11 +25,13 @@ const Dashboard = () => {
   const { disconnect, isConnected, address } = useWallet();
   const { ready: privyReady } = usePrivy();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [playerData, setPlayerData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(TAB_HOME);
   const [activeLbTab, setActiveLbTab] = useState(LB_GLOBAL);
+  const [activeTournament, setActiveTournament] = useState(null);
 
   useEffect(() => {
     if (!address) return;
@@ -38,6 +41,25 @@ const Dashboard = () => {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [address]);
+
+  useEffect(() => {
+    fetch(buildApiUrl('/test/intraverse/tournaments?slug=kult-games&size=10'))
+      .then((r) => r.json())
+      .then((data) => {
+        const list = data?.body?.data || [];
+        const running = list.find((t) => t.status === 'RUNNING');
+        const upcoming = list.find((t) => t.status === 'UPCOMING');
+        setActiveTournament(running || upcoming || null);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const tab = new URLSearchParams(location.search).get('tab');
+    if ([TAB_HOME, TAB_SHOP, TAB_LEADERBOARDS].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [location.search]);
 
   const handlePlayGame = () => navigate('/game');
   const handleDisconnect = async () => {
@@ -112,10 +134,6 @@ const Dashboard = () => {
               <span>{name.slice(0, 2).toUpperCase()}</span>
               <div className="level-badge">LV {PlayerProfile?.level || 1}</div>
             </div>
-            <div className="hero-info">
-              <h1 className="hero-name">{name}</h1>
-              <p className="hero-title">Warzone Warrior</p>
-            </div>
           </div>
 
           <div className="stats-grid">
@@ -168,6 +186,24 @@ const Dashboard = () => {
             </div>
           </div>
 
+          {activeTournament && (
+            <div className="tournament-banner" onClick={() => navigate('/interverse-play')} style={{ cursor: 'pointer' }}>
+              <div className="tournament-banner-left">
+                <span className={`tournament-status-dot ${activeTournament.status === 'RUNNING' ? 'live' : 'upcoming'}`} />
+                <span className="tournament-status-label">
+                  {activeTournament.status === 'RUNNING' ? 'LIVE' : 'UPCOMING'}
+                </span>
+                <span className="tournament-banner-name">{activeTournament.name}</span>
+              </div>
+              <div className="tournament-banner-right">
+                <span className="tournament-banner-rounds">
+                  {Array.isArray(activeTournament.rounds) ? activeTournament.rounds.length : 0} rounds
+                </span>
+                <span className="tournament-banner-cta">View &rarr;</span>
+              </div>
+            </div>
+          )}
+
           <div className="action-row">
             <button className="btn-play" onClick={handlePlayGame}>
               <span className="play-icon"></span>
@@ -177,6 +213,11 @@ const Dashboard = () => {
               Manual
             </button>
           </div>
+          {/* <div className="tournament-action-row">
+            <button className="btn-secondary btn-tournament-desktop" onClick={() => navigate('/interverse-play')}>
+              Tournament
+            </button>
+          </div> */}
         </section>
 
         {/* Shop Section */}
@@ -249,6 +290,13 @@ const Dashboard = () => {
         >
           <span className="nav-icon trophy-icon"></span>
           <span>Ranks</span>
+        </button>
+        <button
+          className="nav-item"
+          onClick={() => navigate('/interverse-play')}
+        >
+          <span className="nav-icon tournament-icon"></span>
+          <span>Tournament</span>
         </button>
       </nav>
     </div>

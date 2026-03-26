@@ -1,13 +1,17 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import './GamePage.css';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../../contexts/WalletContext';
+import { buildApiUrl } from '../../config/api';
 import centerImage from "../../assets/images/abc1.png";
 
 export const Game = () => {
   const [isLoading, setIsLoading]   = useState(true);
   const [showIframe, setShowIframe] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [openRounds, setOpenRounds]   = useState([]);   // rounds with active intervals
+  const [selectedRound, setSelectedRound] = useState(null); // { id, name }
+  const [showRoundPicker, setShowRoundPicker] = useState(false);
 
   const loadedRef  = useRef(false);
   const iframeRef  = useRef(null);
@@ -18,6 +22,92 @@ export const Game = () => {
   const { isConnected, address } = useWallet();
 
   const walletAddress = address || localStorage.getItem('walletAddress');
+  const activeRoundIdRef = useRef(null);
+
+  // Returns all rounds whose interval window contains right now,
+  // plus a single fallback if none are open.
+  function resolveOpenRounds(tournaments) {
+    const now = Date.now();
+    const tournament =
+      tournaments.find((t) => t.status === 'RUNNING') ||
+      tournaments.find((t) => t.status === 'UPCOMING') ||
+      tournaments[0];
+
+    if (!tournament || !Array.isArray(tournament.rounds)) return [];
+
+    const open = tournament.rounds.filter((round) => {
+      if (!Array.isArray(round.intervals)) return false;
+      return round.intervals.some((iv) => now >= iv.startDate && now <= iv.endDate);
+    });
+
+    if (open.length > 0) {
+      console.log('[intraverse] open rounds by interval:', open.map((r) => r.id));
+      return open;
+    }
+
+    // No interval open right now — fall back to first round
+    const fallback = tournament.rounds[0];
+    if (fallback) {
+      console.log('[intraverse] no open interval, fallback roundId:', fallback.id);
+      return [fallback];
+    }
+    return [];
+  }
+
+  // Fetch active tournament rounds on mount
+  useEffect(() => {
+    fetch(buildApiUrl('/test/intraverse/tournaments?slug=kult-games&size=10'))
+      .then((r) => r.json())
+      .then((data) => {
+        const list = data?.body?.data || [];
+        const rounds = resolveOpenRounds(list);
+        if (rounds.length === 1) {
+          // Only one option — auto-select it
+          activeRoundIdRef.current = rounds[0].id;
+          setSelectedRound(rounds[0]);
+        } else if (rounds.length > 1) {
+          // Multiple rounds open simultaneously — let the player choose
+          setOpenRounds(rounds);
+          setShowRoundPicker(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Listen for GAME_OVER postMessage from the game iframe and submit score
+  useEffect(() => {
+    const handleMessage = (event) => {
+      const { type, score, roomId, roundId } = event.data || {};
+      if (type !== 'GAME_OVER') return;
+
+      const resolvedRoundId = roundId || activeRoundIdRef.current;
+      if (!resolvedRoundId) {
+        console.warn('[intraverse] GAME_OVER: no roundId available');
+        return;
+      }
+      if (!walletAddress) {
+        console.warn('[intraverse] GAME_OVER: no walletAddress available');
+        return;
+      }
+
+      fetch(buildApiUrl('/test/intraverse/game-point'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roundId: resolvedRoundId,
+          roomId: roomId || `warzone-${Date.now()}`,
+          score: Number(score) || 0,
+          walletAddress,
+        }),
+      })
+        .then((r) => r.json())
+        .then((data) => console.log('[intraverse] score submitted:', data))
+        .catch((err) => console.error('[intraverse] score submit failed:', err));
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [walletAddress]);
   const GAME_BASE_URL = import.meta.env.VITE_CLOUDFLARE_R2_GAME_URL || 'https://warzonewarriors.xyz/game';
   const gameUrl = walletAddress
     ? `${GAME_BASE_URL}?walletAddress=${encodeURIComponent(walletAddress)}`
@@ -81,6 +171,8 @@ export const Game = () => {
   /* ── Access check + show iframe ── */
   useEffect(() => {
     if (hasRunRef.current) return;
+    // Don't start until round picker (if needed) is resolved
+    if (showRoundPicker) return;
     hasRunRef.current = true;
 
     if (!isConnected && !walletAddress) {
@@ -94,7 +186,15 @@ export const Game = () => {
     // Fallback: remove loading screen after 6s if iframe onLoad never fires
     const fallback = setTimeout(() => setIsLoading(false), 6000);
     return () => clearTimeout(fallback);
-  }, [isConnected, walletAddress, navigate]);
+  }, [isConnected, walletAddress, navigate, showRoundPicker]);
+
+  const handleRoundSelect = (round) => {
+    activeRoundIdRef.current = round.id;
+    setSelectedRound(round);
+    setShowRoundPicker(false);
+    // Reset hasRunRef so the access-check effect fires now that picker is dismissed
+    hasRunRef.current = false;
+  };
 
   const handleIframeLoad = () => {
     loadedRef.current = true;
@@ -106,8 +206,35 @@ export const Game = () => {
       ref={containerRef}
       className={`game-page-container${isFullscreen ? ' is-fullscreen' : ''}`}
     >
+      {/* Round picker — shown when multiple rounds are simultaneously active */}
+      {showRoundPicker && (
+        <div className="round-picker-overlay">
+          <div className="round-picker-card">
+            <div className="round-picker-title">Choose Your Round</div>
+            <p className="round-picker-subtitle">
+              Multiple tournament rounds are active right now. Pick the one you want to play for.
+            </p>
+            <div className="round-picker-list">
+              {openRounds.map((round) => (
+                <button
+                  key={round.id}
+                  className="round-picker-item"
+                  onClick={() => handleRoundSelect(round)}
+                >
+                  <span className="round-picker-name">{round.name || `Round ${round.id}`}</span>
+                  <span className="round-picker-arrow">→</span>
+                </button>
+              ))}
+            </div>
+            <button className="back-to-home-button" style={{ marginTop: 16 }} onClick={() => navigate('/')}>
+              ← Back to Home
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Loading screen */}
-      {isLoading && (
+      {!showRoundPicker && isLoading && (
         <div className="loading-background">
           <div className="center-image">
             <img src={centerImage} alt="Warzone Warriors" className="center-image-content" />
