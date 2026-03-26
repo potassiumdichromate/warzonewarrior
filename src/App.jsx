@@ -45,7 +45,7 @@ function App() {
             <Route path="/iap" element={<IAP />} />
             <Route path="/interverse-play" element={<InterversePlayPage />} />
             <Route path="/auth" element={<IntraverseLoginButton />} />
-            <Route path="/auth/callback/intraverse/callback/:idToken" element={<IntraverseLogin />} />
+            <Route path="/auth/callback/intraverse/callback/*" element={<IntraverseLogin />} />
             <Route path="/intraverse-auth/callback/*" element={<IntraverseLogin />} />
           </Routes>
         </div>
