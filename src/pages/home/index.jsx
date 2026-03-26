@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { usePrivy } from '@privy-io/react-auth';
 import { useWallet } from '../../contexts/WalletContext';
 import LoginModal from '../../components/LoginModal';
-import { buildApiUrl } from '../../config/api';
 import './style.css';
 
 // Import images
@@ -16,7 +15,6 @@ export const Home = () => {
   const { isConnected, address, setUserToken } = useWallet();
   const { ready: privyReady } = usePrivy();
   const [showPrivyLogin, setShowPrivyLogin] = useState(false);
-  const [intraverseLoading, setIntraverseLoading] = useState(false);
   const navigate = useNavigate();
 
   // Redirect to dashboard if already connected
@@ -40,28 +38,6 @@ export const Home = () => {
     
     handleConnection();
   }, [isConnected, address, setUserToken]);
-
-  const startIntraverseLogin = async () => {
-    try {
-      setIntraverseLoading(true);
-      const response = await fetch(buildApiUrl('/test/intraverse/auth/magic-link'));
-      const data = await response.json();
-
-      if (!response.ok || !data?.success || !data?.magicLoginUrl) {
-        throw new Error(data?.message || 'Failed to start Intraverse login');
-      }
-
-      localStorage.setItem('intraversePendingAuthHash', data.authHash);
-      localStorage.setItem('intraverseClientKey', data.clientKey);
-      localStorage.setItem('intraverseMagicLoginUrl', data.magicLoginUrl);
-
-      window.location.assign(data.magicLoginUrl);
-    } catch (error) {
-      console.error('Intraverse login start failed:', error);
-      window.alert(error.message || 'Failed to start Intraverse login.');
-      setIntraverseLoading(false);
-    }
-  };
 
   const renderPrivyLoginButton = () => {
     if (!privyReady) return null;
@@ -113,16 +89,6 @@ export const Home = () => {
             <div className="connect-button-container">
               {renderPrivyLoginButton()}
             </div>
-            {/* <div className="intraverse-entry-container">
-              <button
-                type="button"
-                className="intraverse-entry-button"
-                onClick={startIntraverseLogin}
-                disabled={intraverseLoading}
-              >
-                {intraverseLoading ? 'Opening...' : 'Intraverse'}
-              </button>
-            </div> */}
           </div>
         </div>
       </div>

@@ -6,8 +6,6 @@ function readFromSearch(search) {
   const params = new URLSearchParams(search);
   return {
     idToken: params.get('idToken') || params.get('token') || '',
-    refreshToken: params.get('refreshToken') || '',
-    userId: params.get('userId') || params.get('user') || '',
   };
 }
 
@@ -15,14 +13,13 @@ function readFromPath(pathname) {
   const parts = pathname.split('/').filter(Boolean);
   const callbackIndex = parts.indexOf('callback');
   if (callbackIndex < 0) {
-    return { idToken: '', refreshToken: '', userId: '' };
+    return { idToken: '' };
   }
 
-  const idToken = decodeURIComponent(parts[callbackIndex + 1] || '');
-  const refreshToken = decodeURIComponent(parts[callbackIndex + 2] || '');
-  const userId = decodeURIComponent(parts[callbackIndex + 3] || '');
+  // As requested: read idToken from callbackIndex + 3
+  const idToken = decodeURIComponent(parts[callbackIndex + 3] || '');
 
-  return { idToken, refreshToken, userId };
+  return { idToken };
 }
 
 export default function IntraverseLogin() {
@@ -35,15 +32,13 @@ export default function IntraverseLogin() {
 
     return {
       idToken: pathData.idToken || queryData.idToken,
-      refreshToken: pathData.refreshToken || queryData.refreshToken,
-      userId: pathData.userId || queryData.userId,
     };
   }, [location.pathname, location.search]);
 
   useEffect(() => {
     const finalize = async () => {
       try {
-        if (!callbackData.idToken && !callbackData.userId) {
+        if (!callbackData.idToken) {
           console.warn('[intraverse] callback loaded but no auth values found in URL');
           navigate('/', { replace: true });
           return;
@@ -54,7 +49,6 @@ export default function IntraverseLogin() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             idToken: callbackData.idToken,
-            userId: callbackData.userId,
           }),
         });
         const data = await response.json();
@@ -62,7 +56,6 @@ export default function IntraverseLogin() {
         const intraverseUserId = String(data?.intraverseUserId || '').trim();
         if (response.ok && intraverseUserId) {
           localStorage.removeItem('intraverseIdToken');
-          localStorage.removeItem('intraverseRefreshToken');
           localStorage.setItem('intraverseUserId', intraverseUserId);
           localStorage.setItem('walletConnected', 'true');
           if (data?.walletAddress) {
