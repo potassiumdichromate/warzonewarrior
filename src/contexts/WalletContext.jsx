@@ -47,10 +47,21 @@ const WalletContext = createContext({
   switchToSomnia: async () => {}
 });
 
+function readStoredSession() {
+  if (typeof window === 'undefined') {
+    return { walletAddress: null, token: null };
+  }
+
+  const walletAddress = localStorage.getItem('walletAddress');
+  const token = localStorage.getItem('token');
+  return { walletAddress, token };
+}
+
 export const WalletProvider = ({ children }) => {
   const [isNFTOwner, setIsNFTOwner] = useState(false);
   const backendLoginSentRef = useRef(null);
   const [privyAddress, setPrivyAddress] = useState(null);
+  const [storedSession, setStoredSession] = useState(readStoredSession);
   
   // RainbowKit hooks
   const { address: wagmiAddress, isConnected: wagmiIsConnected } = useAccount();
@@ -69,6 +80,10 @@ export const WalletProvider = ({ children }) => {
       localStorage.removeItem('walletConnected');
       localStorage.removeItem('walletAddress');
       localStorage.removeItem('token');
+      localStorage.removeItem('Intraverse');
+      localStorage.removeItem('intraverseUserId');
+      localStorage.removeItem('intraverseUserInfo');
+      setStoredSession({ walletAddress: null, token: null });
 
       if (privyAuthenticated && privyLogout) {
         try {
@@ -82,6 +97,19 @@ export const WalletProvider = ({ children }) => {
       throw error;
     }
   }, [disconnect, privyAuthenticated, privyLogout]);
+
+  useEffect(() => {
+    const syncStoredSession = () => {
+      setStoredSession(readStoredSession());
+    };
+
+    window.addEventListener('storage', syncStoredSession);
+    window.addEventListener('intraverse-user-saved', syncStoredSession);
+    return () => {
+      window.removeEventListener('storage', syncStoredSession);
+      window.removeEventListener('intraverse-user-saved', syncStoredSession);
+    };
+  }, []);
   
   // Check if wallet is connected on mount and on address change
   useEffect(() => {
@@ -466,9 +494,11 @@ export const WalletProvider = ({ children }) => {
     ensureSomnia();
   }, [wagmiIsConnected, chainId, switchToSomnia]);
 
-  const effectiveAddress = wagmiAddress || privyAddress;
+  const sessionAddress = storedSession.walletAddress || null;
+  const sessionConnected = Boolean(storedSession.walletAddress && storedSession.token);
+  const effectiveAddress = wagmiAddress || privyAddress || sessionAddress;
   const isPrivyConnected = Boolean(privyReady && privyAuthenticated && privyAddress);
-  const effectiveIsConnected = Boolean(wagmiIsConnected || isPrivyConnected);
+  const effectiveIsConnected = Boolean(wagmiIsConnected || isPrivyConnected || sessionConnected);
 
   return (
     <WalletContext.Provider
