@@ -9,6 +9,7 @@ import { useWallet } from './contexts/WalletContext';
 import InterversePlayPage from './pages/intraverse/InterversePlayPage';
 import IntraverseLogin from './pages/intraverse/IntraverseLogin';
 import IntraverseLoginButton from './pages/intraverse/IntraverseLoginButton';
+import AutoLogin from './pages/AutoLogin';
 import '@rainbow-me/rainbowkit/styles.css';
 import './App.css';
 
@@ -47,6 +48,7 @@ function App() {
             <Route path="/auth" element={<IntraverseLoginButton />} />
             <Route path="/auth/callback/intraverse/callback/*" element={<IntraverseLogin />} />
             <Route path="/intraverse-auth/callback/*" element={<IntraverseLogin />} />
+            <Route path="/auto-login" element={<AutoLogin />} />
           </Routes>
         </div>
       </Router>
