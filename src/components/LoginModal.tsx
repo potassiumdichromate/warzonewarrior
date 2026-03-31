@@ -461,24 +461,37 @@ export default function LoginModal({
     blockExplorerUrls: ['https://chainscan.0g.ai'],
   }
 
-  const preflightEnsureAllowedNetwork = async (onAllowed: () => void) => {
+  // Get a specific provider for a wallet from EIP-6963 announcements, or fall back to window.ethereum
+  const getProviderForWallet = async (walletId: WalletId): Promise<any | null> => {
+    return new Promise((resolve) => {
+      const providers: any[] = []
+      const onAnnounce = (e: any) => { providers.push(e.detail) }
+      window.addEventListener('eip6963:announceProvider', onAnnounce)
+      window.dispatchEvent(new Event('eip6963:requestProvider'))
+      // Give extensions 50ms to announce, then pick or fall back
+      setTimeout(() => {
+        window.removeEventListener('eip6963:announceProvider', onAnnounce)
+        const match = providers.find((p) =>
+          p?.info?.rdns?.toLowerCase().includes(walletId.replace('_', '.'))
+        )
+        resolve(match?.provider ?? (window as any).ethereum ?? null)
+      }, 50)
+    })
+  }
+
+  const preflightEnsureAllowedNetwork = async (walletId: WalletId, onAllowed: () => void) => {
     try {
-      const eth = (window as any).ethereum
-      if (!eth?.request) {
-        // If we cannot detect a provider, allow flow to continue (WalletConnect, etc.)
-        onAllowed()
-        return
-      }
+      const eth = await getProviderForWallet(walletId)
+      if (!eth?.request) { onAllowed(); return }
       const current = await eth.request({ method: 'eth_chainId' }).catch(() => undefined)
       if (typeof current === 'string' && current.toLowerCase() !== allowedChain.hexChainId.toLowerCase()) {
-        // Show network modal; do not proceed to wallet connect
         setNetworkOpen(true)
         return
       }
       onAllowed()
-    } catch (e) {
-      // On errors, be conservative and show network modal
-      setNetworkOpen(true)
+    } catch {
+      // Cannot determine chain — let the connection proceed
+      onAllowed()
     }
   }
 
@@ -674,13 +687,9 @@ export default function LoginModal({
                         className="w-full inline-flex items-center justify-center rounded-2xl border border-emerald-400/50 bg-gradient-to-tr from-emerald-400 via-teal-400 to-cyan-500 px-4 py-3 text-lg font-bold text-white shadow-[0_10px_28px_rgba(16,185,129,0.35)] hover:shadow-[0_14px_34px_rgba(16,185,129,0.45)] active:scale-[.99] transition disabled:opacity-60"
                         onClick={() => {
                           if (emailStep === 'enter-code') return
-                          preflightEnsureAllowedNetwork(() => {
-                            try {
-                              if (dialogRef.current?.open) dialogRef.current.close()
-                            } catch {}
-                            // Open Privy login modal with only wallet method, so SIWE completes and `authenticated` flips true
-                            login({ loginMethods: ['wallet'] })
-                          })
+                          try { if (dialogRef.current?.open) dialogRef.current.close() } catch {}
+                          // Let Privy's own modal handle wallet selection and network — no preflight here
+                          login({ loginMethods: ['wallet'] })
                         }}
                         disabled={emailStep === 'enter-code'}
                       >
@@ -702,7 +711,7 @@ export default function LoginModal({
                   ) : (
                     <WalletPickerScrollable
                       connectWith={async (w) => {
-                        await preflightEnsureAllowedNetwork(async () => {
+                        await preflightEnsureAllowedNetwork(w, async () => {
                           await connectWith(w)
                         })
                       }}
