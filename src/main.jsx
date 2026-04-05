@@ -1,6 +1,6 @@
-import { stabilizeWindowEthereumForMultiInjectedWallets } from './lib/injectedEthereum';
-// Replace multi-wallet aggregator on window.ethereum before Privy/Wagmi (avoids evmAsk selectExtension).
-stabilizeWindowEthereumForMultiInjectedWallets();
+// Do NOT call stabilizeWindowEthereumForMultiInjectedWallets() here: it pins window.ethereum to one
+// extension (MetaMask first), so Privy only sees one injected wallet and skips the multi-wallet UI.
+// Wagmi’s injected connector still uses getStableInjectedProvider() in wagmi.config.js for IAP.
 
 import React, { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -37,6 +37,7 @@ const privyWalletList = [
   'okx_wallet',
   'bitget_wallet',
   'universal_profile',
+  'wallet_connect',
 ];
 
 // guess_the_ai_frontend does not pass walletConnectCloudProjectId — Privy uses dashboard + defaults.

@@ -13,7 +13,6 @@ import centerWarzoneLogo from '../assets/images/abc1.png'
 import intraverseLogo from '../assets/Intraverse_logo-cropped.png'
 import { buildApiUrl } from '../config/api'
 import { getWalletConnectProjectId } from '../lib/privyEnv'
-import { ensureInjectedChainToSomnia } from '../lib/switchToSomniaInjected'
 import './LoginModal.css'
 
 /* ============================== Helpers ============================== */
@@ -337,9 +336,7 @@ function WalletPickerScrollable({
 }) {
   return (
     <div className="grid gap-2">
-      <div className="wz-login-panel-note">
-        Choose a wallet to continue
-      </div>
+      <div className="wz-login-panel-note">Choose a wallet to continue</div>
 
       <div className="max-h-[48vh] overflow-y-auto pr-1">
         <style>{`
@@ -570,12 +567,6 @@ export default function LoginModal({
           dialogRef.current.close()
         }
       } catch {}
-      const switched = await ensureInjectedChainToSomnia()
-      if (!switched) {
-        setError('Please switch your wallet to Somnia (chain ID 5031) and try again.')
-        reopenDialog()
-        return
-      }
       await connectWallet({ walletList: [wallet] })
     } catch (err: any) {
       console.error('connectWith error', err)
@@ -604,17 +595,9 @@ export default function LoginModal({
     window.setTimeout(() => {
       void (async () => {
         try {
-          // Same as guess_the_ai_frontend NewLoginScreen: switch/add Somnia on window.ethereum first,
-          // then open Privy so SIWE signs with chain ID 5031.
-          if (hasInjectedWallet) {
-            const switched = await ensureInjectedChainToSomnia()
-            if (!switched) {
-              setError('Please switch your wallet to Somnia (chain ID 5031) and try again.')
-              reopenDialog()
-              return
-            }
-          }
-          login({ loginMethods: ['wallet'] })
+          // Let Privy run connect → network switch to defaultChain (Somnia) → SIWE in one flow;
+          // a pre-Privy switch caused an extra wallet popup and evmAsk issues with multiple extensions.
+          login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
         } catch (err: any) {
           setFriendlyPrivyError(
             err?.privyErrorCode ?? err?.code,
