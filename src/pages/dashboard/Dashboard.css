@@ -8,7 +8,7 @@
 .dashboard-wrapper {
   position: fixed;
   inset: 0;
-  overflow: hidden;
+  overflow: hidden; /* scroll lives on .dash-action-cluster so fixed UI stays put */
   color: var(--wz-text, #f3e6c3);
   font-family: var(--wz-font-body, 'Rajdhani', system-ui, sans-serif);
   background: transparent;
@@ -116,6 +116,29 @@
   display: grid;
   gap: 14px;
   align-items: start;
+  /* Short viewports: scroll inside the panel; breathing room first/last when scrolled */
+  max-height: min(calc(100dvh - 32px), calc(100vh - 32px));
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  scrollbar-gutter: stable;
+}
+
+.dash-action-cluster::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dash-action-cluster::-webkit-scrollbar-thumb {
+  background: rgba(255, 198, 71, 0.25);
+  border-radius: 999px;
+}
+
+.dash-action-cluster::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 999px;
 }
 
 /* ── Meta row (wallet + logout) ── */
@@ -451,11 +474,14 @@
   .dash-action-cluster {
     right: 14px;
     left: 14px;
-    top: auto;
-    bottom: 96px;
+    top: max(100px, calc(env(safe-area-inset-top, 0px) + 88px));
+    bottom: calc(100px + env(safe-area-inset-bottom, 0px));
     transform: none;
     width: auto;
     gap: 8px;
+    max-height: none;
+    padding-top: 16px;
+    padding-bottom: 24px;
   }
 
   .dash-meta-row {
