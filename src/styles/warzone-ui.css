@@ -1,0 +1,470 @@
+/* ============================================================
+   WARZONE WARRIORS — Warm Gold Glassmorphism Design System
+   Premium frosted glass, warm amber accents, smooth gradients.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Orbitron:wght@500;600;700;800;900&display=swap');
+
+/* ── Global scrollbar ── */
+*::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+*::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 198, 71, 0.3);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 198, 71, 0.5);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 198, 71, 0.35) rgba(255, 255, 255, 0.08);
+}
+
+:root {
+  --wz-font: 'Orbitron', 'Rajdhani', 'Impact', 'Arial Black', system-ui, sans-serif;
+  --wz-font-body: 'Rajdhani', 'Segoe UI', system-ui, sans-serif;
+
+  /* ── Warm palette ── */
+  --wz-accent:       #ffc647;
+  --wz-accent-dim:   rgba(255, 198, 71, 0.25);
+  --wz-accent-light: #fff0a1;
+  --wz-accent-deep:  #e08516;
+  --wz-gold:         #ffd740;
+  --wz-gold-bright:  #ffe57a;
+  --wz-gold-light:   #fff8dc;
+  --wz-gold-dark:    #b8860b;
+  --wz-amber:        #ff9500;
+  --wz-orange:       #ff6a00;
+  --wz-fire:         #ff2200;
+  --wz-green:        #4ade80;
+  --wz-green-dim:    rgba(74, 222, 128, 0.15);
+
+  /* ── Surfaces (lifted for readability; less “crushed black”) ── */
+  --wz-ink:       #0e1422;
+  --wz-dark-1:    #121a2a;
+  --wz-dark-2:    #182236;
+  --wz-dark-3:    #1e2a40;
+  --wz-surface:   rgba(22, 28, 44, 0.72);
+  --wz-surface-2: rgba(28, 34, 52, 0.78);
+
+  /* Glass */
+  --wz-glass:        rgba(28, 32, 48, 0.48);
+  --wz-glass-border: rgba(255, 198, 71, 0.18);
+  --wz-glass-glow:   rgba(255, 198, 71, 0.08);
+
+  /* ── Borders ── */
+  --wz-border:        rgba(255, 198, 71, 0.2);
+  --wz-border-bright: rgba(255, 198, 71, 0.45);
+  --wz-border-subtle: rgba(255, 255, 255, 0.06);
+
+  /* ── Text ── */
+  --wz-text:       #f3e6c3;
+  --wz-text-muted: rgba(243, 230, 195, 0.5);
+  --wz-text-gold:  #ffd740;
+
+  /* ── Status ── */
+  --wz-success:     #4ade80;
+  --wz-success-dim: rgba(74, 222, 128, 0.15);
+  --wz-danger:      #ff4040;
+
+  /* ── Geometry ── */
+  --wz-radius-sm:  8px;
+  --wz-radius-md:  12px;
+  --wz-radius-lg:  18px;
+  --wz-radius-xl:  24px;
+  --wz-radius-pill: 999px;
+
+  /* ── FX ── */
+  --wz-shadow:       0 12px 36px rgba(0, 0, 0, 0.38);
+  --wz-glow-accent:  0 0 20px rgba(255, 198, 71, 0.25), 0 0 60px rgba(255, 198, 71, 0.08);
+  --wz-glow-gold:    0 0 20px rgba(255, 215, 64, 0.35), 0 0 60px rgba(255, 215, 64, 0.1);
+  --wz-transition:   0.22s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Marketplace “Buy” bar — shared with primary CTAs */
+  --wz-cta-buy-gradient: linear-gradient(135deg, #ffe57a 0%, #ffc107 40%, #c05800 100%);
+  --wz-cta-buy-text: #1a0800;
+  --wz-cta-buy-border: rgba(255, 237, 180, 0.45);
+  --wz-cta-buy-shadow: 0 4px 18px rgba(180, 83, 9, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   BASE BUTTON — Glassmorphic warm button
+   ══════════════════════════════════════════════════════════ */
+
+a.wz-btn {
+  text-decoration: none;
+  display: inline-flex;
+  box-sizing: border-box;
+}
+
+.wz-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 28px;
+
+  border-radius: var(--wz-radius-md);
+  border: 1px solid var(--wz-glass-border);
+
+  background: var(--wz-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+
+  font-family: var(--wz-font);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--wz-text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform var(--wz-transition),
+    box-shadow var(--wz-transition),
+    border-color var(--wz-transition),
+    background var(--wz-transition);
+  outline: none;
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Shimmer sweep */
+.wz-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06),
+    transparent
+  );
+  transition: left 0.5s ease;
+  pointer-events: none;
+}
+
+.wz-btn:not(:disabled):hover::before {
+  left: 100%;
+}
+
+.wz-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+.wz-btn:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: var(--wz-glow-accent);
+  border-color: var(--wz-border-bright);
+}
+
+.wz-btn:not(:disabled):active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: none;
+}
+
+
+/* ── Size modifiers ── */
+
+.wz-btn--sm {
+  min-height: 38px;
+  padding: 0 18px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  border-radius: var(--wz-radius-sm);
+}
+
+.wz-btn--lg {
+  min-height: 56px;
+  padding: 0 36px;
+  font-size: 15px;
+  letter-spacing: 0.18em;
+  border-radius: var(--wz-radius-lg);
+}
+
+.wz-btn--block { width: 100%; }
+.wz-btn--grow  { flex: 1; min-width: 0; }
+
+
+/* ══════════════════════════════════════════════════════════
+   COLOR VARIANTS
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Primary: solid gold bar (same as marketplace Buy) ── */
+.wz-btn--primary {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--wz-cta-buy-gradient);
+  border-color: var(--wz-cta-buy-border);
+  color: var(--wz-cta-buy-text);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.28);
+  box-shadow: var(--wz-cta-buy-shadow);
+}
+
+.wz-btn--primary::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.22),
+    transparent
+  );
+}
+
+.wz-btn--primary:not(:disabled):hover {
+  filter: brightness(1.06);
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 6px 22px rgba(180, 83, 9, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  transform: translateY(-3px);
+}
+
+.wz-btn--primary:not(:disabled):active {
+  filter: brightness(0.97);
+  box-shadow: 0 2px 10px rgba(120, 50, 0, 0.35);
+  transform: translateY(1px) scale(0.98);
+}
+
+/* ── Secondary: Cooler / muted variant ── */
+.wz-btn--secondary {
+  background: linear-gradient(
+    135deg,
+    rgba(180, 160, 120, 0.12) 0%,
+    rgba(140, 120, 80, 0.1) 50%,
+    rgba(100, 80, 50, 0.14) 100%
+  );
+  border-color: rgba(200, 175, 130, 0.3);
+  color: #e8d8b0;
+  text-shadow: 0 0 10px rgba(200, 175, 130, 0.2);
+  box-shadow: 0 0 8px rgba(200, 175, 130, 0.08), inset 0 0 20px rgba(200, 175, 130, 0.03);
+}
+
+.wz-btn--secondary:not(:disabled):hover {
+  border-color: rgba(200, 175, 130, 0.5);
+  box-shadow: 0 0 20px rgba(200, 175, 130, 0.2);
+  transform: translateY(-2px);
+}
+
+/* ── Outline: Glass with subtle border ── */
+.wz-btn--outline {
+  border: 1px solid rgba(255, 198, 71, 0.2);
+  background: rgba(28, 34, 52, 0.38);
+  color: var(--wz-text);
+  backdrop-filter: blur(12px);
+}
+
+.wz-btn--outline:not(:disabled):hover {
+  border-color: rgba(255, 198, 71, 0.35);
+  background: rgba(255, 198, 71, 0.04);
+  box-shadow: 0 0 12px rgba(255, 198, 71, 0.1);
+}
+
+/* ── Ghost: flat / transparent ── */
+.wz-btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--wz-text-muted);
+}
+
+.wz-btn--ghost:not(:disabled):hover {
+  color: var(--wz-text);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Success ── */
+.wz-btn--success {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.12), rgba(34, 197, 94, 0.16));
+  border-color: rgba(74, 222, 128, 0.3);
+  color: #80e8a0;
+  text-shadow: 0 0 10px rgba(74, 222, 128, 0.2);
+}
+
+/* ── Danger ── */
+.wz-btn--danger {
+  background: linear-gradient(135deg, rgba(255, 64, 64, 0.14), rgba(180, 30, 20, 0.18));
+  border-color: rgba(255, 64, 64, 0.3);
+  color: #ff8080;
+  text-shadow: 0 0 10px rgba(255, 64, 64, 0.2);
+}
+
+/* ── Pill: round ends ── */
+.wz-btn--pill {
+  border-radius: var(--wz-radius-pill);
+  border: 1px solid rgba(255, 198, 71, 0.16);
+}
+
+/* ── Misc modifiers ── */
+.wz-btn--cap-normal {
+  text-transform: none;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
+.wz-btn--icon {
+  min-width: 44px;
+  padding: 0;
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   BUTTON STACK  (checkout panel)
+   ══════════════════════════════════════════════════════════ */
+
+.wz-btn-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  width: min(100%, 340px);
+}
+
+.wz-btn-stack-divider {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--wz-text-muted);
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   PAGE HELPERS
+   ══════════════════════════════════════════════════════════ */
+
+/* Warm vignette overlay */
+.wz-page-scrim {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%,
+      rgba(255, 198, 71, 0.08), transparent 52%),
+    radial-gradient(ellipse 60% 45% at 100% 100%,
+      rgba(224, 133, 22, 0.07), transparent 48%),
+    radial-gradient(ellipse 50% 40% at 0% 80%,
+      rgba(255, 198, 71, 0.05), transparent 42%),
+    linear-gradient(180deg,
+      rgba(14, 18, 30, 0.28) 0%,
+      rgba(10, 14, 24, 0.42) 100%);
+}
+
+/* Glass panel */
+.wz-glass-panel {
+  background: var(--wz-glass);
+  border: 1px solid var(--wz-glass-border);
+  border-radius: var(--wz-radius-lg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    var(--wz-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 0 30px rgba(255, 198, 71, 0.02);
+}
+
+/* Spinner */
+@keyframes wz-spin { to { transform: rotate(360deg); } }
+
+.wz-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(255, 255, 255, 0.06);
+  border-top-color: var(--wz-accent);
+  border-radius: 50%;
+  animation: wz-spin 0.85s linear infinite;
+  box-shadow: 0 0 16px rgba(255, 198, 71, 0.15);
+}
+
+.wz-loading-label {
+  margin-top: 20px;
+  font-family: var(--wz-font);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--wz-accent);
+  text-shadow: 0 0 12px rgba(255, 198, 71, 0.25);
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   MARKETPLACE “BUY” STRIP (spans, card footers)
+   ══════════════════════════════════════════════════════════ */
+
+.wz-cta-buy {
+  background: var(--wz-cta-buy-gradient);
+  color: var(--wz-cta-buy-text);
+  box-shadow: 0 2px 12px rgba(120, 50, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.32);
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   SKELETON — loading placeholders (e.g. home connect while Privy loads)
+   ══════════════════════════════════════════════════════════ */
+
+@keyframes wz-skeleton-flow {
+  0%   { background-position: 120% 0; }
+  100% { background-position: -120% 0; }
+}
+
+.wz-skeleton {
+  border-radius: var(--wz-radius-lg);
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 198, 71, 0.09) 42%,
+    rgba(255, 255, 255, 0.04) 84%
+  );
+  background-size: 240% 100%;
+  animation: wz-skeleton-flow 1.35s ease-in-out infinite;
+  border: 1px solid rgba(255, 198, 71, 0.12);
+  box-sizing: border-box;
+}
+
+.wz-skeleton--btn {
+  width: 100%;
+  min-height: 56px;
+  border-radius: var(--wz-radius-lg);
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   GLOBAL ANIMATIONS
+   ══════════════════════════════════════════════════════════ */
+
+@keyframes wz-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+@keyframes wz-glow-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 198, 71, 0.1); }
+  50%      { box-shadow: 0 0 24px rgba(255, 198, 71, 0.25); }
+}
+
+@keyframes wz-border-breathe {
+  0%, 100% { border-color: rgba(255, 198, 71, 0.12); }
+  50%      { border-color: rgba(255, 198, 71, 0.32); }
+}
+
+@keyframes wz-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}

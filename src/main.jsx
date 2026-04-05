@@ -1,12 +1,15 @@
+import { stabilizeWindowEthereumForMultiInjectedWallets } from './lib/injectedEthereum';
+// Replace multi-wallet aggregator on window.ethereum before Privy/Wagmi (avoids evmAsk selectExtension).
+stabilizeWindowEthereumForMultiInjectedWallets();
+
 import React, { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
-import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import { PrivyProvider } from '@privy-io/react-auth';
-import { config, somniaTestnet } from './wagmi.config';
+import { config, somniaChain } from './wagmi.config';
 import { OptionsController } from '@reown/appkit-controllers';
-import '@rainbow-me/rainbowkit/styles.css';
+import { getPrivyAppId, getWalletConnectProjectId } from './lib/privyEnv';
 import './index.css';
 import App from './App';
 
@@ -14,40 +17,55 @@ import App from './App';
 import { Buffer } from 'buffer';
 window.Buffer = Buffer;
 
-const walletConnectProjectId = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID;
-const privyAppId = import.meta.env.VITE_PRIVY_APP_ID;
+const walletConnectProjectId = getWalletConnectProjectId();
+const privyAppId = getPrivyAppId();
 
+// Same rule as guess_the_ai_frontend: embedded wallets need a secure context (HTTPS) in the browser
+const canUseEmbeddedWallets =
+  typeof window === 'undefined' || window.isSecureContext;
+// Same walletList as guess_the_ai_frontend/src/lib/privyConfig.ts — one list for all devices (no
+// shorter mobile-only list, which was hiding most wallets on phones).
+const privyWalletList = [
+  'metamask',
+  'coinbase_wallet',
+  'base_account',
+  'rainbow',
+  'phantom',
+  'zerion',
+  'cryptocom',
+  'uniswap',
+  'okx_wallet',
+  'bitget_wallet',
+  'universal_profile',
+];
+
+// guess_the_ai_frontend does not pass walletConnectCloudProjectId — Privy uses dashboard + defaults.
 export const privyConfig = {
   appearance: {
     theme: 'dark',
+    accentColor: '#ffc647',
     walletChainType: 'ethereum-only',
     showWalletLoginFirst: true,
-    walletList: [
-      'metamask',
-      'coinbase_wallet',
-      'base_account',
-      'rainbow',
-      'phantom',
-      'zerion',
-      'cryptocom',
-      'uniswap',
-      'okx_wallet',
-      'bitget_wallet',
-      'universal_profile',
-    ],
+    walletList: privyWalletList,
   },
-  embeddedWallets: {
-    // Automatically create wallet for new users (only when using Privy UI)
-    createOnLogin: 'users-without-wallets',
-  },
+  ...(canUseEmbeddedWallets
+    ? {
+        embeddedWallets: {
+          createOnLogin: 'users-without-wallets',
+        },
+      }
+    : {}),
   loginMethods: ['wallet', 'email', 'google'],
-  supportedChains: [somniaTestnet],
-  defaultChain: somniaTestnet,
+  supportedChains: [somniaChain],
+  defaultChain: somniaChain,
+  intl: {
+    defaultCountry: 'US',
+  },
 };
 
 if (!walletConnectProjectId) {
   console.warn(
-    'VITE_WALLET_CONNECT_PROJECT_ID is not set. WalletConnect analytics will be disabled to avoid failed fetch noise.'
+    '[Privy/Wagmi] No WalletConnect project ID. Set VITE_WALLET_CONNECT_PROJECT_ID. Mobile / WalletConnect wallet login will fail without it.'
   );
 }
 
@@ -136,18 +154,7 @@ if (!rootElement) {
           <PrivyProvider appId={privyAppId} config={privyConfig}>
             <WagmiProvider config={config}>
               <QueryClientProvider client={queryClient}>
-                <RainbowKitProvider 
-                  modalSize="wide"
-                  theme={darkTheme({
-                    accentColor: '#7C3AED',
-                    accentColorForeground: 'white',
-                    borderRadius: 'medium',
-                    fontStack: 'system',
-                    overlayBlur: 'small',
-                  })}
-                >
-                  <App />
-                </RainbowKitProvider>
+                <App />
               </QueryClientProvider>
             </WagmiProvider>
           </PrivyProvider>

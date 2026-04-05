@@ -1,43 +1,43 @@
-/* IAP Section Container */
+/* IAP Section Container — Holographic Glassmorphism */
 .iap-section {
   height: 100%;
   display: flex;
   flex-direction: column;
-  color: #fff;
+  color: #f3e6c3;
 }
 
 /* IAP Header */
 .iap-header {
   padding: 15px 0;
-  border-bottom: 2px solid rgba(236, 201, 75, 0.3);
+  border-bottom: 1px solid rgba(255, 198, 71, 0.12);
   margin-bottom: 20px;
 }
 
 .iap-title {
   margin: 0 0 8px 0;
-  font-size: 20px;
-  font-weight: 900;
-  color: #ecc94b;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffc647;
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 0.12em;
   display: flex;
   align-items: center;
   gap: 10px;
-  font-family: 'Rajdhani', sans-serif;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  font-family: var(--wz-font, 'Orbitron', sans-serif);
+  text-shadow: 0 0 12px rgba(255, 198, 71, 0.4);
 }
 
 .title-icon {
-  font-size: 24px;
+  font-size: 22px;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 .iap-subtitle {
   margin: 0;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  color: rgba(243, 230, 195, 0.4);
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.1em;
   font-weight: 600;
 }
 
@@ -46,41 +46,41 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 5px;
 }
 
 .iap-categories::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 .iap-categories::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 0;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 999px;
 }
 
 .iap-categories::-webkit-scrollbar-thumb {
-  background: rgba(236, 201, 75, 0.4);
-  border-radius: 0;
+  background: rgba(255, 198, 71, 0.25);
+  border-radius: 999px;
 }
 
 .iap-categories::-webkit-scrollbar-thumb:hover {
-  background: rgba(236, 201, 75, 0.6);
+  background: rgba(255, 198, 71, 0.4);
 }
 
 /* Category Card */
 .iap-category-card {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 0;
-  padding: 15px;
+  background: rgba(8, 14, 30, 0.4);
+  border-radius: 14px;
+  padding: 14px;
   display: flex;
   align-items: center;
   gap: 12px;
-  border: 2px solid rgba(236, 201, 75, 0.2);
+  border: 1px solid rgba(255, 198, 71, 0.1);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
 }
@@ -91,13 +91,14 @@
   inset: 0;
   background: var(--category-color);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.22s ease;
+  border-radius: 14px;
 }
 
 .iap-category-card:hover {
-  border-color: rgba(236, 201, 75, 0.5);
-  transform: translateX(5px);
-  box-shadow: 0 4px 15px rgba(236, 201, 75, 0.2);
+  border-color: rgba(255, 198, 71, 0.3);
+  transform: translateX(4px);
+  box-shadow: 0 0 16px rgba(255, 198, 71, 0.08), 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .iap-category-card:hover::before {
@@ -105,18 +106,19 @@
 }
 
 .iap-category-card:active {
-  transform: translateX(3px);
+  transform: translateX(2px) scale(0.99);
 }
 
 /* Category Image */
 .category-image-container {
-  flex: 0 0 60px;
-  height: 60px;
+  flex: 0 0 56px;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 0;
+  background: rgba(255, 198, 71, 0.04);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 198, 71, 0.08);
   padding: 8px;
   position: relative;
   z-index: 1;
@@ -127,7 +129,7 @@
   height: 100%;
   object-fit: contain;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-  transition: transform 0.3s ease;
+  transition: transform 0.22s ease;
 }
 
 .iap-category-card:hover .category-image {
@@ -144,42 +146,43 @@
 
 .category-name {
   margin: 0 0 4px 0;
-  font-size: 16px;
-  font-weight: 800;
-  color: #ecc94b;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffc647;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  font-family: 'Rajdhani', sans-serif;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.08em;
+  font-family: var(--wz-font, 'Orbitron', sans-serif);
+  text-shadow: 0 0 10px rgba(255, 198, 71, 0.3);
 }
 
 .category-description {
   margin: 0;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(243, 230, 195, 0.5);
   line-height: 1.4;
 }
 
 /* Category Arrow */
 .category-arrow {
   flex: 0 0 auto;
-  font-size: 20px;
-  color: rgba(236, 201, 75, 0.6);
-  transition: all 0.3s ease;
+  font-size: 18px;
+  color: rgba(255, 198, 71, 0.4);
+  transition: all 0.22s ease;
   position: relative;
   z-index: 1;
 }
 
 .iap-category-card:hover .category-arrow {
-  color: #ecc94b;
-  transform: translateX(5px);
+  color: #ffc647;
+  transform: translateX(4px);
+  text-shadow: 0 0 8px rgba(255, 198, 71, 0.3);
 }
 
 /* IAP Footer */
 .iap-footer {
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 2px solid rgba(236, 201, 75, 0.3);
+  border-top: 1px solid rgba(255, 198, 71, 0.1);
 }
 
 .marketplace-button {
@@ -188,12 +191,12 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.22s ease;
 }
 
 .marketplace-button:hover {
-  transform: scale(1.05);
-  filter: brightness(1.1);
+  transform: scale(1.03);
+  filter: brightness(1.08);
 }
 
 .marketplace-button:active {
@@ -204,7 +207,7 @@
   width: 100%;
   height: auto;
   display: block;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
 }
 
 /* Responsive Design */
@@ -215,20 +218,22 @@
   }
 
   .iap-title {
-    font-size: 18px;
+    font-size: 16px;
   }
 
   .iap-categories {
-    gap: 12px;
+    gap: 10px;
   }
 
   .iap-category-card {
     padding: 12px;
+    border-radius: 12px;
   }
 
   .category-image-container {
-    flex: 0 0 50px;
-    height: 50px;
+    flex: 0 0 48px;
+    height: 48px;
+    border-radius: 10px;
   }
 
   .category-name {
@@ -247,8 +252,9 @@
   }
 
   .category-image-container {
-    flex: 0 0 45px;
-    height: 45px;
+    flex: 0 0 42px;
+    height: 42px;
+    border-radius: 8px;
   }
 
   .category-name {
@@ -256,6 +262,6 @@
   }
 
   .category-arrow {
-    font-size: 18px;
+    font-size: 16px;
   }
 }

@@ -1,15 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import backgroundImage from '../../assets/images/WhatsApp Image 2025-06-11 at 14.01.20 1.png';
-import backImage from '../../assets/images/back-iap.png';
-import marketplaceHeader from '../../assets/images/marketplace-header.png';
-import rightArrow from '../../assets/images/right-arrow.png';
-import leftArrow from '../../assets/images/left-arrow.png';
-import coinImage from '../../assets/images/coin1.png';
-import gemImage from '../../assets/images/gem2.png';
-import gunsImage from '../../assets/images/guns3.png';
-import essentialsImage from '../../assets/images/essentials4.png';
-import boosterImage from '../../assets/images/booster5.png';
+import backgroundImage from '../../assets/images/marketplace-bg.png';
 import c1Image from '../../assets/images/c1.png';
 import c2Image from '../../assets/images/c2.png';
 import c3Image from '../../assets/images/c3.png';
@@ -34,7 +25,6 @@ import coin100Image from '../../assets/images/100-coins.png';
 import coin500Image from '../../assets/images/500-coins.png';
 import coin1000Image from '../../assets/images/1000-coins.png';
 import coin2000Image from '../../assets/images/2000-coins.png';
-import clickToBuyImage from '../../assets/images/Click-to-buy.png';
 import gems100Image from '../../assets/images/100-gems.png';
 import gems300Image from '../../assets/images/300-gems.png';
 import gems500Image from '../../assets/images/500-gems.png';
@@ -55,7 +45,6 @@ import gun6ImageDetail from '../../assets/images/gunn6.png';
 // import boos4ImageDetail from '../../assets/images/boos4.png';
 // import boos5ImageDetail from '../../assets/images/boos5.png';
 // import boos6ImageDetail from '../../assets/images/boos6.png';
-import buyButtonImage from '../../assets/images/buy-button.png';
 import './iap.css';
 import { getMarketplacePurchaseStatus, getPlayerProfile, updateMarketplaceData } from '../../utils/api';
 import { useAccount, useChainId, useWaitForTransactionReceipt, useWalletClient } from 'wagmi';
@@ -66,6 +55,9 @@ import { encodeFunctionData, keccak256, parseEther, stringToBytes } from 'viem';
 import contractAbi from '../../abi/WarzoneInAppPurchase.json';
 import { usePrivyWalletTools } from '../../hooks/usePrivyWalletTools';
 import PrivyWalletWidget from '../../components/PrivyWalletWidget';
+import ThemedBackButton from '../../components/ThemedBackButton';
+import MobileBottomNav from '../../components/MobileBottomNav';
+import warzoneLogo from '../../assets/logo.png';
 
 // Simple price map for Guns (SOMI)
 const GUN_PRICES_ETH = {
@@ -104,6 +96,15 @@ const GEM_PRICES_ETH = {
   '500': '2.5',
   '1000': '5',
 };
+
+
+function getItemPriceSomi(item) {
+  if (!item) return null;
+  if (item.type === 'Guns') return GUN_PRICES_ETH[item.value] ?? null;
+  if (item.type === 'Coins') return COIN_PRICES_ETH[item.value] ?? null;
+  if (item.type === 'Gems') return GEM_PRICES_ETH[item.value] ?? null;
+  return null;
+}
 
 const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
   const { isConnected, address } = useAccount();
@@ -550,16 +551,17 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
             <div className="success-actions">
               {txHash && (
                 <a
-                  className="view-explorer"
+                  className="view-explorer wz-btn wz-btn--sm wz-btn--outline wz-btn--cap-normal"
                   href={`https://explorer.somnia.network/tx/${txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  View on Explorer
+                  Explorer
                 </a>
               )}
               <button
-                className="close-success"
+                type="button"
+                className="wz-btn wz-btn--sm wz-btn--primary close-success"
                 onClick={() => {
                   setShowSuccess(false);
                   setPendingOrder(null);
@@ -575,9 +577,10 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
       )}
       <div className="coin-detail-content">
         <img src={coinImage} alt="Coins" className="coin-detail-image" />
-        <div className="buy-buttons-stack">
-          <button 
-            className="buy-button" 
+        <div className="wz-btn-stack buy-buttons-stack">
+          <button
+            type="button"
+            className="wz-btn wz-btn--lg wz-btn--primary wz-btn--block buy-button"
             onClick={handleBuyNow}
             disabled={isSending || isConfirming || currentChainId !== somniaTestnet.id}
             title={
@@ -587,15 +590,15 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
                 ? 'Waiting for wallet'
                 : isConfirming
                 ? 'Waiting for confirmation'
-                : 'Buy Now'
+                : 'Buy with connected wallet'
             }
           >
-            <img src={buyButtonImage} alt="Buy Now" className="buy-button-image" />
+            Buy · Wallet
           </button>
-          <span className="buy-or-label">or</span>
+          <span className="wz-btn-stack-divider buy-or-label">or</span>
           <button
             type="button"
-            className="privy-buy-button"
+            className="wz-btn wz-btn--lg wz-btn--secondary wz-btn--block privy-buy-button"
             onClick={handleBuyWithPrivy}
             disabled={isSending || isConfirming || !canUsePrivy}
             title={
@@ -608,7 +611,7 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
                 : 'Buy using Privy'
             }
           >
-            Buy using Privy
+            Buy · Privy
           </button>
         </div>
         <div className="purchase-meta">
@@ -640,21 +643,14 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
 const IAP = () => {
   const navigate = useNavigate();
   const { address: connectedAddress, isConnected } = useAccount();
-  const [currentPage, setCurrentPage] = React.useState(0);
-  const [currentIndex, setCurrentIndex] = React.useState({
-    coins: 0,
-    gems: 0,
-    guns: 0
-  });
-  const [detailView, setDetailView] = React.useState({ 
-    show: false, 
-    image: null, 
-    type: null, // "Coins" or Gems or other types
-    value: null
+  const [activeCategory, setActiveCategory] = React.useState(0); // 0 coins, 1 gems, 2 guns
+  const [detailView, setDetailView] = React.useState({
+    show: false,
+    image: null,
+    type: null,
+    value: null,
   });
   const [ownedGuns, setOwnedGuns] = useState([]);
-  const totalPages = 3; // Total number of pages (coins, gems, guns, essentials, boosters)
-  const [isMobile, setIsMobile] = useState(false);
   
   // Load owned guns for the connected wallet from localStorage
   useEffect(() => {
@@ -718,17 +714,6 @@ const IAP = () => {
       setOwnedGuns([]);
     }
   }, [isConnected]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (typeof window !== 'undefined') {
-        setIsMobile(window.innerWidth <= 768);
-      }
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   // Coins data
   const coinsData = [
@@ -855,227 +840,101 @@ const IAP = () => {
   ];
 
 
-  
-  
-  // Show all guns with horizontal scrolling
-  const currentGuns = [...gunsData];
-
   const handleBack = () => {
     if (detailView.show) {
-      setDetailView({ show: false, image: null, type: null , value: null});
+      setDetailView({ show: false, image: null, type: null, value: null });
     } else {
       navigate(-1);
     }
   };
 
-  const handleNext = () => {
-    if (currentPage === 0) { // Coins page
-      setCurrentIndex(prev => ({
-        ...prev,
-        coins: (prev.coins + 1) % coinsData.length
-      }));
-    } else if (currentPage === 1) { // Gems page
-      setCurrentIndex(prev => ({
-        ...prev,
-        gems: (prev.gems + 1) % gemsData.length
-      }));
-    } else if (currentPage === 2) { // Guns page
-      setCurrentIndex(prev => ({
-        ...prev,
-        guns: (prev.guns + 1) % gunsData.length
-      }));
-    } else {
-      setCurrentPage(prev => Math.min(prev + 1, totalPages - 1));
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentPage === 0) { // Coins page
-      setCurrentIndex(prev => ({
-        ...prev,
-        coins: (prev.coins - 1 + coinsData.length) % coinsData.length
-      }));
-    } else if (currentPage === 1) { // Gems page
-      setCurrentIndex(prev => ({
-        ...prev,
-        gems: (prev.gems - 1 + gemsData.length) % gemsData.length
-      }));
-    } else if (currentPage === 2) { // Guns page
-      setCurrentIndex(prev => ({
-        ...prev,
-        guns: (prev.guns - 1 + gunsData.length) % gunsData.length
-      }));
-    } else {
-      setCurrentPage(prev => Math.max(prev - 1, 0));
-    }
-  };
-
-  const handleDotClick = (index) => {
-    if (currentPage === 0) {
-      setCurrentIndex(prev => ({ ...prev, coins: index }));
-    } else if (currentPage === 1) {
-      setCurrentIndex(prev => ({ ...prev, gems: index }));
-    } else if (currentPage === 2) {
-      setCurrentIndex(prev => ({ ...prev, guns: index }));
-    }
-  };
-
-  const handleImageClick = (pageIndex) => {
-    setCurrentPage(pageIndex);
-  };
-
-  // Render item with buy button or Owned badge
-  const renderItem = (item) => {
+  const openItemDetail = (item) => {
     const owned = item.type === 'Guns' && ownedGuns.includes(String(item.value));
-    const openDetail = () => {
-      if (owned) return;
-      setDetailView({ 
-        show: true, 
-        image: item.detailImage, 
-        type: item.type, 
-        value: item.value 
-      });
-    };
-
-    return (
-      <div className="carousel-item">
-        <div className="item-container" style={{ position: 'relative' }}>
-          <img 
-            src={item.image} 
-            alt={item.name} 
-            className="item-image"
-            onClick={openDetail}
-            style={owned ? { filter: 'grayscale(80%)', opacity: 0.8, cursor: 'not-allowed' } : undefined}
-          />
-          {owned ? (
-            <div 
-              className="owned-badge"
-              style={{
-                position: 'absolute',
-                bottom: 12,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                background: 'rgba(0,0,0,0.7)',
-                color: '#fff',
-                padding: '6px 12px',
-                borderRadius: 6,
-                fontWeight: 700,
-                letterSpacing: 0.6,
-                textTransform: 'uppercase'
-              }}
-            >
-              Owned
-            </div>
-          ) : (
-            <img 
-              src={clickToBuyImage} 
-              alt="Click to Buy"
-              className="click-to-buy-button"
-              onClick={openDetail}
-            />
-          )}
-        </div>
-      </div>
-    );
+    if (owned) return;
+    setDetailView({
+      show: true,
+      image: item.detailImage,
+      type: item.type,
+      value: item.value,
+    });
   };
 
-  // Get visible items for the current page (simple carousel)
-  const getVisibleItems = (items, currentIdx) => {
-    const itemCount = items.length;
-    if (!itemCount) return [];
+  const categoryItems =
+    activeCategory === 0 ? coinsData : activeCategory === 1 ? gemsData : gunsData;
+  const categoryLabels = ['Coins', 'Gems', 'Guns'];
 
-    const visibleCount = isMobile ? 1 : 3;
-    if (itemCount <= visibleCount) return items;
+  // ── Carousel state ──
+  const trackRef = useRef(null);
+  const [activeCard, setActiveCard] = useState(0);
+  const isDragging = useRef(false);
+  const dragStart = useRef(0);
+  const scrollStart = useRef(0);
 
-    const result = [];
-    for (let i = 0; i < visibleCount; i++) {
-      const idx = (currentIdx + i + itemCount) % itemCount;
-      result.push(items[idx]);
-    }
-    return result;
+  // Reset to first card when category changes
+  useEffect(() => {
+    setActiveCard(0);
+    if (trackRef.current) trackRef.current.scrollLeft = 0;
+  }, [activeCategory]);
+
+  const getCardWidth = useCallback(() => {
+    const card = trackRef.current?.querySelector('.iap-card');
+    return card ? card.offsetWidth + 20 : 220; // 20 = gap
+  }, []);
+
+  const scrollToCard = useCallback((idx) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const clamped = Math.max(0, Math.min(idx, categoryItems.length - 1));
+    setActiveCard(clamped);
+    el.scrollTo({ left: clamped * getCardWidth(), behavior: 'smooth' });
+  }, [categoryItems.length, getCardWidth]);
+
+  const handlePrev = () => scrollToCard(activeCard - 1);
+  const handleNext = () => scrollToCard(activeCard + 1);
+
+  // Update dot indicator on scroll (snap-based)
+  const onScroll = useCallback(() => {
+    const el = trackRef.current;
+    if (!el || isDragging.current) return;
+    const idx = Math.round(el.scrollLeft / getCardWidth());
+    setActiveCard(Math.max(0, Math.min(idx, categoryItems.length - 1)));
+  }, [getCardWidth, categoryItems.length]);
+
+  // Mouse drag-to-scroll
+  const onMouseDown = (e) => {
+    isDragging.current = true;
+    dragStart.current = e.pageX;
+    scrollStart.current = trackRef.current.scrollLeft;
+    trackRef.current.style.cursor = 'grabbing';
+    trackRef.current.style.userSelect = 'none';
   };
-
-  // Render navigation dots for carousel
-  const renderDots = (count, current) => {
-    return (
-      <div className="carousel-dots">
-        {Array.from({ length: count }).map((_, index) => (
-          <span
-            key={index}
-            className={`dot ${index === current ? 'active' : ''}`}
-            onClick={() => handleDotClick(index)}
-          />
-        ))}
-      </div>
-    );
+  const onMouseMove = (e) => {
+    if (!isDragging.current) return;
+    const delta = dragStart.current - e.pageX;
+    trackRef.current.scrollLeft = scrollStart.current + delta;
   };
-
-  // Render page content with navigation
-  const renderPageContent = () => {
-    // Get current data based on page
-    let currentData, currentIndexValue, type;
-    
-    if (currentPage === 0) {
-      currentData = coinsData;
-      currentIndexValue = currentIndex.coins;
-      type = 'Coins';
-    } else if (currentPage === 1) {
-      currentData = gemsData;
-      currentIndexValue = currentIndex.gems;
-      type = 'Gems';
-    } else if (currentPage === 2) {
-      currentData = gunsData;
-      currentIndexValue = currentIndex.guns;
-      type = 'Guns';
-    } else {
-      currentData = [];
-      currentIndexValue = 0;
-      type = '';
-    }
-
-    const visibleItems = getVisibleItems(currentData, currentIndexValue);
-
-    return (
-      <div className="display-container">
-        <img
-          src={leftArrow}
-          alt="Previous"
-          className="left-arrow"
-          onClick={handlePrevious}
-        />
-        <img
-          src={rightArrow}
-          alt="Next"
-          className="right-arrow"
-          onClick={handleNext}
-        />
-
-        <div className="carousel-container">
-          <div className="carousel-items">
-            {visibleItems.map((item, idx) => (
-              <div key={`${type}-${item.id}-${idx}`} className="carousel-item-wrapper">
-                {renderItem(item)}
-              </div>
-            ))}
-          </div>
-          {renderDots(currentData.length, currentIndexValue)}
-        </div>
-      </div>
-    );
+  const onMouseUp = () => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    trackRef.current.style.cursor = '';
+    trackRef.current.style.userSelect = '';
+    onScroll(); // snap to nearest card
   };
 
   if (detailView.show) {
     return (
-      <div className="iap-container" style={{ '--background-image': `url(${backgroundImage})` }}>
-        <button onClick={handleBack} className="back-button">
-          <img src={backImage} alt="Back" />
-        </button>
-        <div className="marketplace-header">
-          <img src={marketplaceHeader} alt="Marketplace" />
+      <div className="iap-container iap-container--detail" style={{ '--background-image': `url(${backgroundImage})` }}>
+        <div className="wz-page-scrim" aria-hidden="true" />
+        <ThemedBackButton onClick={handleBack} className="back-button" compact />
+        <div className="iap-brand-lockup" aria-hidden="true">
+          <img src={warzoneLogo} alt="Warzone Warriors" className="iap-brand-logo" />
+        </div>
+        <div className="iap-top-bar">
+          <div className="iap-heading-chip">Marketplace</div>
         </div>
         <PrivyWalletWidget />
-        <CoinDetail 
-          coinImage={detailView.image} 
+        <CoinDetail
+          coinImage={detailView.image}
           type={detailView.type}
           value={detailView.value}
           onClose={() => setDetailView({ show: false, image: null, type: null, value: null })}
@@ -1094,53 +953,115 @@ const IAP = () => {
               }
               return next;
             });
-          }} 
+          }}
         />
+        <MobileBottomNav current="marketplace" />
       </div>
     );
   }
 
   return (
     <div className="iap-container" style={{ '--background-image': `url(${backgroundImage})` }}>
-      <button className="back-button" onClick={handleBack}>
-        <img src={backImage} alt="Back" className="back-button-image" />
-      </button>
-      <div className="marketplace-header">
-        <img src={marketplaceHeader} alt="Marketplace" />
-        <div className="currency-container">
-          <img 
-            src={coinImage} 
-            alt="Coins" 
-            className={`currency-image coin-image ${currentPage === 0 ? 'active' : ''}`} 
-            onClick={() => handleImageClick(0)}
-          />
-          <img 
-            src={gemImage} 
-            alt="Gems" 
-            className={`currency-image gem-image ${currentPage === 1 ? 'active' : ''}`} 
-            onClick={() => handleImageClick(1)}
-          />
-          <img 
-            src={gunsImage} 
-            alt="Guns" 
-            className={`currency-image guns-image ${currentPage === 2 ? 'active' : ''}`} 
-            onClick={() => handleImageClick(2)}
-          />
-          {/* <img 
-            src={essentialsImage} 
-            alt="Essentials" 
-            className={`currency-image essentials-image ${currentPage === 3 ? 'active' : ''}`} 
-            onClick={() => handleImageClick(3)}
-          />
-          <img 
-            src={boosterImage} 
-            alt="Booster" 
-            className={`currency-image booster-image ${currentPage === 4 ? 'active' : ''}`} 
-            onClick={() => handleImageClick(4)}
-          /> */}
-        </div>
-        {renderPageContent()}
+      <div className="wz-page-scrim" aria-hidden="true" />
+      <ThemedBackButton className="back-button" onClick={handleBack} compact />
+      <div className="iap-brand-lockup" aria-hidden="true">
+        <img src={warzoneLogo} alt="Warzone Warriors" className="iap-brand-logo" />
       </div>
+
+      {/* Header banner */}
+      <div className="iap-top-bar">
+        <div className="iap-heading-chip">Marketplace</div>
+      </div>
+
+      {/* Text-based category tabs */}
+      <div className="iap-category-tabs" role="tablist" aria-label="Marketplace category">
+        {categoryLabels.map((label, idx) => (
+          <button
+            key={label}
+            type="button"
+            role="tab"
+            aria-selected={activeCategory === idx}
+            className={`iap-tab ${activeCategory === idx ? 'iap-tab--active' : ''}`}
+            onClick={() => setActiveCategory(idx)}
+          >
+            <span className="iap-tab-label">{label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Carousel shell */}
+      <div className="iap-carousel-shell">
+        {/* Prev arrow */}
+        <button
+          type="button"
+          className="iap-arrow iap-arrow--left"
+          onClick={handlePrev}
+          disabled={activeCard === 0}
+          aria-label="Previous"
+        >‹</button>
+
+        {/* Scrollable track */}
+        <div
+          className="iap-track"
+          ref={trackRef}
+          onScroll={onScroll}
+          onMouseDown={onMouseDown}
+          onMouseMove={onMouseMove}
+          onMouseUp={onMouseUp}
+          onMouseLeave={onMouseUp}
+        >
+          {categoryItems.map((item) => {
+            const owned = item.type === 'Guns' && ownedGuns.includes(String(item.value));
+            const price = getItemPriceSomi(item);
+            return (
+              <button
+                key={`${item.type}-${item.id}`}
+                type="button"
+                className={`iap-card ${owned ? 'iap-card--owned' : ''}`}
+                onClick={() => openItemDetail(item)}
+                disabled={owned}
+              >
+                <div className="iap-card-art">
+                  <img src={item.image} alt={item.name} className="iap-card-img" loading="lazy" />
+                  {owned && <div className="iap-card-owned-badge">✓ Owned</div>}
+                </div>
+                <div className="iap-card-footer">
+                  <span className="iap-card-name">{item.name}</span>
+                  <span className="iap-card-price">{price != null ? `${price} SOMI` : '—'}</span>
+                  {!owned && <span className="iap-card-cta wz-cta-buy">BUY</span>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Next arrow */}
+        <button
+          type="button"
+          className="iap-arrow iap-arrow--right"
+          onClick={handleNext}
+          disabled={activeCard === categoryItems.length - 1}
+          aria-label="Next"
+        >›</button>
+      </div>
+
+      {/* Dot indicators */}
+      <div className="iap-dots" role="tablist">
+        {categoryItems.map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            role="tab"
+            aria-selected={i === activeCard}
+            className={`iap-dot ${i === activeCard ? 'iap-dot--active' : ''}`}
+            onClick={() => scrollToCard(i)}
+            aria-label={`Item ${i + 1}`}
+          />
+        ))}
+      </div>
+
+      <PrivyWalletWidget />
+      <MobileBottomNav current="marketplace" />
     </div>
   );
 };

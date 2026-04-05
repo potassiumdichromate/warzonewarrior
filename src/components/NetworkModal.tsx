@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { getAllowedChainFromEnv, type AllowedChainConfig } from '../lib/chain'
+import { getStableInjectedProvider } from '../lib/injectedEthereum'
 
 type Props = {
   open: boolean
@@ -18,13 +19,13 @@ export default function NetworkModal({ open, onClose, onSwitched }: Props) {
 
   const allowed: AllowedChainConfig =
     getAllowedChainFromEnv() || {
-      caip2: 'eip155:16661',
-      decimalChainId: 16661,
-      hexChainId: '0x4115',
-      chainName: '0G Mainnet',
-      nativeCurrency: { name: '0G', symbol: '0G', decimals: 18 },
-      rpcUrls: ['https://evmrpc.0g.ai'],
-      blockExplorerUrls: ['https://chainscan.0g.ai'],
+      caip2: 'eip155:5031',
+      decimalChainId: 5031,
+      hexChainId: '0x13a7',
+      chainName: 'Somnia Mainnet',
+      nativeCurrency: { name: 'Somnia', symbol: 'SOMI', decimals: 18 },
+      rpcUrls: ['https://api.infra.mainnet.somnia.network'],
+      blockExplorerUrls: ['https://explorer.somnia.network'],
     }
 
   useEffect(() => {
@@ -36,8 +37,8 @@ export default function NetworkModal({ open, onClose, onSwitched }: Props) {
   const trySwitch = async () => {
     setError('')
     setLoading(true)
+    const eth = getStableInjectedProvider()
     try {
-      const eth = window.ethereum
       if (!eth?.request) {
         setError('No EIP-1193 wallet detected. Please switch networks in your wallet to continue.')
         return
@@ -54,9 +55,9 @@ export default function NetworkModal({ open, onClose, onSwitched }: Props) {
       const msg = err?.message || String(err)
       // 4902 = Unrecognized chain; different wallets use different codes, fall back to generic add attempt if RPC available
       const hasRpc = Array.isArray(allowed.rpcUrls) && allowed.rpcUrls.length > 0
-      if (hasRpc && window.ethereum?.request) {
+      if (hasRpc && eth?.request) {
         try {
-          await window.ethereum.request({
+          await eth.request({
             method: 'wallet_addEthereumChain',
             params: [
               {
@@ -68,7 +69,7 @@ export default function NetworkModal({ open, onClose, onSwitched }: Props) {
               },
             ],
           })
-          await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: allowed.hexChainId }] })
+          await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: allowed.hexChainId }] })
           onSwitched?.()
           onClose()
           return
@@ -101,7 +102,8 @@ export default function NetworkModal({ open, onClose, onSwitched }: Props) {
 
         <h3 className="text-xl font-bold mb-2">Switch Network Required</h3>
         <p className="text-sm text-white/80 mb-3">
-          This app only supports {allowed.chainName || `eip155:${allowed.decimalChainId}`} (chainId {allowed.decimalChainId}).
+          This app only supports{' '}
+          {allowed.chainName || `chain ID ${allowed.decimalChainId}`} (chain ID {allowed.decimalChainId}).
           Please switch your wallet to continue.
         </p>
         {allowed.blockExplorerUrls?.[0] && (

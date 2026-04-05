@@ -41,6 +41,7 @@ export const PrivyWalletWidget = () => {
   const [viewportWidth, setViewportWidth] = useState(
     typeof window !== 'undefined' ? window.innerWidth : 0
   );
+  const [mobileFundsOpen, setMobileFundsOpen] = useState(false);
   const dragStateRef = useRef({
     isDragging: false,
     offsetX: 0,
@@ -142,6 +143,14 @@ export const PrivyWalletWidget = () => {
     };
   }, []);
 
+  const isMobileLayout = viewportWidth <= 768;
+
+  useEffect(() => {
+    if (!isMobileLayout && mobileFundsOpen) {
+      setMobileFundsOpen(false);
+    }
+  }, [isMobileLayout, mobileFundsOpen]);
+
   if (!canUsePrivy || !activeWallet?.address) {
     return null;
   }
@@ -214,28 +223,13 @@ export const PrivyWalletWidget = () => {
     setRefreshTick((prev) => prev + 1);
   };
 
-  return (
-    <div ref={containerRef} className="privy-wallet-widget" style={dragStyle}>
-      <div
-        className="privy-wallet-header"
-        onMouseDown={handleDragStart}
-      >
-        <span className="privy-wallet-title">My Funds</span>
-        <button
-          type="button"
-          className="privy-refresh-button"
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={handleRefreshClick}
-          disabled={loading}
-        >
-          {loading ? 'Refreshing…' : 'Refresh'}
-        </button>
-      </div>
+  const walletDetails = (
+    <>
       <div className="privy-wallet-row">
         <span className="label">Address</span>
         <button
           type="button"
-          className="privy-copy-button"
+          className="wz-btn wz-btn--sm wz-btn--outline privy-copy-button"
           onClick={handleCopyAddress}
           title={activeWallet.address}
         >
@@ -251,9 +245,88 @@ export const PrivyWalletWidget = () => {
           {loading ? 'Loading…' : balance != null ? `${balance} ${symbol}` : error || '--'}
         </span>
       </div>
+    </>
+  );
+
+  if (isMobileLayout) {
+    return (
+      <>
+        <div className="privy-wallet-mobile-bar">
+          <button
+            type="button"
+            className="wz-btn wz-btn--sm wz-btn--outline privy-mobile-trigger"
+            onClick={() => setMobileFundsOpen(true)}
+          >
+            My Funds
+          </button>
+          <button
+            type="button"
+            className="wz-btn wz-btn--sm wz-btn--primary privy-mobile-add-funds"
+            onClick={handleAddFunds}
+          >
+            Add Funds
+          </button>
+        </div>
+
+        {mobileFundsOpen && (
+          <div className="privy-wallet-modal-overlay" onClick={() => setMobileFundsOpen(false)}>
+            <div className="privy-wallet-modal" onClick={(event) => event.stopPropagation()}>
+              <div className="privy-wallet-header">
+                <span className="privy-wallet-title">My Funds</span>
+                <button
+                  type="button"
+                  className="wz-btn wz-btn--sm wz-btn--ghost privy-refresh-button"
+                  onClick={handleRefreshClick}
+                  disabled={loading}
+                >
+                  {loading ? 'Refreshing…' : 'Refresh'}
+                </button>
+              </div>
+              {walletDetails}
+              <div className="privy-wallet-modal-actions">
+                <button
+                  type="button"
+                  className="wz-btn wz-btn--sm wz-btn--outline"
+                  onClick={() => setMobileFundsOpen(false)}
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  className="wz-btn wz-btn--sm wz-btn--primary"
+                  onClick={handleAddFunds}
+                >
+                  Add Funds
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  return (
+    <div ref={containerRef} className="privy-wallet-widget" style={dragStyle}>
+      <div
+        className="privy-wallet-header"
+        onMouseDown={handleDragStart}
+      >
+        <span className="privy-wallet-title">My Funds</span>
+        <button
+          type="button"
+          className="wz-btn wz-btn--sm wz-btn--ghost privy-refresh-button"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={handleRefreshClick}
+          disabled={loading}
+        >
+          {loading ? 'Refreshing…' : 'Refresh'}
+        </button>
+      </div>
+      {walletDetails}
       <button
         type="button"
-        className="privy-add-funds-button"
+        className="wz-btn wz-btn--sm wz-btn--primary wz-btn--block privy-add-funds-button"
         onClick={handleAddFunds}
       >
         Add Funds

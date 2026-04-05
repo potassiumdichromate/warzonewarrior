@@ -1,37 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../../contexts/WalletContext';
 import { getPlayerProfile } from '../../utils/api';
-import IAPSection from '../../components/IAPSection';
-import LiveLeaderboard from '../../components/LiveLeaderboard';
-import { usePrivy } from '@privy-io/react-auth';
-import { buildApiUrl } from '../../config/api';
+import MobileBottomNav from '../../components/MobileBottomNav';
 import './Dashboard.css';
 
 import gameManualPdf from '../../assets/images/Game-manual.pdf';
-import connectedBackgroundImage from '../../assets/images/Desktop - After connect.png';
-import mobileAfterConnectImage from '../../assets/images/After-mobile.png';
-
-// Tab IDs for mobile
-const TAB_HOME = 'home';
-const TAB_SHOP = 'shop';
-const TAB_LEADERBOARDS = 'leaderboards';
-
-// Leaderboard tabs
-const LB_GLOBAL = 'global';
-const LB_EVENT = 'event';
+import actionButtonImage from '../../assets/button.png';
+import warzoneLogo from '../../assets/logo.png';
 
 const Dashboard = () => {
   const { disconnect, isConnected, address } = useWallet();
-  const { ready: privyReady } = usePrivy();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [playerData, setPlayerData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState(TAB_HOME);
-  const [activeLbTab, setActiveLbTab] = useState(LB_GLOBAL);
-  const [activeTournament, setActiveTournament] = useState(null);
+  const [walletCopied, setWalletCopied] = useState(false);
 
   useEffect(() => {
     if (!address) return;
@@ -42,38 +26,32 @@ const Dashboard = () => {
       .finally(() => setLoading(false));
   }, [address]);
 
-  useEffect(() => {
-    fetch(buildApiUrl('/test/intraverse/tournaments?slug=kult-games&size=10'))
-      .then((r) => r.json())
-      .then((data) => {
-        const list = data?.body?.data || [];
-        const running = list.find((t) => t.status === 'RUNNING');
-        const upcoming = list.find((t) => t.status === 'UPCOMING');
-        setActiveTournament(running || upcoming || null);
-      })
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    const tab = new URLSearchParams(location.search).get('tab');
-    if ([TAB_HOME, TAB_SHOP, TAB_LEADERBOARDS].includes(tab)) {
-      setActiveTab(tab);
-    }
-  }, [location.search]);
-
-  const handlePlayGame = () => navigate('/game');
   const handleDisconnect = async () => {
     try {
       await disconnect();
-      ['walletConnected', 'walletAddress', 'token'].forEach(k => localStorage.removeItem(k));
+      ['walletConnected', 'walletAddress', 'token'].forEach((k) => localStorage.removeItem(k));
       navigate('/');
     } catch (e) {
       console.error('Disconnect error:', e);
     }
   };
-  const openGameManual = () => window.open(gameManualPdf, '_blank');
 
-  if (!isConnected) { navigate('/'); return null; }
+  const openGameManual = () => window.open(gameManualPdf, '_blank');
+  const handleCopyWallet = async () => {
+    if (!walletAddress) return;
+    try {
+      await navigator.clipboard.writeText(walletAddress);
+      setWalletCopied(true);
+      window.setTimeout(() => setWalletCopied(false), 1600);
+    } catch (e) {
+      console.error('Copy wallet failed:', e);
+    }
+  };
+
+  if (!isConnected) {
+    navigate('/');
+    return null;
+  }
 
   if (loading) {
     return (
@@ -87,218 +65,77 @@ const Dashboard = () => {
   }
 
   const {
-    name = 'Warrior',
     walletAddress = '',
-    PlayerProfile = {},
     PlayerResources = {},
-    PlayerAchievementData = {},
-    PlayerGuns = {}
+    PlayerGuns = {},
   } = playerData || {};
 
-  const formatWallet = (addr) => addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '';
+  const formatWallet = (addr) => (addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '');
   const ownedGunsCount = Object.keys(PlayerGuns || {}).length;
 
+  const heroStats = [
+    { label: 'Coins', value: (PlayerResources?.coin || 0).toLocaleString() },
+    { label: 'Gems', value: (PlayerResources?.gem || 0).toLocaleString() },
+    { label: 'Guns', value: ownedGunsCount },
+  ];
+
+  const navActions = [
+    { title: 'Play Now', onClick: () => navigate('/game'), primary: true },
+    { title: 'Marketplace', onClick: () => navigate('/iap') },
+    { title: 'Leaderboard', onClick: () => navigate('/leaderboard') },
+    { title: 'Tournament', onClick: () => navigate('/tournament') },
+    { title: 'Manual', onClick: openGameManual },
+  ];
+
   return (
-    <div
-      className="dashboard-wrapper"
-      style={{
-        '--desktop-bg': `url(${connectedBackgroundImage})`,
-        '--mobile-bg': `url(${mobileAfterConnectImage})`,
-      }}
-    >
-      {/* Header */}
-      <header className="dash-header">
-        <div className="header-left">
-          <div className="brand">
-            <span className="brand-icon">W</span>
-            <span className="brand-text">WARZONE</span>
-          </div>
-        </div>
-        <div className="header-right">
-          <div className="wallet-chip">
-            <span className="wallet-dot"></span>
-            <span>{formatWallet(walletAddress)}</span>
-          </div>
-          <button className="btn-logout" onClick={handleDisconnect}>
-            Logout
-          </button>
-        </div>
-      </header>
+    <div className="dashboard-wrapper">
+      <div className="dashboard-brand-lockup" aria-hidden="true">
+        <img src={warzoneLogo} alt="Warzone Warriors" className="dashboard-brand-logo" />
+      </div>
 
-      {/* Main Content */}
       <main className="dash-main">
-        {/* Profile & Actions Section */}
-        <section className={`dash-section profile-section ${activeTab === TAB_HOME ? 'active' : ''}`}>
-          <div className="profile-hero">
-            <div className="hero-avatar">
-              <span>{name.slice(0, 2).toUpperCase()}</span>
-              <div className="level-badge">LV {PlayerProfile?.level || 1}</div>
-            </div>
-          </div>
-
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-icon coins-icon"></div>
-              <div className="stat-content">
-                <span className="stat-value">{(PlayerResources?.coin || 0).toLocaleString()}</span>
-                <span className="stat-label">Coins</span>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon gems-icon"></div>
-              <div className="stat-content">
-                <span className="stat-value">{(PlayerResources?.gem || 0).toLocaleString()}</span>
-                <span className="stat-label">Gems</span>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon xp-icon"></div>
-              <div className="stat-content">
-                <span className="stat-value">{(PlayerProfile?.exp || 0).toLocaleString()}</span>
-                <span className="stat-label">XP</span>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon guns-icon"></div>
-              <div className="stat-content">
-                <span className="stat-value">{ownedGunsCount}</span>
-                <span className="stat-label">Guns</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="achievements-row">
-            <div className="achievement-item">
-              <span className="ach-value">{PlayerAchievementData?.KILL_ENEMY_GENERAL?.progress || 0}</span>
-              <span className="ach-label">Generals</span>
-            </div>
-            <div className="achievement-item">
-              <span className="ach-value">{PlayerAchievementData?.KILL_ENEMY?.progress || 0}</span>
-              <span className="ach-label">Kills</span>
-            </div>
-            <div className="achievement-item">
-              <span className="ach-value">{PlayerAchievementData?.KILL_ENEMY_TANK?.progress || 0}</span>
-              <span className="ach-label">Tanks</span>
-            </div>
-            <div className="achievement-item">
-              <span className="ach-value">{PlayerAchievementData?.KILL_ENEMY_BY_GRENADE?.progress || 0}</span>
-              <span className="ach-label">Grenades</span>
-            </div>
-          </div>
-
-          {activeTournament && (
-            <div className="tournament-banner" onClick={() => navigate('/interverse-play')} style={{ cursor: 'pointer' }}>
-              <div className="tournament-banner-left">
-                <span className={`tournament-status-dot ${activeTournament.status === 'RUNNING' ? 'live' : 'upcoming'}`} />
-                <span className="tournament-status-label">
-                  {activeTournament.status === 'RUNNING' ? 'LIVE' : 'UPCOMING'}
-                </span>
-                <span className="tournament-banner-name">{activeTournament.name}</span>
-              </div>
-              <div className="tournament-banner-right">
-                <span className="tournament-banner-rounds">
-                  {Array.isArray(activeTournament.rounds) ? activeTournament.rounds.length : 0} rounds
-                </span>
-                <span className="tournament-banner-cta">View &rarr;</span>
-              </div>
-            </div>
-          )}
-
-          <div className="action-row">
-            <button className="btn-play" onClick={handlePlayGame}>
-              <span className="play-icon"></span>
-              PLAY NOW
-            </button>
-            <button className="btn-secondary" onClick={openGameManual}>
-              Manual
-            </button>
-          </div>
-          {/* <div className="tournament-action-row">
-            <button className="btn-secondary btn-tournament-desktop" onClick={() => navigate('/interverse-play')}>
-              Tournament
-            </button>
-          </div> */}
-        </section>
-
-        {/* Shop Section */}
-        <section className={`dash-section shop-section ${activeTab === TAB_SHOP ? 'active' : ''}`}>
-          <IAPSection />
-        </section>
-
-        {/* Leaderboards Section */}
-        <section className={`dash-section leaderboards-section ${activeTab === TAB_LEADERBOARDS ? 'active' : ''}`}>
-          {/* Leaderboard Tabs */}
-          <div className="lb-tabs">
-            {/* <button
-              className={`lb-tab ${activeLbTab === LB_GLOBAL ? 'active' : ''}`}
-              onClick={() => setActiveLbTab(LB_GLOBAL)}
-            >
-               <span className="lb-tab-icon">🎮</span>
-              <span>Friday Games Arena</span>
-              <span className="event-live-dot"></span>
-            </button> */}
+        <section className="dash-action-cluster">
+          <div className="dash-meta-row">
             <button
-              className={`lb-tab ${activeLbTab === LB_EVENT ? 'active' : ''}`}
-              onClick={() => setActiveLbTab(LB_EVENT)}
+              type="button"
+              className="wz-btn wz-btn--sm wz-btn--outline wz-btn--pill wallet-chip"
+              onClick={handleCopyWallet}
+              title="Copy wallet address"
             >
-              <span className="lb-tab-icon">🏆</span>
-              <span>Global Rankings</span>
+              <span className="wallet-dot"></span>
+              <span>{walletCopied ? 'Copied' : formatWallet(walletAddress)}</span>
+            </button>
+            <button type="button" className="wz-btn wz-btn--sm wz-btn--ghost wz-btn--pill btn-logout" onClick={handleDisconnect}>
+              Logout
             </button>
           </div>
 
-          {/* Leaderboard Content */}
-          <div className="lb-content">
-            {/* {activeLbTab === LB_GLOBAL ? (
-              
-              <LiveLeaderboard
-                key={LB_EVENT}
-                autoRefresh={true}
-                refreshInterval={30000}
-                eventName="Friday Gamers Arena"
-              />
-            ) : ( */}
-              <LiveLeaderboard
-                key={LB_GLOBAL}
-                autoRefresh={true}
-                refreshInterval={30000}
-                isEvent={true}
-              />
-             {/* )} */}
+          <div className="dash-strip">
+            {heroStats.map((item) => (
+              <div key={item.label} className="dash-stat">
+                <span className="dash-stat-value">{item.value}</span>
+                <span className="dash-stat-label">{item.label}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="dash-nav-row">
+            {navActions.map((item) => (
+              <button
+                key={item.title}
+                type="button"
+                className={`dash-nav-btn ${item.primary ? 'dash-nav-btn-primary' : ''}`}
+                onClick={item.onClick}
+              >
+                <img src={actionButtonImage} alt="" className="dash-nav-btn-image" aria-hidden="true" />
+                <span className="dash-nav-btn-title">{item.title}</span>
+              </button>
+            ))}
           </div>
         </section>
       </main>
 
-      {/* Mobile Navigation */}
-      <nav className="mobile-nav">
-        <button
-          className={`nav-item ${activeTab === TAB_HOME ? 'active' : ''}`}
-          onClick={() => setActiveTab(TAB_HOME)}
-        >
-          <span className="nav-icon home-icon"></span>
-          <span>Home</span>
-        </button>
-        <button
-          className={`nav-item ${activeTab === TAB_SHOP ? 'active' : ''}`}
-          onClick={() => setActiveTab(TAB_SHOP)}
-        >
-          <span className="nav-icon shop-icon"></span>
-          <span>Shop</span>
-        </button>
-        <button
-          className={`nav-item ${activeTab === TAB_LEADERBOARDS ? 'active' : ''}`}
-          onClick={() => setActiveTab(TAB_LEADERBOARDS)}
-        >
-          <span className="nav-icon trophy-icon"></span>
-          <span>Ranks</span>
-        </button>
-        <button
-          className="nav-item"
-          onClick={() => navigate('/interverse-play')}
-        >
-          <span className="nav-icon tournament-icon"></span>
-          <span>Tournament</span>
-        </button>
-      </nav>
+      <MobileBottomNav current="dashboard" />
     </div>
   );
 };

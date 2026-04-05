@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../../contexts/WalletContext';
 import { buildApiUrl } from '../../config/api';
 import centerImage from "../../assets/images/abc1.png";
+import ThemedBackButton from '../../components/ThemedBackButton';
+import VideoBackground from '../../components/VideoBackground';
 
 export const Game = () => {
   const [isLoading, setIsLoading]   = useState(true);
@@ -206,6 +208,7 @@ export const Game = () => {
       ref={containerRef}
       className={`game-page-container${isFullscreen ? ' is-fullscreen' : ''}`}
     >
+      <VideoBackground />
       {/* Round picker — shown when multiple rounds are simultaneously active */}
       {showRoundPicker && (
         <div className="round-picker-overlay">
@@ -218,7 +221,8 @@ export const Game = () => {
               {openRounds.map((round) => (
                 <button
                   key={round.id}
-                  className="round-picker-item"
+                  type="button"
+                  className="wz-btn wz-btn--outline wz-btn--block round-picker-item"
                   onClick={() => handleRoundSelect(round)}
                 >
                   <span className="round-picker-name">{round.name || `Round ${round.id}`}</span>
@@ -226,9 +230,12 @@ export const Game = () => {
                 </button>
               ))}
             </div>
-            <button className="back-to-home-button" style={{ marginTop: 16 }} onClick={() => navigate('/')}>
-              ← Back to Home
-            </button>
+            <ThemedBackButton
+              className="back-to-home-button"
+              compact
+              label="Back"
+              onClick={() => navigate('/')}
+            />
           </div>
         </div>
       )}
@@ -246,11 +253,14 @@ export const Game = () => {
       {/* Top bar with back + fullscreen */}
       {showIframe && (
         <div className="game-topbar">
-          <button className="back-to-home-button" onClick={() => navigate('/')}>
-            ← HOME
-          </button>
-          <button className="fullscreen-button" onClick={toggleFullscreen} title="Toggle fullscreen">
-            {isFullscreen ? '✕ EXIT FULL' : '⛶ FULLSCREEN'}
+          <ThemedBackButton className="back-to-home-button" compact label="Back" onClick={() => navigate('/')} />
+          <button
+            type="button"
+            className="wz-btn wz-btn--sm wz-btn--primary fullscreen-button"
+            onClick={toggleFullscreen}
+            title="Toggle fullscreen"
+          >
+            {isFullscreen ? 'Exit' : 'Fullscreen'}
           </button>
         </div>
       )}

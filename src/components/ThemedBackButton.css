@@ -1,0 +1,115 @@
+/* ============================================================
+   WARZONE WARRIORS — ThemedBackButton
+   Glassmorphic warm gold style
+   ============================================================ */
+
+.themed-back-button {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-self: flex-start;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  max-width: max-content;
+  min-width: 120px;
+  min-height: 46px;
+  white-space: nowrap;
+  padding: 0 20px;
+  border: 1px solid rgba(255, 198, 71, 0.18);
+  border-radius: 12px;
+  background: rgba(8, 10, 18, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    background 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 8px rgba(255, 198, 71, 0.06);
+  overflow: hidden;
+}
+
+/* Shimmer sweep */
+.themed-back-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 198, 71, 0.06), transparent);
+  transition: left 0.45s ease;
+  pointer-events: none;
+}
+
+.themed-back-button:hover::before {
+  left: 100%;
+}
+
+.themed-back-button:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 198, 71, 0.35);
+  box-shadow: 0 0 20px rgba(255, 198, 71, 0.12), 0 0 60px rgba(255, 198, 71, 0.04);
+  background: rgba(255, 198, 71, 0.04);
+}
+
+.themed-back-button:active {
+  transform: translateY(1px) scale(0.97);
+  box-shadow: 0 0 4px rgba(255, 198, 71, 0.1);
+}
+
+/* Hide the PNG image */
+.themed-back-button-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.themed-back-button-overlay { display: none; }
+
+/* ── Button content ── */
+.themed-back-button-content {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.themed-back-button-arrow,
+.themed-back-button-label {
+  color: #ffc647;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-family: var(--wz-font, 'Orbitron', 'Rajdhani', sans-serif);
+  text-shadow: 0 0 10px rgba(255, 198, 71, 0.25);
+}
+
+.themed-back-button-arrow {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.themed-back-button-label {
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* Compact */
+.themed-back-button-compact {
+  width: auto;
+  min-width: 100px;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+}
+
+.themed-back-button-compact .themed-back-button-arrow { font-size: 16px; }
+.themed-back-button-compact .themed-back-button-label { font-size: 11px; }

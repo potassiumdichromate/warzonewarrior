@@ -1,42 +1,42 @@
-/* Daily Quests Container */
+/* Daily Quests Container — Holographic Glassmorphism */
 .daily-quests {
   height: 100%;
   display: flex;
   flex-direction: column;
-  color: #fff;
+  color: #f3e6c3;
 }
 
 /* Quests Header */
 .quests-header {
   padding: 15px 0;
-  border-bottom: 2px solid rgba(236, 201, 75, 0.3);
+  border-bottom: 1px solid rgba(255, 198, 71, 0.12);
   margin-bottom: 15px;
 }
 
 .quests-title {
   margin: 0 0 8px 0;
-  font-size: 20px;
-  font-weight: 900;
-  color: #ecc94b;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffc647;
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 0.12em;
   display: flex;
   align-items: center;
   gap: 10px;
-  font-family: 'Rajdhani', sans-serif;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  font-family: var(--wz-font, 'Orbitron', sans-serif);
+  text-shadow: 0 0 12px rgba(255, 198, 71, 0.4);
 }
 
 .title-icon {
-  font-size: 24px;
+  font-size: 22px;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 .quests-count {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(243, 230, 195, 0.4);
   font-weight: 600;
-  letter-spacing: 1px;
+  letter-spacing: 0.08em;
 }
 
 /* Quests List */
@@ -46,26 +46,26 @@
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   padding-right: 5px;
 }
 
 .quests-list::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 .quests-list::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 0;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 999px;
 }
 
 .quests-list::-webkit-scrollbar-thumb {
-  background: rgba(236, 201, 75, 0.4);
-  border-radius: 0;
+  background: rgba(255, 198, 71, 0.25);
+  border-radius: 999px;
 }
 
 .quests-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(236, 201, 75, 0.6);
+  background: rgba(255, 198, 71, 0.4);
 }
 
 /* Quest Item */
@@ -73,11 +73,11 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 15px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 0;
-  border: 2px solid rgba(236, 201, 75, 0.2);
-  transition: all 0.3s ease;
+  padding: 14px;
+  background: rgba(8, 14, 30, 0.4);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 198, 71, 0.08);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   animation: questFadeIn 0.4s ease-out backwards;
 }
 
@@ -93,16 +93,17 @@
 }
 
 .quest-item:hover {
-  background: rgba(236, 201, 75, 0.05);
-  border-color: rgba(236, 201, 75, 0.4);
+  background: rgba(255, 198, 71, 0.04);
+  border-color: rgba(255, 198, 71, 0.2);
   transform: translateX(-3px);
+  box-shadow: 0 0 12px rgba(255, 198, 71, 0.06);
 }
 
 /* Completed Quest */
 .quest-item.completed {
-  opacity: 0.7;
-  background: rgba(74, 222, 128, 0.1);
-  border-color: rgba(74, 222, 128, 0.3);
+  opacity: 0.6;
+  background: rgba(57, 255, 20, 0.04);
+  border-color: rgba(57, 255, 20, 0.15);
 }
 
 .quest-item.completed .quest-icon {
@@ -111,37 +112,37 @@
 
 /* Ready to Claim Quest */
 .quest-item.ready {
-  background: linear-gradient(135deg, rgba(74, 222, 128, 0.15), rgba(0, 0, 0, 0.3));
-  border-color: rgba(74, 222, 128, 0.5);
+  background: linear-gradient(135deg, rgba(57, 255, 20, 0.06), rgba(8, 14, 30, 0.4));
+  border-color: rgba(57, 255, 20, 0.3);
   animation: readyPulse 2s ease-in-out infinite;
 }
 
 @keyframes readyPulse {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4);
+    box-shadow: 0 0 0 0 rgba(57, 255, 20, 0.2);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(74, 222, 128, 0);
+    box-shadow: 0 0 0 6px rgba(57, 255, 20, 0);
   }
 }
 
 /* Quest Icon */
 .quest-icon {
-  flex: 0 0 50px;
-  height: 50px;
-  border-radius: 0;
-  background: var(--quest-color, rgba(236, 201, 75, 0.2));
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  flex: 0 0 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--quest-color, rgba(255, 198, 71, 0.08));
+  border: 1px solid rgba(255, 198, 71, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 24px;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
-  transition: transform 0.3s ease;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  transition: transform 0.22s ease;
 }
 
 .quest-item:hover .quest-icon {
-  transform: scale(1.1) rotate(5deg);
+  transform: scale(1.08) rotate(3deg);
 }
 
 /* Quest Details */
@@ -156,8 +157,7 @@
 .quest-name {
   font-size: 14px;
   font-weight: 700;
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  color: #f3e6c3;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -166,22 +166,22 @@
 /* Progress Bar */
 .quest-progress-bar {
   width: 100%;
-  height: 8px;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 0;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 999px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .quest-progress-fill {
   height: 100%;
   background: linear-gradient(90deg, 
-    var(--quest-color, #ecc94b), 
-    var(--quest-color, #ecc94b)
+    var(--quest-color, #ffc647), 
+    var(--quest-color, #ffc647)
   );
-  border-radius: 0;
+  border-radius: 999px;
   transition: width 0.6s ease;
-  box-shadow: 0 0 10px var(--quest-color, rgba(236, 201, 75, 0.5));
+  box-shadow: 0 0 10px var(--quest-color, rgba(255, 198, 71, 0.4));
   position: relative;
   overflow: hidden;
 }
@@ -196,7 +196,7 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0.25) 50%,
     transparent 100%
   );
   animation: progressShine 2s ease-in-out infinite;
@@ -209,9 +209,9 @@
 
 .quest-progress-text {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(243, 230, 195, 0.45);
   font-weight: 600;
-  font-family: 'Courier New', monospace;
+  font-family: ui-monospace, monospace;
 }
 
 /* Quest Status */
@@ -222,38 +222,40 @@
 }
 
 .status-badge {
-  padding: 6px 12px;
-  border-radius: 0;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .status-badge.claimed {
-  background: rgba(74, 222, 128, 0.2);
-  color: #4ade80;
-  border: 1px solid rgba(74, 222, 128, 0.4);
+  background: rgba(57, 255, 20, 0.08);
+  color: #80ff60;
+  border: 1px solid rgba(57, 255, 20, 0.25);
+  text-shadow: 0 0 8px rgba(57, 255, 20, 0.2);
 }
 
 .status-badge.ready {
-  background: linear-gradient(135deg, #4ade80, #22c55e);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: linear-gradient(135deg, rgba(57, 255, 20, 0.15), rgba(57, 255, 20, 0.1));
+  color: #80ff60;
+  border: 1px solid rgba(57, 255, 20, 0.35);
   animation: badgePulse 1.5s ease-in-out infinite;
+  text-shadow: 0 0 8px rgba(57, 255, 20, 0.3);
 }
 
 @keyframes badgePulse {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  50% { transform: scale(1.04); }
 }
 
 .status-badge.progress {
-  background: rgba(236, 201, 75, 0.2);
-  color: #ecc94b;
-  border: 1px solid rgba(236, 201, 75, 0.4);
-  font-family: 'Rajdhani', sans-serif;
+  background: rgba(255, 198, 71, 0.06);
+  color: rgba(255, 198, 71, 0.7);
+  border: 1px solid rgba(255, 198, 71, 0.2);
+  font-family: var(--wz-font, 'Orbitron', sans-serif);
 }
 
 /* No Quests State */
@@ -262,17 +264,17 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(243, 230, 195, 0.35);
   font-size: 14px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.1em;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
   .quests-title {
-    font-size: 18px;
+    font-size: 16px;
   }
 
   .quest-item {
@@ -281,9 +283,10 @@
   }
 
   .quest-icon {
-    flex: 0 0 45px;
-    height: 45px;
+    flex: 0 0 42px;
+    height: 42px;
     font-size: 22px;
+    border-radius: 10px;
   }
 
   .quest-name {
@@ -291,7 +294,7 @@
   }
 
   .quest-progress-bar {
-    height: 6px;
+    height: 5px;
   }
 
   .quest-progress-text {
@@ -300,7 +303,7 @@
 
   .status-badge {
     padding: 5px 10px;
-    font-size: 10px;
+    font-size: 9px;
   }
 }
 
@@ -311,9 +314,10 @@
   }
 
   .quest-icon {
-    flex: 0 0 40px;
-    height: 40px;
+    flex: 0 0 38px;
+    height: 38px;
     font-size: 20px;
+    border-radius: 8px;
   }
 
   .quest-name {
@@ -322,6 +326,6 @@
 
   .status-badge {
     padding: 4px 8px;
-    font-size: 9px;
+    font-size: 8px;
   }
 }

@@ -7,7 +7,7 @@
     inset: 0;
     width: 100%;
     height: 100%;
-    background: #000;
+    background: #0f1419;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -17,7 +17,7 @@
   .loading-background {
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    background: linear-gradient(135deg, #252b42 0%, #2a3650 100%);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -72,39 +72,36 @@
     align-items: center;
     justify-content: space-between;
     padding: 10px 14px;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.75) 0%, transparent 100%);
+    background: linear-gradient(to bottom, rgba(20, 26, 38, 0.82) 0%, transparent 100%);
     pointer-events: none; /* children override */
   }
   
   .back-to-home-button,
   .fullscreen-button {
     pointer-events: all;
-    background: linear-gradient(135deg, rgba(236,201,75,0.92), rgba(214,158,46,0.92));
-    border: 2px solid rgba(255,255,255,0.25);
-    color: #1a202c;
-    font-size: 13px;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 1px;
     cursor: pointer;
-    padding: 9px 18px;
-    font-family: 'Rajdhani', sans-serif;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
     gap: 6px;
-    min-height: 44px;   /* touch target */
-    min-width: 44px;
-    border-radius: 4px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.4);
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+  }
+
+  .fullscreen-button {
+    font-size: 12px;
+    min-width: 120px;
   }
   
   .back-to-home-button:hover,
   .fullscreen-button:hover {
     filter: brightness(1.1);
     transform: translateY(-1px);
+  }
+
+  .back-to-home-button {
+    min-width: 148px;
+    min-height: 56px;
   }
   
   .back-to-home-button:active,
@@ -149,7 +146,7 @@
 .round-picker-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(135deg, #2a3148 0%, #343e58 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -158,8 +155,8 @@
 }
 
 .round-picker-card {
-  background: #0f172a;
-  border: 1px solid #1e293b;
+  background: rgba(36, 42, 58, 0.95);
+  border: 1px solid rgba(255, 198, 71, 0.2);
   border-radius: 20px;
   padding: 32px 28px;
   max-width: 480px;
@@ -194,21 +191,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 20px;
-  background: #0a0f1e;
-  border: 1px solid #1e293b;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
-  color: #e2e8f0;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: 0.04em;
+  font-weight: 700;
   font-size: 15px;
-  font-weight: 600;
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--wz-font, 'Rajdhani', sans-serif);
+  min-height: 52px;
 }
 
 .round-picker-item:hover {
-  border-color: #ecc94b;
-  background: #1a1f2e;
+  border-color: rgba(252, 211, 77, 0.45);
+  background: rgba(245, 158, 11, 0.08);
 }
 
 .round-picker-name {

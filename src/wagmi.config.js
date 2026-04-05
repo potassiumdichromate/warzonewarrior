@@ -1,11 +1,12 @@
-import { http, createConfig } from 'wagmi';
-import { getDefaultConfig } from '@rainbow-me/rainbowkit';
+import { defineChain } from 'viem';
+import { createConfig, http } from 'wagmi';
+import { injected, walletConnect } from 'wagmi/connectors';
+import { getStableInjectedProvider } from './lib/injectedEthereum';
 
-// Define the Somnia Mainnet chain
-export const somniaTestnet = {
+// Privy + Wagmi: use viem defineChain so custom Somnia is recognized like first-class networks (SIWE chainId).
+export const somniaChain = defineChain({
   id: 5031,
   name: 'Somnia',
-  network: 'somnia',
   nativeCurrency: {
     decimals: 18,
     name: 'Somnia',
@@ -13,38 +14,58 @@ export const somniaTestnet = {
   },
   rpcUrls: {
     default: { http: ['https://api.infra.mainnet.somnia.network'] },
-    public: { http: ['https://api.infra.mainnet.somnia.network'] },
   },
   blockExplorers: {
-    default: { 
+    default: {
       name: 'Somnia Explorer',
       url: 'https://explorer.somnia.network/',
-      apiUrl: 'https://explorer.somnia.network/api'
     },
   },
   testnet: false,
-};
+});
 
-// Get the WalletConnect Project ID from environment variables
-const walletConnectProjectId = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID;
+/** @deprecated Use somniaChain; kept for existing imports */
+export const somniaTestnet = somniaChain;
+
+const rawWc = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID;
+const walletConnectProjectId =
+  rawWc && !String(rawWc).includes('YOUR_') ? String(rawWc).trim() : '';
 
 if (!walletConnectProjectId) {
-  console.warn('Warning: VITE_WALLET_CONNECT_PROJECT_ID is not set in .env file');
+  console.warn(
+    '[Wagmi] Set VITE_WALLET_CONNECT_PROJECT_ID (WalletConnect Cloud project ID) for WalletConnect connector.'
+  );
 }
 
-// Create the Wagmi config with all connectors
-export const config = getDefaultConfig({
-  appName: 'War Zone Warriors',
-  projectId: walletConnectProjectId || 'default-project-id',
-  // Only allow Somnia (Mainnet)
-  chains: [somniaTestnet],
-  ssr: true,
-  // Add custom transports if needed
-  ...(somniaTestnet && {
-    transports: {
-      [somniaTestnet.id]: http('https://api.infra.mainnet.somnia.network'),
+const connectors = [
+  injected({
+    getProvider() {
+      return getStableInjectedProvider() ?? undefined;
     },
-  })
+  }),
+];
+if (walletConnectProjectId) {
+  connectors.push(
+    walletConnect({
+      projectId: walletConnectProjectId,
+      showQrModal: true,
+      metadata: {
+        name: 'War Zone Warriors',
+        description: 'War Zone Warriors',
+        url: typeof window !== 'undefined' ? window.location.origin : 'https://warzonewarriors.xyz',
+        icons: [],
+      },
+    })
+  );
+}
+
+/** Wagmi for IAP / chain hooks — wallet UX is Privy, not RainbowKit */
+export const config = createConfig({
+  chains: [somniaChain],
+  connectors,
+  transports: {
+    [somniaChain.id]: http('https://api.infra.mainnet.somnia.network'),
+  },
 });
 
 export default config;

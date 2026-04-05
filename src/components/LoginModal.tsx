@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 import type React from 'react'
 import {
   useConnectWallet,
@@ -9,16 +9,23 @@ import {
   useCreateWallet,
 } from '@privy-io/react-auth'
 
-import zeroGLogo from '../assets/OG.png'
-import kultGameLogo from '../assets/kultLogo.png'
-import MyLogo from '../assets/logo.png'
 import centerWarzoneLogo from '../assets/images/abc1.png'
-import NetworkModal from './NetworkModal'
-import { getAllowedChainFromEnv } from '../lib/chain'
+import intraverseLogo from '../assets/Intraverse_logo-cropped.png'
+import { buildApiUrl } from '../config/api'
+import { getWalletConnectProjectId } from '../lib/privyEnv'
+import { ensureInjectedChainToSomnia } from '../lib/switchToSomniaInjected'
+import './LoginModal.css'
 
 /* ============================== Helpers ============================== */
 function getPrimaryWalletAddress(user: any | undefined | null): string | undefined {
   if (!user) return undefined
+  const linked = Array.isArray(user.linkedAccounts) ? user.linkedAccounts : []
+  const isEmbedded = (a: any) => String(a?.connectorType || '').toLowerCase() === 'embedded'
+  const externalLinked = linked.find(
+    (a: any) => a?.type === 'wallet' && a?.address && !isEmbedded(a)
+  )
+  if (externalLinked?.address) return externalLinked.address
+  if (user.wallet?.address && !isEmbedded(user.wallet)) return user.wallet.address
   if (user.wallet?.address) return user.wallet.address
   if (Array.isArray(user.embeddedWallets) && user.embeddedWallets[0]?.address) {
     return user.embeddedWallets[0].address
@@ -26,10 +33,8 @@ function getPrimaryWalletAddress(user: any | undefined | null): string | undefin
   if (Array.isArray(user.wallets) && user.wallets[0]?.address) {
     return user.wallets[0].address
   }
-  if (Array.isArray(user.linkedAccounts)) {
-    const w = user.linkedAccounts.find((a: any) => a?.type === 'wallet' && a?.address)
-    if (w?.address) return w.address
-  }
+  const anyWallet = linked.find((a: any) => a?.type === 'wallet' && a?.address)
+  if (anyWallet?.address) return anyWallet.address
   return undefined
 }
 
@@ -46,6 +51,10 @@ function deriveAuthMethodFromUser(user: any | undefined | null): 'email' | 'oaut
   // Else fall back to email if present
   if (user.email?.address) return 'email'
   return null
+}
+
+function isEmailOrSocialPrivyUser(user: any | undefined | null): boolean {
+  return deriveAuthMethodFromUser(user) === 'email' || deriveAuthMethodFromUser(user) === 'oauth'
 }
 
 /* ============================== Icons ============================== */
@@ -81,36 +90,37 @@ function HeaderLogos({
   leftLogoSrc,
   rightLogoSrc,
 }: { leftLogoSrc?: string; rightLogoSrc?: string }) {
+  if (!leftLogoSrc && !rightLogoSrc) return null
+
   return (
-    <>
+    <div className="wz-login-brand-row" aria-hidden="true">
       {leftLogoSrc && (
-        <img
-          src={leftLogoSrc}
-          alt="Left logo"
-          className="fixed left-3 top-3 z-[60] w-30 m-3 rounded-md border border-[#222] object-contain pointer-events-none"
-        />
+        <span className="wz-login-brand-chip">
+          <img
+            src={leftLogoSrc}
+            alt="Left logo"
+            className="wz-login-brand-logo wz-login-brand-logo--wide"
+          />
+        </span>
       )}
       {rightLogoSrc && (
-        <img
-          src={rightLogoSrc}
-          alt="Right logo"
-          className="fixed right-3 top-3 z-[60] w-24 m-3 rounded-md border border-[#222] object-contain pointer-events-none"
-        />
+        <span className="wz-login-brand-chip">
+          <img
+            src={rightLogoSrc}
+            alt="Right logo"
+            className="wz-login-brand-logo"
+          />
+        </span>
       )}
-    </>
+    </div>
   )
 }
 
 function TitleCard() {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-amber-500/15 to-transparent pt-8 pb-5 text-center mb-3">
-      <div className="pointer-events-none absolute -inset-20 bg-[radial-gradient(900px_220px_at_50%_-20%,rgba(245,158,11,0.35),transparent)]" />
-      <div className="relative z-10">
-        <h2 className="text-3xl md:text-4xl font-extrabold tracking-wider bg-gradient-to-r from-amber-300 via-orange-400 to-yellow-500 bg-clip-text text-transparent drop-shadow-[0_2px_16px_rgba(251,146,60,0.45)]">
-          WELCOME
-        </h2>
-        <div className="mx-auto mt-2 h-1 w-24 rounded-full bg-gradient-to-r from-transparent via-amber-300/70 to-transparent" />
-      </div>
+    <div className="wz-login-title-card">
+      <span className="wz-login-eyebrow">Warzone Warriors</span>
+      <h2 className="wz-login-title">Connect Your Wallet</h2>
     </div>
   )
 }
@@ -118,16 +128,32 @@ function TitleCard() {
 function ErrorBanner({ error }: { error?: string }) {
   if (!error) return null
   return (
-    <div className="my-2 rounded-lg bg-[#2a0e0e] px-3 py-2 text-sm text-[#ffd8d8]">
+    <div className="wz-login-alert wz-login-alert--error">
       {error}
     </div>
   )
 }
 
+function getFriendlyPrivyErrorMessage(errorCode: string | undefined, fallback?: string) {
+  switch (errorCode) {
+    case 'exited_auth_flow':
+      return ''
+    case 'client_request_timeout':
+      return 'Wallet login took too long. Please keep the wallet app open and try again.'
+    case 'allowlist_rejected':
+      return 'This site origin is not allowed for wallet login in the current Privy configuration.'
+    case 'generic_connect_wallet_error':
+    case 'unknown_connect_wallet_error':
+      return 'Could not connect to the wallet. Please try again or use WalletConnect.'
+    default:
+      return fallback || ''
+  }
+}
+
 function EmbeddedWalletBadge({ address }: { address?: string }) {
   if (!address) return null
   return (
-    <div className="mb-3 rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-xs text-white/80 break-all">
+    <div className="wz-login-badge">
       Wallet: <span className="font-mono text-[11px] text-white/95">{address}</span>
     </div>
   )
@@ -135,10 +161,10 @@ function EmbeddedWalletBadge({ address }: { address?: string }) {
 
 function DividerOr() {
   return (
-    <div className="my-1 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-[#9CB9D0]">
-      <span className="h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-      <span className="text-xs">or</span>
-      <span className="h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+    <div className="wz-login-divider">
+      <span className="wz-login-divider-line" />
+      <span className="wz-login-divider-label">or</span>
+      <span className="wz-login-divider-line" />
     </div>
   )
 }
@@ -168,14 +194,14 @@ function EmailForm({
           placeholder="you@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-base text-white/95 placeholder-white/40 outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300/60 transition"
+          className="wz-login-input"
           disabled={disabled}
         />
       </label>
       <div className="mt-1">
         <button
           type="submit"
-          className="inline-flex w-full items-center justify-center rounded-2xl border border-amber-400/70 bg-gradient-to-tr from-amber-500 via-orange-500 to-red-500 px-5 py-3 font-bold text-white shadow-[0_10px_28px_rgba(251,146,60,0.45)] hover:shadow-[0_14px_34px_rgba(251,146,60,0.6)] active:scale-[.98] disabled:opacity-60"
+          className="wz-login-primary"
           disabled={
             disabled ||
             emailState.status === 'sending-code' ||
@@ -206,7 +232,7 @@ function CodeForm({
   return (
     <form className="grid gap-3" onSubmit={onCodeSubmit}>
       <label className="grid gap-2">
-        <span className="text-sm text-[#9CB9D0]">Enter 6-digit code</span>
+        <span className="text-sm text-[#d6c190]">Enter 6-digit code</span>
         <input
           type="text"
           pattern="[0-9]{6}"
@@ -214,20 +240,20 @@ function CodeForm({
           placeholder="123456"
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          className="rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-base text-[#EAF6FF] outline-none focus:ring-2 focus:ring-amber-400/60"
+          className="wz-login-input"
         />
       </label>
       <div className="mt-1 flex justify-between gap-2">
         <button
           type="button"
           onClick={onBack}
-          className="rounded-xl border border-transparent px-3 py-2.5 text-[#9CB9D0] hover:text-white"
+          className="wz-login-link"
         >
           Edit email
         </button>
         <button
           type="submit"
-          className="inline-flex items-center justify-center rounded-2xl border border-amber-400/70 bg-gradient-to-tr from-amber-500 via-orange-500 to-red-500 px-5 py-3 font-bold text-white shadow-[0_10px_28px_rgba(251,146,60,0.45)] hover:shadow-[0_14px_34px_rgba(251,146,60,0.6)] active:scale-[.98] disabled:opacity-60"
+          className="wz-login-primary"
           disabled={emailState.status === 'submitting-code' || emailState.status === 'sending-code'}
         >
           {emailState.status === 'submitting-code' ? 'Verifying…' : 'Verify & continue'}
@@ -248,7 +274,21 @@ type WalletId =
   | 'uniswap'
   | 'okx_wallet'
   | 'bitget_wallet'
+  | 'wallet_connect'
   | 'universal_profile'
+
+const isMobileBrowser =
+  typeof navigator !== 'undefined' &&
+  /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+
+const mobileBrowserWalletList: WalletId[] = [
+  'bitget_wallet',
+  'okx_wallet',
+  'metamask',
+  'coinbase_wallet',
+  'rainbow',
+  'wallet_connect',
+]
 
 const walletOptions: Array<{ id: WalletId; label: string; hint: string }> = [
   { id: 'metamask', label: 'MetaMask', hint: 'Browser Extension' },
@@ -261,6 +301,7 @@ const walletOptions: Array<{ id: WalletId; label: string; hint: string }> = [
   { id: 'uniswap', label: 'Uniswap Wallet', hint: 'App / Extension' },
   { id: 'okx_wallet', label: 'OKX Wallet', hint: 'App / Extension' },
   { id: 'bitget_wallet', label: 'Bitget Wallet', hint: 'App / Extension' },
+  { id: 'wallet_connect', label: 'WalletConnect', hint: 'Mobile fallback' },
   { id: 'universal_profile', label: 'Universal Profile', hint: 'Universal Profile' },
 ]
 
@@ -273,15 +314,15 @@ function WalletRow({
     <button
       type="button"
       onClick={onClick}
-      className="w-full inline-flex items-center justify-between rounded-2xl border border-white/15 bg-gradient-to-r from-[#0b122a] via-[#111a39] to-[#0b122a] px-4 py-3 text-white/95 hover:bg-white/10"
+      className="wz-login-option"
     >
-      <span className="inline-flex items-center gap-2">
-        <span className="inline-flex size-6 items-center justify-center rounded-full bg-white/10">
+      <span className="inline-flex items-center gap-3">
+        <span className="inline-flex size-8 items-center justify-center rounded-full border border-white/10 bg-[rgba(255,198,71,0.08)] text-[#ffc647]">
           <WalletIcon />
         </span>
         {label}
       </span>
-      {hint ? <span className="text-xs opacity-70">{hint}</span> : null}
+      {hint ? <span className="wz-login-option-hint">{hint}</span> : null}
     </button>
   )
 }
@@ -296,7 +337,7 @@ function WalletPickerScrollable({
 }) {
   return (
     <div className="grid gap-2">
-      <div className="rounded-xl border border-white/15 bg-white/5 p-3 text-sm text-white/80">
+      <div className="wz-login-panel-note">
         Choose a wallet to continue
       </div>
 
@@ -304,8 +345,8 @@ function WalletPickerScrollable({
         <style>{`
           .wallet-scroll::-webkit-scrollbar { width: 8px; }
           .wallet-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.06); border-radius: 9999px; }
-          .wallet-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 9999px; }
-          .wallet-scroll:hover::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.35); }
+          .wallet-scroll::-webkit-scrollbar-thumb { background: rgba(255,198,71,0.25); border-radius: 9999px; }
+          .wallet-scroll:hover::-webkit-scrollbar-thumb { background: rgba(255,198,71,0.4); }
         `}</style>
         <div className="wallet-scroll grid gap-2">
           {walletOptions.map((wallet) => (
@@ -322,7 +363,7 @@ function WalletPickerScrollable({
       <button
         type="button"
         onClick={onBack}
-        className="mt-1 text-sm text-white/80 hover:text-white underline underline-offset-4"
+        className="wz-login-link w-fit mt-1"
       >
         Back
       </button>
@@ -339,7 +380,7 @@ function GoogleButton({
 }) {
   return (
     <button
-      className="flex w-full items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-4 py-3 font-semibold text-white/95 hover:bg-white/10 disabled:opacity-50"
+      className="wz-login-secondary"
       disabled={disabled}
       onClick={onClick}
       aria-label="Continue with Google"
@@ -350,47 +391,30 @@ function GoogleButton({
   )
 }
 
-function CreateWalletPanel({
-  variant,
-  creating,
-  onCreate,
+function IntraverseButton({
+  onClick,
+  disabled,
+  loading,
 }: {
-  variant: 'email' | 'oauth'
-  creating: boolean
-  onCreate: () => void
+  onClick: () => void
+  disabled?: boolean
+  loading?: boolean
 }) {
-  const copy = variant === 'email' ? 'Continue with your email session.' : 'Continue with your Google session.'
-  const color =
-    variant === 'email'
-      ? 'border-amber-400/70 bg-gradient-to-tr from-amber-500 via-orange-500 to-red-500'
-      : 'border-lime-400/60 bg-gradient-to-tr from-lime-400 via-emerald-500 to-amber-400'
-
   return (
-    <div className="grid gap-4">
-      <div className="rounded-xl bg-amber-500/10 border border-amber-400/30 px-4 py-3 text-sm text-amber-50/90">
-        You don’t have a wallet address yet. We’ll create one now to continue.
-      </div>
-      <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-        <div className="text-sm text-white/80 mb-3">{copy}</div>
-        <button
-          onClick={onCreate}
-          disabled={creating}
-          className={`inline-flex w-full items-center justify-center rounded-2xl ${color} px-5 py-3 font-bold text-white shadow-[0_10px_28px_rgba(251,146,60,0.45)] active:scale-[.98] disabled:opacity-60`}
-        >
-          {creating ? 'Creating wallet…' : 'Create wallet'}
-        </button>
-      </div>
-
-      {/* Keep other paths disabled while creating wallet is required */}
-      <div className="grid gap-2 opacity-60">
-        <div className="grid gap-2">
-          {walletOptions.map((wallet) => (
-            <WalletRow key={wallet.id} label={wallet.label} hint={wallet.hint} />
-          ))}
-        </div>
-        <GoogleButton onClick={() => {}} disabled />
-      </div>
-    </div>
+    <button
+      className="wz-login-secondary wz-login-secondary--intraverse"
+      disabled={disabled}
+      onClick={onClick}
+      aria-label="Continue with Intraverse"
+    >
+      <img
+        src={intraverseLogo}
+        alt=""
+        className="wz-login-intraverse-logo"
+        aria-hidden="true"
+      />
+      <span>{loading ? 'Opening Intraverse...' : 'Intraverse Login'}</span>
+    </button>
   )
 }
 
@@ -399,7 +423,7 @@ export default function LoginModal({
   open,
   onClose,
   logoSrc,
-  leftLogoSrc = kultGameLogo,
+  leftLogoSrc,
   centerLogoSrc = centerWarzoneLogo,
   rightLogoSrc,
 }: LoginModalProps) {
@@ -408,6 +432,8 @@ export default function LoginModal({
   const [code, setCode] = useState('')
   const [emailStep, setEmailStep] = useState<'enter-email' | 'enter-code'>('enter-email')
   const [error, setError] = useState('')
+  const [privyInitTimedOut, setPrivyInitTimedOut] = useState(false)
+  const privyConfigured = Boolean((import.meta as any).env?.VITE_PRIVY_APP_ID)
 
   // Which auth path user took (for create-wallet screen copy)
   const { ready, authenticated, user, logout } = usePrivy()
@@ -416,17 +442,69 @@ export default function LoginModal({
   // Toggle that replaces email + social UI with wallet list after clicking "Connect Wallet"
   const [walletMode, setWalletMode] = useState(false)
 
-  // If logged in (email/oauth) but no wallet — ask to create with our custom UI
+  // Email/social: embedded wallet is created automatically (no manual “Create wallet” step)
   const [creating, setCreating] = useState(false)
+  const [intraverseLoading, setIntraverseLoading] = useState(false)
+  const autoCreateEmbeddedRef = useRef(false)
 
   const { createWallet } = useCreateWallet()
   const [existingAddress, setExistingAddress] = useState<string | undefined>(getPrimaryWalletAddress(user))
   const hasAnyWallet = Boolean(existingAddress)
 
+  const setFriendlyPrivyError = (errorCode: string | undefined, fallback?: string) => {
+    const nextMessage = getFriendlyPrivyErrorMessage(errorCode, fallback)
+    setError(nextMessage)
+  }
+
+  const reopenDialog = () => {
+    try {
+      if (open && dialogRef.current && !dialogRef.current.open) {
+        dialogRef.current.showModal()
+      }
+    } catch {}
+  }
+
+  const closeDialogForPrivyFlow = () => {
+    try {
+      if (dialogRef.current?.open) {
+        dialogRef.current.close()
+      }
+    } catch {}
+  }
+
   // External wallet connect
   const { connectWallet } = useConnectWallet({
-    onSuccess: () => onClose?.(),
-    onError: (err: any) => setError((err?.message ?? err?.code ?? String(err)) || 'Failed to connect wallet'),
+    onSuccess: async (result: any) => {
+      const connectedWallet = result?.wallet ?? result
+
+      if (authenticated) {
+        onClose?.()
+        return
+      }
+
+      if (typeof connectedWallet?.loginOrLink !== 'function') {
+        setError('Wallet connected, but login could not be completed. Please try again.')
+        reopenDialog()
+        return
+      }
+
+      try {
+        await connectedWallet.loginOrLink()
+      } catch (err: any) {
+        setFriendlyPrivyError(
+          err?.privyErrorCode ?? err?.code,
+          (err?.message ?? err?.code ?? String(err)) || 'Failed to authenticate wallet'
+        )
+        reopenDialog()
+      }
+    },
+    onError: (err: any) => {
+      setFriendlyPrivyError(
+        typeof err === 'string' ? err : err?.privyErrorCode ?? err?.code,
+        (err?.message ?? err?.code ?? String(err)) || 'Failed to connect wallet'
+      )
+      reopenDialog()
+    },
   })
 
   // Social login
@@ -448,83 +526,145 @@ export default function LoginModal({
   })
 
   // Privy modal login (use for wallet auth so `authenticated` becomes true)
-  const { login } = useLogin()
-
-  // Network gating state
-  const [networkOpen, setNetworkOpen] = useState(false)
-  const allowedChain = getAllowedChainFromEnv() || {
-    caip2: 'eip155:16661',
-    decimalChainId: 16661,
-    hexChainId: '0x4115',
-    chainName: '0G Mainnet',
-    rpcUrls: ['https://evmrpc.0g.ai'],
-    blockExplorerUrls: ['https://chainscan.0g.ai'],
-  }
-
-  // Get a specific provider for a wallet from EIP-6963 announcements, or fall back to window.ethereum
-  const getProviderForWallet = async (walletId: WalletId): Promise<any | null> => {
-    return new Promise((resolve) => {
-      const providers: any[] = []
-      const onAnnounce = (e: any) => { providers.push(e.detail) }
-      window.addEventListener('eip6963:announceProvider', onAnnounce)
-      window.dispatchEvent(new Event('eip6963:requestProvider'))
-      // Give extensions 50ms to announce, then pick or fall back
-      setTimeout(() => {
-        window.removeEventListener('eip6963:announceProvider', onAnnounce)
-        const match = providers.find((p) =>
-          p?.info?.rdns?.toLowerCase().includes(walletId.replace('_', '.'))
-        )
-        resolve(match?.provider ?? (window as any).ethereum ?? null)
-      }, 50)
-    })
-  }
-
-  const preflightEnsureAllowedNetwork = async (walletId: WalletId, onAllowed: () => void) => {
-    try {
-      const eth = await getProviderForWallet(walletId)
-      if (!eth?.request) { onAllowed(); return }
-      const current = await eth.request({ method: 'eth_chainId' }).catch(() => undefined)
-      if (typeof current === 'string' && current.toLowerCase() !== allowedChain.hexChainId.toLowerCase()) {
-        setNetworkOpen(true)
+  const { login } = useLogin({
+    onError: (errorCode: any) => {
+      if (errorCode === 'exited_auth_flow' || String(errorCode).includes('exited_auth_flow')) {
+        setError('')
+        reopenDialog()
         return
       }
-      onAllowed()
-    } catch {
-      // Cannot determine chain — let the connection proceed
-      onAllowed()
-    }
-  }
+      const err = errorCode as { code?: number; details?: { eipCode?: number } }
+      if (err?.code === -32002 || err?.details?.eipCode === -32002) {
+        setError('Wallet connection already pending. Check your wallet app or other browser tabs.')
+        reopenDialog()
+        return
+      }
+      setFriendlyPrivyError(String(errorCode), 'Failed to connect wallet')
+      reopenDialog()
+    },
+  })
 
-  // Create embedded wallet with our own UI (no Privy modal UI)
-  const handleCreateEmbeddedWallet = async () => {
+  const walletConnectProjectId = getWalletConnectProjectId()
+  // Match guess_the_ai_frontend: any window.ethereum counts as “injected” for gating + chain preflight.
+  const hasInjectedWallet =
+    typeof window !== 'undefined' &&
+    Boolean((window as unknown as { ethereum?: unknown }).ethereum)
+
+  const runEmbeddedWalletCreation = useCallback(async () => {
     setError('')
     setCreating(true)
     try {
       await createWallet()
-      // Optional: if your SDK version doesn’t immediately refresh the user object,
-      // uncomment this tiny poll to wait for the wallet to appear.
-      // const t0 = Date.now()
-      // while (!getPrimaryWalletAddress(user) && Date.now() - t0 < 4000) {
-      //   await new Promise(r => setTimeout(r, 200))
-      // }
-      // After the hook refreshes, the effect below will see a wallet and close the modal.
     } catch (err: any) {
       setError(err?.message || 'Failed to create wallet')
+      throw err
     } finally {
       setCreating(false)
     }
-  }
+  }, [createWallet])
 
   const connectWith = async (wallet: WalletId) => {
     try {
-      try { if (dialogRef.current?.open) dialogRef.current.close() } catch {}
-      onClose?.()
+      try {
+        if (dialogRef.current?.open) {
+          dialogRef.current.close()
+        }
+      } catch {}
+      const switched = await ensureInjectedChainToSomnia()
+      if (!switched) {
+        setError('Please switch your wallet to Somnia (chain ID 5031) and try again.')
+        reopenDialog()
+        return
+      }
       await connectWallet({ walletList: [wallet] })
     } catch (err: any) {
       console.error('connectWith error', err)
       setError(err?.message || 'Failed to connect wallet')
+      reopenDialog()
     }
   }
+
+  const handleWalletButtonPress = async () => {
+    if (authDisabled) {
+      setError('Login is still initializing. Please wait a few seconds and try again.')
+      return
+    }
+    if (emailStep === 'enter-code') return
+    setError('')
+
+    if (!walletConnectProjectId && !hasInjectedWallet) {
+      setError(
+        'WalletConnect project ID is missing. Set VITE_WALLET_CONNECT_PROJECT_ID or VITE_WALLETCONNECT_PROJECT_ID in .env and reload, or use a browser with an injected wallet.'
+      )
+      return
+    }
+
+    closeDialogForPrivyFlow()
+
+    window.setTimeout(() => {
+      void (async () => {
+        try {
+          // Same as guess_the_ai_frontend NewLoginScreen: switch/add Somnia on window.ethereum first,
+          // then open Privy so SIWE signs with chain ID 5031.
+          if (hasInjectedWallet) {
+            const switched = await ensureInjectedChainToSomnia()
+            if (!switched) {
+              setError('Please switch your wallet to Somnia (chain ID 5031) and try again.')
+              reopenDialog()
+              return
+            }
+          }
+          login({ loginMethods: ['wallet'] })
+        } catch (err: any) {
+          setFriendlyPrivyError(
+            err?.privyErrorCode ?? err?.code,
+            err?.message || 'Failed to connect wallet'
+          )
+          reopenDialog()
+        }
+      })()
+    }, 0)
+  }
+
+  const startIntraverseLogin = async () => {
+    try {
+      setError('')
+      setIntraverseLoading(true)
+
+      const response = await fetch(buildApiUrl('/test/intraverse/auth/magic-link'))
+      const data = await response.json()
+
+      if (!response.ok || !data?.success || !data?.magicLoginUrl) {
+        throw new Error(data?.message || 'Failed to start Intraverse login')
+      }
+
+      localStorage.setItem('intraversePendingAuthHash', data.authHash || '')
+      localStorage.setItem('intraverseClientKey', data.clientKey || '')
+      localStorage.setItem('intraverseMagicLoginUrl', data.magicLoginUrl)
+
+      window.location.assign(data.magicLoginUrl)
+    } catch (err: any) {
+      setError(err?.message || 'Failed to start Intraverse login')
+      setIntraverseLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!open) {
+      setPrivyInitTimedOut(false)
+      return
+    }
+    if (!privyConfigured || ready) {
+      setPrivyInitTimedOut(false)
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setPrivyInitTimedOut(true)
+    }, 8000)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [open, privyConfigured, ready])
 
   
 
@@ -536,6 +676,7 @@ export default function LoginModal({
     setCode('')
     setEmailStep('enter-email')
     setWalletMode(false)
+    autoCreateEmbeddedRef.current = false
     setExistingAddress(getPrimaryWalletAddress(user))
     setLoginMethod(deriveAuthMethodFromUser(user))
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -564,16 +705,30 @@ export default function LoginModal({
       onClose?.()
       return
     }
-    // No wallet → show create-wallet panel (regardless of loginMethod)
-    // Pick a variant based on user (google present → 'oauth', else 'email')
+    // No wallet yet → keep modal open; email/social triggers auto createWallet in separate effect
     setLoginMethod((prev) => prev ?? deriveAuthMethodFromUser(user) ?? 'email')
-    // Keep the modal open and let the render show CreateWalletPanel
   }, [ready, authenticated, user, onClose])
+
+  // Auto-create embedded wallet after email / Google login (Privy createOnLogin may lag behind custom UI)
+  useEffect(() => {
+    if (!open || !ready || !authenticated || !user) return
+    if (getPrimaryWalletAddress(user)) return
+    if (!isEmailOrSocialPrivyUser(user)) return
+    if (autoCreateEmbeddedRef.current) return
+    autoCreateEmbeddedRef.current = true
+    void runEmbeddedWalletCreation().catch(() => {
+      autoCreateEmbeddedRef.current = false
+    })
+  }, [open, ready, authenticated, user, runEmbeddedWalletCreation])
 
   // Handlers for forms
   const onEmailSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault()
     setError('')
+    if (!ready) {
+      setError('Login is still initializing. Please wait a few seconds and try again.')
+      return
+    }
     try {
       setLoginMethod('email')
       await sendCode({ email })
@@ -587,6 +742,10 @@ export default function LoginModal({
   const onCodeSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault()
     setError('')
+    if (!ready) {
+      setError('Login is still initializing. Please wait a few seconds and try again.')
+      return
+    }
     try {
       await loginWithCode({ code })
     } catch (err: any) {
@@ -596,9 +755,11 @@ export default function LoginModal({
 
   // UI rules
   const showCustomCreateUI = Boolean(authenticated && !hasAnyWallet)
+  const showPrivyLoadingState = privyConfigured && !ready
+  const authDisabled = !ready || !privyConfigured
 
   // Unified close handler: if user is authenticated but lacks a wallet
-  // (i.e., seeing CreateWalletPanel), closing should log them out.
+  // (embedded wallet still provisioning), closing should log them out.
   const requestClose = () => {
     if (showCustomCreateUI && authenticated) {
       // Best-effort logout; do not block UI on awaiting.
@@ -615,123 +776,156 @@ export default function LoginModal({
     <dialog
       ref={dialogRef}
       onCancel={requestClose}
-      className="fixed inset-0 z-50 m-0 flex items-center justify-center bg-black/40 p-4 sm:p-6 w-full h-full"
+      className="wz-login-modal"
     >
-      <HeaderLogos leftLogoSrc={leftLogoSrc} rightLogoSrc={rightLogoSrc} />
-
-      <div className="relative w-full max-w-[500px] max-h-[92dvh] overflow-visible rounded-2xl border border-amber-400/60 bg-[rgba(24,16,8,0.94)] shadow-[0_30px_80px_rgba(0,0,0,0.70)]">
-        <div className="relative p-6 pt-10 md:pt-10 text-[#FFF7ED] bg-gradient-to-b from-[rgba(245,158,11,0.12)] via-[rgba(127,29,29,0.92)] to-[rgba(24,16,8,0.96)]">
+      <div className="wz-login-shell">
+        <span className="wz-login-orb wz-login-orb--one" aria-hidden="true" />
+        <span className="wz-login-orb wz-login-orb--two" aria-hidden="true" />
+        <div className="wz-login-card">
           {(centerLogoSrc ?? logoSrc) && (
-            <img
-              src={centerLogoSrc ?? logoSrc}
-              alt="Center logo"
-              style={{ height: '120px' }}
-              className="absolute left-1/2 -top-8 md:-top-10 -translate-x-1/2 z-20 w-26 md:w-34 rounded-xl object-contain"
-            />
-          )}
-
-          <button
-            type="button"
-            onClick={requestClose}
-            aria-label="Close"
-            className="absolute right-3 top-2 text-2xl leading-none text-slate-300 hover:text-white bg-transparent p-0"
-          >
-            ×
-          </button>
-
-          <TitleCard />
-          <ErrorBanner error={error} />
-          <EmbeddedWalletBadge address={authenticated ? existingAddress : undefined} />
-
-          {showCustomCreateUI ? (
-            <CreateWalletPanel
-              variant={loginMethod === 'oauth' ? 'oauth' : 'email'}
-              creating={creating}
-              onCreate={handleCreateEmbeddedWallet}
-            />
-          ) : (
-            <div className="grid gap-4">
-              {!authenticated && (
-                <>
-                  {!walletMode ? (
-                    <>
-                      {emailStep === 'enter-email' ? (
-                        <EmailForm
-                          email={email}
-                          setEmail={setEmail}
-                          emailState={emailState}
-                          onEmailSubmit={onEmailSubmit}
-                          setLoginMethod={setLoginMethod}
-                          disabled={false}
-                        />
-                      ) : (
-                        <CodeForm
-                          code={code}
-                          setCode={setCode}
-                          onBack={() => {
-                            setError('')
-                            setCode('')
-                            setEmail('')
-                            setLoginMethod(null)
-                            setEmailStep('enter-email')
-                          }}
-                          onCodeSubmit={onCodeSubmit}
-                          emailState={emailState}
-                        />
-                      )}
-
-                      <DividerOr />
-
-                      {/* CONNECT WALLET triggers Privy wallet login to create an authenticated session */}
-                      <button
-                        className="w-full inline-flex items-center justify-center rounded-2xl border border-emerald-400/50 bg-gradient-to-tr from-emerald-400 via-teal-400 to-cyan-500 px-4 py-3 text-lg font-bold text-white shadow-[0_10px_28px_rgba(16,185,129,0.35)] hover:shadow-[0_14px_34px_rgba(16,185,129,0.45)] active:scale-[.99] transition disabled:opacity-60"
-                        onClick={() => {
-                          if (emailStep === 'enter-code') return
-                          try { if (dialogRef.current?.open) dialogRef.current.close() } catch {}
-                          // Let Privy's own modal handle wallet selection and network — no preflight here
-                          login({ loginMethods: ['wallet'] })
-                        }}
-                        disabled={emailStep === 'enter-code'}
-                      >
-                        <span className="mr-2 inline-flex items-center">
-                          <WalletIcon />
-                        </span>
-                        <span>Connect Wallet</span>
-                      </button>
-
-                      <GoogleButton
-                        disabled={oauthLoading || emailStep === 'enter-code'}
-                        onClick={() => {
-                          if (emailStep === 'enter-code') return
-                          setLoginMethod('oauth')
-                          initOAuth({ provider: 'google' })
-                        }}
-                      />
-                    </>
-                  ) : (
-                    <WalletPickerScrollable
-                      connectWith={async (w) => {
-                        await preflightEnsureAllowedNetwork(w, async () => {
-                          await connectWith(w)
-                        })
-                      }}
-                      onBack={() => setWalletMode(false)}
-                    />
-                  )}
-                </>
-              )}
+            <div className="wz-login-crest-shell">
+              <img
+                src={centerLogoSrc ?? logoSrc}
+                alt="Center logo"
+                className="wz-login-crest"
+              />
             </div>
           )}
+
+          <div className="wz-login-scroll">
+            <button
+              type="button"
+              onClick={requestClose}
+              aria-label="Close"
+              className="wz-login-close"
+            >
+              ×
+            </button>
+
+            <HeaderLogos leftLogoSrc={leftLogoSrc} rightLogoSrc={rightLogoSrc} />
+            <TitleCard />
+            <ErrorBanner error={error} />
+            {!privyConfigured && (
+              <div className="wz-login-alert wz-login-alert--error">
+                Login is not configured because `VITE_PRIVY_APP_ID` is missing in this environment.
+              </div>
+            )}
+            {showPrivyLoadingState && (
+              <div className="wz-login-alert wz-login-alert--neutral">
+                {privyInitTimedOut
+                  ? 'Login is taking longer than expected to initialize. Please refresh once and check that the Privy app is configured for this site domain.'
+                  : 'Initializing login...'}
+              </div>
+            )}
+            <EmbeddedWalletBadge address={authenticated ? existingAddress : undefined} />
+
+            {showCustomCreateUI ? (
+              <div className="grid gap-4">
+                <div className="wz-login-alert wz-login-alert--neutral">
+                  {creating
+                    ? 'Creating your wallet…'
+                    : isEmailOrSocialPrivyUser(user)
+                      ? 'Finishing setup…'
+                      : 'Completing sign-in…'}
+                </div>
+                {!creating && error ? (
+                  <button
+                    type="button"
+                    className="wz-login-primary"
+                    onClick={() => {
+                      autoCreateEmbeddedRef.current = false
+                      void runEmbeddedWalletCreation().catch(() => {
+                        autoCreateEmbeddedRef.current = false
+                      })
+                    }}
+                  >
+                    Try again
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {!authenticated && (
+                  <>
+                    {!walletMode ? (
+                      <>
+                        {emailStep === 'enter-email' ? (
+                          <EmailForm
+                            email={email}
+                            setEmail={setEmail}
+                            emailState={emailState}
+                            onEmailSubmit={onEmailSubmit}
+                            setLoginMethod={setLoginMethod}
+                            disabled={authDisabled}
+                          />
+                        ) : (
+                          <CodeForm
+                            code={code}
+                            setCode={setCode}
+                            onBack={() => {
+                              setError('')
+                              setCode('')
+                              setEmail('')
+                              setLoginMethod(null)
+                              setEmailStep('enter-email')
+                            }}
+                            onCodeSubmit={onCodeSubmit}
+                            emailState={emailState}
+                          />
+                        )}
+
+                        <DividerOr />
+
+                        {/* CONNECT WALLET triggers Privy wallet login to create an authenticated session */}
+                        <button
+                          className="wz-login-primary wz-login-primary--wallet"
+                          onClick={handleWalletButtonPress}
+                          disabled={emailStep === 'enter-code' || authDisabled}
+                        >
+                          <span className="mr-2 inline-flex items-center">
+                            <WalletIcon />
+                          </span>
+                          <span>Connect Wallet</span>
+                        </button>
+
+                      {isMobileBrowser && (
+                        <div className="wz-login-alert wz-login-alert--neutral">
+                          On mobile browsers, open your wallet app or use the WalletConnect fallback if direct wallet launch does not work.
+                        </div>
+                      )}
+
+                      <IntraverseButton
+                        disabled={emailStep === 'enter-code' || intraverseLoading}
+                        loading={intraverseLoading}
+                        onClick={startIntraverseLogin}
+                      />
+
+                      <GoogleButton
+                        disabled={oauthLoading || emailStep === 'enter-code' || authDisabled || intraverseLoading}
+                        onClick={() => {
+                          if (authDisabled) {
+                            setError('Login is still initializing. Please wait a few seconds and try again.')
+                              return
+                            }
+                            if (emailStep === 'enter-code') return
+                            setLoginMethod('oauth')
+                            initOAuth({ provider: 'google' })
+                          }}
+                        />
+                      </>
+                    ) : (
+                      <WalletPickerScrollable
+                        connectWith={connectWith}
+                        onBack={() => setWalletMode(false)}
+                      />
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-      <NetworkModal
-        open={networkOpen}
-        onClose={() => setNetworkOpen(false)}
-        onSwitched={() => {
-          // After successful switch, user can click Connect Wallet again
-          setNetworkOpen(false)
-        }}
-      />
     </dialog>
   )
 }

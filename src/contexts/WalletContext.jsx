@@ -1,10 +1,10 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useAccount, useDisconnect, useConnect, useSwitchChain, useChainId } from 'wagmi';
-import { mainnet, polygon, optimism, arbitrum, base, zora } from 'wagmi/chains';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { loginUser } from '../utils/api';
 import { createPublicClient, http } from 'viem';
 import { buildApiUrl } from '../config/api';
+import { getStableInjectedProvider } from '../lib/injectedEthereum';
 
 // Somnia Network Configuration (Mainnet)
 export const somniaTestnet = {
@@ -63,7 +63,7 @@ export const WalletProvider = ({ children }) => {
   const [privyAddress, setPrivyAddress] = useState(null);
   const [storedSession, setStoredSession] = useState(readStoredSession);
   
-  // RainbowKit hooks
+  // Wagmi hooks (optional path alongside Privy)
   const { address: wagmiAddress, isConnected: wagmiIsConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const { connect } = useConnect();
@@ -75,6 +75,7 @@ export const WalletProvider = ({ children }) => {
   // Handle disconnection
   const handleDisconnect = useCallback(async () => {
     try {
+      backendLoginSentRef.current = null;
       disconnect();
       setIsNFTOwner(false);
       localStorage.removeItem('walletConnected');
@@ -133,10 +134,24 @@ export const WalletProvider = ({ children }) => {
     checkConnection();
   }, [wagmiIsConnected, wagmiAddress]);
 
-  // Derive a primary wallet address from Privy user + wallets
+  // Prefer external (injected) wallet from linkedAccounts — matches Privy + GUESS_THE_AI flow
+  // so MetaMask / Bitget / OKX logins resolve the correct address for /login.
   const getPrimaryPrivyAddress = useCallback((user, wallets) => {
     if (!user) return undefined;
-    if (user.wallet && user.wallet.address) return user.wallet.address;
+    const linked = Array.isArray(user.linkedAccounts) ? user.linkedAccounts : [];
+    const isEmbedded = (a) => String(a?.connectorType || '').toLowerCase() === 'embedded';
+
+    const externalLinked = linked.find(
+      (a) => a?.type === 'wallet' && a?.address && !isEmbedded(a)
+    );
+    if (externalLinked?.address) return externalLinked.address;
+
+    if (user.wallet?.address && !isEmbedded(user.wallet)) {
+      return user.wallet.address;
+    }
+
+    if (user.wallet?.address) return user.wallet.address;
+
     if (Array.isArray(user.embeddedWallets) && user.embeddedWallets[0]?.address) {
       return user.embeddedWallets[0].address;
     }
@@ -146,12 +161,16 @@ export const WalletProvider = ({ children }) => {
     if (Array.isArray(wallets) && wallets[0]?.address) {
       return wallets[0].address;
     }
-    if (Array.isArray(user.linkedAccounts)) {
-      const w = user.linkedAccounts.find((a) => a?.type === 'wallet' && a?.address);
-      if (w?.address) return w.address;
-    }
+    const anyWallet = linked.find((a) => a?.type === 'wallet' && a?.address);
+    if (anyWallet?.address) return anyWallet.address;
     return undefined;
   }, []);
+
+  useEffect(() => {
+    if (!privyAuthenticated) {
+      backendLoginSentRef.current = null;
+    }
+  }, [privyAuthenticated]);
 
   
   
@@ -164,7 +183,7 @@ export const WalletProvider = ({ children }) => {
     }
 
     try {
-      // First try to use the injected provider from RainbowKit/Wagmi
+      // First try to use the injected provider from Wagmi / browser
       const provider = window.ethereum || (window.web3 && window.web3.currentProvider);
       
       // If no provider is found, check for WalletConnect or other injected providers
@@ -367,8 +386,9 @@ export const WalletProvider = ({ children }) => {
 
         if (switchError?.code === 4902) {
           try {
-            if (typeof window !== 'undefined' && window.ethereum?.request) {
-              await window.ethereum.request({
+            const injected = typeof window !== 'undefined' ? getStableInjectedProvider() : null;
+            if (injected?.request) {
+              await injected.request({
                 method: 'wallet_addEthereumChain',
                 params: [{
                   chainId: `0x${somniaTestnet.id.toString(16)}`,
@@ -447,18 +467,31 @@ export const WalletProvider = ({ children }) => {
 
     setPrivyAddress(addr);
 
-    if (backendLoginSentRef.current === addr) return;
+    const stored = localStorage.getItem('walletAddress');
+    const token = localStorage.getItem('token');
+    if (token && stored && stored.toLowerCase() === addr.toLowerCase()) {
+      backendLoginSentRef.current = addr;
+      localStorage.setItem('walletConnected', 'true');
+      return;
+    }
+
     backendLoginSentRef.current = addr;
 
-    try {
-      // Call the existing backend login flow with the Privy wallet address
-      // so the rest of the app (name, game, IAP) continues to work as-is.
-      setUserToken(addr);
-      localStorage.setItem('walletConnected', 'true');
-      localStorage.setItem('walletAddress', addr);
-    } catch (err) {
-      console.warn('Failed to persist Privy wallet info:', err);
-    }
+    (async () => {
+      try {
+        await setUserToken(addr);
+        if (!localStorage.getItem('token')) {
+          console.error('[WalletContext] Backend /login failed after Privy auth; address:', addr);
+          backendLoginSentRef.current = null;
+          return;
+        }
+        localStorage.setItem('walletConnected', 'true');
+        localStorage.setItem('walletAddress', addr);
+      } catch (err) {
+        console.warn('Failed to persist Privy wallet info:', err);
+        backendLoginSentRef.current = null;
+      }
+    })();
   }, [privyReady, privyAuthenticated, privyUser, privyWallets, getPrimaryPrivyAddress, setUserToken]);
 
   const connectWallet = useCallback(async () => {

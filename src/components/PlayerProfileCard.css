@@ -1,4 +1,4 @@
-/* Profile Card Container */
+/* Profile Card Container — Holographic Glassmorphism */
 .profile-card-container {
   width: 100%;
   max-width: 520px;
@@ -10,23 +10,20 @@
   transform-origin: center top;
 }
 
-/* Profile Card - ID Card Style */
+/* Profile Card */
 .profile-card {
   width: 100%;
-  background: linear-gradient(135deg, 
-    rgba(30, 41, 59, 0.95) 0%,
-    rgba(15, 23, 42, 0.98) 50%,
-    rgba(30, 41, 59, 0.95) 100%
-  );
-  border-radius: 0;
-  border: 3px solid #ecc94b;
+  background: rgba(6, 10, 22, 0.75);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 198, 71, 0.18);
   box-shadow: 
-    0 0 30px rgba(236, 201, 75, 0.3),
-    0 10px 40px rgba(0, 0, 0, 0.6),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 0 30px rgba(255, 198, 71, 0.08),
+    0 10px 40px rgba(0, 0, 0, 0.5),
+    inset 0 0 30px rgba(255, 198, 71, 0.03);
   overflow: hidden;
   position: relative;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   animation: cardEntrance 0.6s ease-out;
 }
 
@@ -43,10 +40,11 @@
 
 /* Card Header */
 .card-header {
-  background: linear-gradient(135deg, #ecc94b 0%, #d69e2e 100%);
+  background: linear-gradient(135deg, rgba(255, 198, 71, 0.12), rgba(224, 133, 22, 0.08));
   padding: 12px 20px;
   position: relative;
   overflow: hidden;
+  border-bottom: 1px solid rgba(255, 198, 71, 0.1);
 }
 
 .header-stripe {
@@ -54,10 +52,10 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
+  height: 2px;
   background: linear-gradient(90deg, 
     transparent 0%, 
-    rgba(255, 255, 255, 0.6) 50%, 
+    rgba(255, 198, 71, 0.6) 50%, 
     transparent 100%
   );
   animation: shimmer 3s ease-in-out infinite;
@@ -70,13 +68,13 @@
 
 .card-title {
   margin: 0;
-  font-size: 20px;
-  font-weight: 900;
-  letter-spacing: 3px;
-  color: #1a202c;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #ffc647;
+  text-shadow: 0 0 12px rgba(255, 198, 71, 0.4);
   text-align: center;
-  font-family: 'Rajdhani', 'Arial Black', sans-serif;
+  font-family: var(--wz-font, 'Orbitron', sans-serif);
 }
 
 .card-number {
@@ -84,11 +82,11 @@
   top: 50%;
   right: 20px;
   transform: translateY(-50%);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
-  color: rgba(26, 32, 44, 0.7);
+  color: rgba(255, 198, 71, 0.35);
   letter-spacing: 1px;
-  font-family: 'Courier New', monospace;
+  font-family: ui-monospace, monospace;
 }
 
 /* Main Content */
@@ -108,12 +106,12 @@
   height: 1px;
   background: linear-gradient(90deg, 
     transparent 0%, 
-    rgba(236, 201, 75, 0.3) 50%, 
+    rgba(255, 198, 71, 0.15) 50%, 
     transparent 100%
   );
 }
 
-/* Left Side - Avatar and Info */
+/* Left Side */
 .profile-left {
   display: flex;
   flex-direction: column;
@@ -129,15 +127,15 @@
 .avatar {
   width: 100px;
   height: 100px;
-  border-radius: 0;
-  background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
-  border: 3px solid #ecc94b;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 198, 71, 0.08), rgba(8, 14, 30, 0.6));
+  border: 2px solid rgba(255, 198, 71, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 
-    0 4px 15px rgba(0, 0, 0, 0.4),
-    inset 0 2px 4px rgba(255, 255, 255, 0.1);
+    0 4px 15px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(255, 198, 71, 0.08);
   position: relative;
   overflow: hidden;
 }
@@ -152,7 +150,7 @@
   background: linear-gradient(
     45deg,
     transparent 30%,
-    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 198, 71, 0.06) 50%,
     transparent 70%
   );
   animation: avatarShine 3s ease-in-out infinite;
@@ -172,12 +170,11 @@
 
 .avatar-text {
   font-size: 36px;
-  font-weight: 900;
-  color: #ecc94b;
+  font-weight: 700;
+  color: #ffc647;
   text-shadow: 
-    0 2px 4px rgba(0, 0, 0, 0.5),
-    0 0 10px rgba(236, 201, 75, 0.3);
-  font-family: 'Rajdhani', sans-serif;
+    0 0 14px rgba(255, 198, 71, 0.5);
+  font-family: var(--wz-font, 'Orbitron', sans-serif);
   z-index: 1;
 }
 
@@ -186,18 +183,19 @@
   bottom: -10px;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(135deg, #ecc94b 0%, #d69e2e 100%);
-  padding: 4px 12px;
-  border-radius: 0;
-  border: 2px solid #1a202c;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(135deg, rgba(255, 198, 71, 0.2), rgba(0, 180, 220, 0.15));
+  padding: 4px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 198, 71, 0.3);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 .avatar-badge span {
-  font-size: 12px;
-  font-weight: 900;
-  color: #1a202c;
-  letter-spacing: 1px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffc647;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 8px rgba(255, 198, 71, 0.3);
 }
 
 .profile-info {
@@ -207,20 +205,19 @@
 
 .warrior-name {
   margin: 0 0 8px 0;
-  font-size: 20px;
-  font-weight: 800;
-  color: #ecc94b;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-  letter-spacing: 1px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #f3e6c3;
+  letter-spacing: 0.06em;
   word-wrap: break-word;
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--wz-font, 'Orbitron', sans-serif);
 }
 
 .wallet-address {
   margin: 0;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
-  font-family: 'Courier New', monospace;
+  color: rgba(243, 230, 195, 0.45);
+  font-family: ui-monospace, monospace;
   letter-spacing: 0.5px;
 }
 
@@ -234,26 +231,26 @@
 .resources-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
 }
 
 .resource-item {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 0;
+  background: rgba(8, 14, 30, 0.4);
+  border-radius: 12px;
   padding: 12px;
   display: flex;
   align-items: center;
   gap: 10px;
-  border: 1px solid rgba(236, 201, 75, 0.2);
-  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 198, 71, 0.1);
+  transition: all 0.22s ease;
 }
 
 .resource-item:hover {
-  background: rgba(236, 201, 75, 0.1);
-  border-color: rgba(236, 201, 75, 0.4);
+  background: rgba(255, 198, 71, 0.04);
+  border-color: rgba(255, 198, 71, 0.25);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(236, 201, 75, 0.2);
+  box-shadow: 0 0 14px rgba(255, 198, 71, 0.08);
 }
 
 .resource-icon {
@@ -269,39 +266,40 @@
 }
 
 .resource-label {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 10px;
+  color: rgba(243, 230, 195, 0.45);
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.1em;
   font-weight: 600;
 }
 
 .resource-value {
   font-size: 18px;
-  font-weight: 900;
-  color: #ecc94b;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  color: #ffc647;
+  text-shadow: 0 0 10px rgba(255, 198, 71, 0.3);
+  font-family: var(--wz-font, 'Orbitron', sans-serif);
 }
 
 /* Achievements Section */
 .achievements-section {
   padding: 12px 20px;
-  background: rgba(0, 0, 0, 0.2);
-  border-top: 2px solid rgba(236, 201, 75, 0.2);
+  background: rgba(0, 0, 0, 0.15);
+  border-top: 1px solid rgba(255, 198, 71, 0.08);
 }
 
 .achievements-title {
   margin: 0 0 10px 0;
-  font-size: 15px;
-  font-weight: 800;
-  color: #ecc94b;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffc647;
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 0.12em;
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--wz-font, 'Orbitron', sans-serif);
+  text-shadow: 0 0 10px rgba(255, 198, 71, 0.3);
 }
 
 .title-icon {
@@ -316,19 +314,19 @@
 }
 
 .achievement-item {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 0;
+  background: rgba(8, 14, 30, 0.4);
+  border-radius: 10px;
   padding: 10px;
   display: flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid rgba(236, 201, 75, 0.15);
-  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 198, 71, 0.08);
+  transition: all 0.22s ease;
 }
 
 .achievement-item:hover {
-  background: rgba(236, 201, 75, 0.1);
-  border-color: rgba(236, 201, 75, 0.3);
+  background: rgba(255, 198, 71, 0.04);
+  border-color: rgba(255, 198, 71, 0.2);
   transform: translateY(-2px);
 }
 
@@ -346,7 +344,7 @@
 
 .achievement-label {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(243, 230, 195, 0.4);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 600;
@@ -354,17 +352,16 @@
 
 .achievement-value {
   font-size: 16px;
-  font-weight: 900;
-  color: #fff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  color: #f3e6c3;
+  font-family: var(--wz-font, 'Orbitron', sans-serif);
 }
 
 /* Card Footer */
 .card-footer {
   padding: 10px 20px;
-  background: linear-gradient(135deg, rgba(236, 201, 75, 0.1) 0%, rgba(214, 158, 46, 0.05) 100%);
-  border-top: 1px solid rgba(236, 201, 75, 0.2);
+  background: linear-gradient(135deg, rgba(255, 198, 71, 0.04), rgba(224, 133, 22, 0.03));
+  border-top: 1px solid rgba(255, 198, 71, 0.08);
   position: relative;
   display: flex;
   justify-content: space-between;
@@ -376,11 +373,11 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 2px;
+  height: 1px;
   background: repeating-linear-gradient(
     90deg,
     transparent 0px,
-    rgba(236, 201, 75, 0.3) 5px,
+    rgba(255, 198, 71, 0.15) 5px,
     transparent 10px
   );
 }
@@ -397,9 +394,9 @@
   width: 40px;
   height: 40px;
   background: linear-gradient(45deg, 
-    rgba(236, 201, 75, 0.3),
-    rgba(214, 158, 46, 0.2),
-    rgba(236, 201, 75, 0.3)
+    rgba(255, 198, 71, 0.15),
+    rgba(224, 133, 22, 0.1),
+    rgba(255, 198, 71, 0.15)
   );
   border-radius: 50%;
   position: relative;
@@ -409,28 +406,27 @@
 @keyframes hologramPulse {
   0%, 100% { 
     opacity: 0.5;
-    box-shadow: 0 0 10px rgba(236, 201, 75, 0.3);
+    box-shadow: 0 0 10px rgba(255, 198, 71, 0.15);
   }
   50% { 
     opacity: 1;
-    box-shadow: 0 0 20px rgba(236, 201, 75, 0.6);
+    box-shadow: 0 0 20px rgba(255, 198, 71, 0.3);
   }
 }
 
 .verification-stamp {
   font-size: 11px;
-  font-weight: 900;
-  color: #4ade80;
-  letter-spacing: 2px;
+  font-weight: 700;
+  color: #39ff14;
+  letter-spacing: 0.1em;
   display: flex;
   align-items: center;
   gap: 5px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 0 8px rgba(57, 255, 20, 0.3);
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  /* No scale transform — card fills the column naturally */
   .profile-card-container {
     transform: none;
     padding: 0;
@@ -464,8 +460,8 @@
     gap: 8px;
   }
 
-  .card-title       { font-size: 16px; letter-spacing: 2px; }
-  .warrior-name     { font-size: 17px; }
+  .card-title       { font-size: 15px; letter-spacing: 0.1em; }
+  .warrior-name     { font-size: 16px; }
   .resource-value   { font-size: 17px; }
   .achievement-value{ font-size: 15px; }
 }
@@ -473,7 +469,7 @@
 @media (max-width: 480px) {
   .achievements-grid { grid-template-columns: 1fr; }
   .card-number { display: none; }
-  .card-title  { font-size: 14px; letter-spacing: 1px; }
-  .avatar { width: 84px; height: 84px; }
+  .card-title  { font-size: 13px; }
+  .avatar { width: 84px; height: 84px; border-radius: 14px; }
   .avatar-text { font-size: 30px; }
 }

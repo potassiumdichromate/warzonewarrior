@@ -17,8 +17,18 @@ const FALLBACK_ALLOWED_CHAIN = {
   },
 };
 
+const isEmbeddedConnector = (a) => String(a?.connectorType || '').toLowerCase() === 'embedded';
+
 export const getPrimaryPrivyWallet = (user, wallets) => {
   if (!user) return undefined;
+
+  const linked = Array.isArray(user.linkedAccounts) ? user.linkedAccounts : [];
+  const externalLinked = linked.find(
+    (a) => a?.type === 'wallet' && a?.address && !isEmbeddedConnector(a)
+  );
+  if (externalLinked?.address) return externalLinked;
+
+  if (user.wallet?.address && !isEmbeddedConnector(user.wallet)) return user.wallet;
 
   if (user.wallet && user.wallet.address) return user.wallet;
 
@@ -34,10 +44,8 @@ export const getPrimaryPrivyWallet = (user, wallets) => {
     return wallets[0];
   }
 
-  if (Array.isArray(user.linkedAccounts)) {
-    const w = user.linkedAccounts.find((a) => a?.type === 'wallet' && a?.address);
-    if (w?.address) return w;
-  }
+  const anyWallet = linked.find((a) => a?.type === 'wallet' && a?.address);
+  if (anyWallet?.address) return anyWallet;
 
   return undefined;
 };

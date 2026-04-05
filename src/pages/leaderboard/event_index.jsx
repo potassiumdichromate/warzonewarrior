@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ThemedBackButton from '../../components/ThemedBackButton';
 import { getLeaderboard, getAllTimeLeaderboard } from '../../utils/api';
 import ribbonImage from '../../assets/images/image 25.png';
 import backgroundImage from '../../assets/images/Rectangle 3.png';
 import bottomLeftImage from '../../assets/images/abc3.png';
 import bottomRightImage from '../../assets/images/abc2.png';
-import backButtonImage from '../../assets/images/BackBtn .png';
 import './style.css';
 
 export const Leaderboard = () => {
@@ -36,7 +36,6 @@ export const Leaderboard = () => {
           id: index,
           name: user.name || user.walletAddress?.slice(0, 6) + '...' + user.walletAddress?.slice(-4) || `Player ${index + 1}`,
           coins: user?.PlayerResources?.coin || 0,
-          exp: user?.PlayerProfile?.exp || 0,
         }));
         setFestivalUsers(formatted);
       } catch (e) {
@@ -60,8 +59,6 @@ export const Leaderboard = () => {
           id:    index,
           name:  user.name || `Player ${index + 1}`,
           coins: user.PlayerResources?.coin || 0,
-          exp:   user.PlayerProfile?.exp || 0,
-          // For previous week, you might need to fetch historical data or calculate it differently
         }));
         setUsers(formattedData);
       } catch (err) {
@@ -85,13 +82,14 @@ export const Leaderboard = () => {
 
   const isFestival = activeBoard === 'festival';
   const headerLabels = isFestival
-    ? ['Rank', 'Player', 'Gaming Party Coins', 'Experience']
-    : ['Rank', 'Player', 'Coins', 'Experience'];
+    ? ['Rank', 'Player', 'Gaming Party Coins']
+    : ['Rank', 'Player', 'Coins'];
 
   if ((loading && !isFestival) || (festivalLoading && isFestival)) {
     return (
-      <div className="leaderboard-loading" style={{width:'100%',height:'100vh',display:'flex',justifyContent:'center',alignItems:'center'}}>
-        <p>Loading...</p>
+      <div className="leaderboard-loading">
+        <div className="wz-spinner" aria-hidden="true" />
+        <p className="wz-loading-label">Loading ranks</p>
       </div>
     );
   }
@@ -99,8 +97,10 @@ export const Leaderboard = () => {
   if (error) {
     return (
       <div className="leaderboard-error">
-        <p>{error}</p>
-        <button onClick={() => window.location.reload()}>Retry</button>
+        <p className="leaderboard-error-text">{error}</p>
+        <button type="button" className="wz-btn wz-btn--primary" onClick={() => window.location.reload()}>
+          Retry
+        </button>
       </div>
     );
   }
@@ -132,9 +132,7 @@ export const Leaderboard = () => {
           alt="Bottom Right Decoration" 
           className="leaderboard-decoration-right"
         />
-        <button className="back-button" onClick={navigateToHome}>
-          <img src={backButtonImage} alt="Back" className="back-button-image" />
-        </button>
+        <ThemedBackButton className="back-button" onClick={navigateToHome} compact />
       </div>
       <div className="leaderboard-header-container">
         <div className="ribbon-container">
@@ -223,7 +221,6 @@ export const Leaderboard = () => {
                 <span className="player-name">{user.name}</span>
               </div>
               <div className="score">{(user.coins || 0).toLocaleString()}</div>
-              <div className="score">{(user.exp || 0).toLocaleString()}</div>
             </div>
           ))}
         </div>
