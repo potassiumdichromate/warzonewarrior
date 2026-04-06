@@ -359,7 +359,7 @@ export default function InterversePlayPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-background relative overflow-x-hidden pb-24 sm:pb-0">
+      <div className="min-h-screen bg-background relative overflow-x-hidden pb-36 sm:pb-0">
         <div className="fixed inset-0 z-0">
           <video autoPlay muted loop playsInline className="w-full h-full object-cover opacity-30">
             <source src="/videos/war-scene.mp4" type="video/mp4" />
@@ -370,8 +370,8 @@ export default function InterversePlayPage() {
 
         <header className="fixed top-0 left-0 right-0 z-50">
           <div className="bg-background/95 backdrop-blur-md border-b border-border">
-            <div className="container mx-auto px-4 flex items-center justify-between h-14 sm:h-16">
-              <Link to="/">
+            <div className="container mx-auto px-4 relative flex items-center justify-between h-14 sm:h-16">
+              <Link to="/" className="relative z-10 shrink-0">
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -384,11 +384,11 @@ export default function InterversePlayPage() {
                   </span>
                 </motion.div>
               </Link>
-              <div className="flex items-center gap-2">
-                <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-gold animate-pulse-glow" />
-                <h1 className="font-orbitron text-base sm:text-lg md:text-xl font-bold text-gradient-sunset">TOURNAMENTS</h1>
+              <div className="pointer-events-none absolute left-1/2 top-1/2 z-0 flex max-w-[calc(100%-120px)] -translate-x-1/2 -translate-y-1/2 items-center justify-center gap-2 px-2 text-center sm:max-w-none">
+                <Trophy className="w-4 h-4 sm:w-6 sm:h-6 shrink-0 text-gold animate-pulse-glow" />
+                <h1 className="font-orbitron text-sm sm:text-lg md:text-xl font-bold leading-none text-gradient-sunset whitespace-nowrap">TOURNAMENTS</h1>
               </div>
-              <div className="hidden sm:block">
+              <div className="relative z-10 hidden sm:block">
                 <PageWalletControls
                   isConnected={isConnected}
                   address={address}

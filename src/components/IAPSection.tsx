@@ -4,7 +4,7 @@ import './IAPSection.css';
 
 // Import category images
 import coinImage from '../assets/images/coin1.png';
-import gemImage from '../assets/images/gem2.png';
+import gemImage from '../assets/images/gems-large-clean.png';
 import gunsImage from '../assets/images/guns3.png';
 import marketplaceImage from '../assets/images/Marketplace-button.png';
 import marketplaceDesktopImage from '../assets/images/Marketplace-Desktop.png';

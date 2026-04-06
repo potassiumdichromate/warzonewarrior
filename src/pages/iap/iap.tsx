@@ -6,14 +6,13 @@ import c1Image from '../../assets/images/c1.png';
 import c2Image from '../../assets/images/c2.png';
 import c3Image from '../../assets/images/c3.png';
 import c4Image from '../../assets/images/c4.png';
-import g1Image from '../../assets/images/g1.png';
-import g2Image from '../../assets/images/g2.png';
-import g3Image from '../../assets/images/g3.png';
-import g4Image from '../../assets/images/g4.png';
-import gun1Image from '../../assets/images/gun1.png';
-import gun2Image from '../../assets/images/gun2.png';
-import gun3Image from '../../assets/images/gun3.png';
-import gun4Image from '../../assets/images/gun4.png';
+import gemsSmallImage from '../../assets/images/gems-small-clean.png';
+import gemsLargeImage from '../../assets/images/gems-large-clean.png';
+import gemsChestImage from '../../assets/images/gems-chest-clean.png';
+import gunAwpImage from '../../assets/images/gun-awp-clean.png';
+import gunBullpupImage from '../../assets/images/gun-bullpup-clean.png';
+import gunShotgunImage from '../../assets/images/gun-shotgun-clean.png';
+import gunSniperRifleImage from '../../assets/images/gun-sniper-rifle-clean.png';
 // import b1Image from '../../assets/images/b1.png';
 // import b2Image from '../../assets/images/b2.png';
 // import b3Image from '../../assets/images/b3.png';
@@ -26,18 +25,8 @@ import coin100Image from '../../assets/images/100-coins.png';
 import coin500Image from '../../assets/images/500-coins.png';
 import coin1000Image from '../../assets/images/1000-coins.png';
 import coin2000Image from '../../assets/images/2000-coins.png';
-import gems100Image from '../../assets/images/100-gems.png';
-import gems300Image from '../../assets/images/300-gems.png';
-import gems500Image from '../../assets/images/500-gems.png';
-import gems1000Image from '../../assets/images/1000-gems.png';
-import gun1ImageDetail from '../../assets/images/gunn1.png';
-import gun2ImageDetail from '../../assets/images/gunn2.png';
-import gun3ImageDetail from '../../assets/images/gunn3.png';
-import gun4ImageDetail from '../../assets/images/gunn4.png';
-import gun5Image from '../../assets/images/gun5.png';
-import gun6Image from '../../assets/images/gun6.png';
-import gun5ImageDetail from '../../assets/images/gunn5.png';
-import gun6ImageDetail from '../../assets/images/gunn6.png';
+import gunTeslaMiniImage from '../../assets/images/gun-tesla-mini-clean.png';
+import gunScarHImage from '../../assets/images/gun-scar-h-clean.png';
 // import essen1ImageDetail from '../../assets/images/essen1.png';
 // import essen2ImageDetail from '../../assets/images/essen2.png';
 // import boos1ImageDetail from '../../assets/images/boos1.png';
@@ -107,19 +96,19 @@ const IAP_COINS_DATA = [
 ];
 
 const IAP_GEMS_DATA = [
-  { id: 1, image: g1Image, detailImage: gems100Image, name: '100 Gems', value: '100', type: 'Gems' as const },
-  { id: 2, image: g2Image, detailImage: gems300Image, name: '300 Gems', value: '300', type: 'Gems' as const },
-  { id: 3, image: g3Image, detailImage: gems500Image, name: '500 Gems', value: '500', type: 'Gems' as const },
-  { id: 4, image: g4Image, detailImage: gems1000Image, name: '1000 Gems', value: '1000', type: 'Gems' as const },
+  { id: 1, image: gemsSmallImage, detailImage: gemsSmallImage, name: '100 Gems', value: '100', type: 'Gems' as const },
+  { id: 2, image: gemsSmallImage, detailImage: gemsSmallImage, name: '300 Gems', value: '300', type: 'Gems' as const },
+  { id: 3, image: gemsLargeImage, detailImage: gemsLargeImage, name: '500 Gems', value: '500', type: 'Gems' as const },
+  { id: 4, image: gemsChestImage, detailImage: gemsChestImage, name: '1000 Gems', value: '1000', type: 'Gems' as const },
 ];
 
 const IAP_GUNS_DATA = [
-  { id: 1, image: gun1Image, detailImage: gun1ImageDetail, name: 'AWP', value: 'AWP', type: 'Guns' as const },
-  { id: 2, image: gun2Image, detailImage: gun2ImageDetail, name: 'Bullpup', value: 'Bullpup', type: 'Guns' as const },
-  { id: 3, image: gun3Image, detailImage: gun3ImageDetail, name: 'Shotgun', value: 'Shotgun', type: 'Guns' as const },
-  { id: 4, image: gun4Image, detailImage: gun4ImageDetail, name: 'Sniper Rifle', value: 'Sniper Rifle', type: 'Guns' as const },
-  { id: 5, image: gun5Image, detailImage: gun5ImageDetail, name: 'Tesla Mini', value: 'Tesla Mini', type: 'Guns' as const },
-  { id: 6, image: gun6Image, detailImage: gun6ImageDetail, name: 'ScarH', value: 'ScarH', type: 'Guns' as const },
+  { id: 1, image: gunAwpImage, detailImage: gunAwpImage, name: 'AWP', value: 'AWP', type: 'Guns' as const },
+  { id: 2, image: gunBullpupImage, detailImage: gunBullpupImage, name: 'Bullpup', value: 'Bullpup', type: 'Guns' as const },
+  { id: 3, image: gunShotgunImage, detailImage: gunShotgunImage, name: 'Shotgun', value: 'Shotgun', type: 'Guns' as const },
+  { id: 4, image: gunSniperRifleImage, detailImage: gunSniperRifleImage, name: 'Sniper Rifle', value: 'Sniper Rifle', type: 'Guns' as const },
+  { id: 5, image: gunTeslaMiniImage, detailImage: gunTeslaMiniImage, name: 'Tesla Mini', value: 'Tesla Mini', type: 'Guns' as const },
+  { id: 6, image: gunScarHImage, detailImage: gunScarHImage, name: 'ScarH', value: 'ScarH', type: 'Guns' as const },
 ];
 
 function buildItemsByCategory(ownedGuns: string[]): Record<IapMarketCategory, IapMarketDisplayItem[]> {
@@ -790,7 +779,7 @@ const IAP = () => {
     if (item.owned) return;
     setDetailView({
       show: true,
-      image: item.detailImage,
+      image: item.image,
       type: item.iapType,
       value: item.iapValue,
     });
@@ -816,8 +805,13 @@ const IAP = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[160] flex items-center justify-center p-4"
-            style={{ background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(6px)' }}
+            className="fixed inset-0 z-[160] flex items-center justify-center overflow-y-auto p-4"
+            style={{
+              background: 'rgba(0,0,0,0.82)',
+              backdropFilter: 'blur(6px)',
+              paddingTop: 'max(16px, env(safe-area-inset-top, 0px))',
+              paddingBottom: 'max(16px, env(safe-area-inset-bottom, 0px))',
+            }}
             onClick={closeDetail}
           >
             <motion.div
@@ -825,8 +819,9 @@ const IAP = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 24 }}
               transition={{ type: 'spring', stiffness: 240, damping: 22 }}
-              className="relative w-full max-w-lg rounded-2xl overflow-hidden"
+              className="relative w-full max-w-lg rounded-2xl overflow-x-hidden overflow-y-auto"
               style={{
+                maxHeight: 'calc(100dvh - 32px)',
                 background: 'linear-gradient(180deg, rgba(30,22,12,0.99) 0%, rgba(12,9,5,1) 100%)',
                 border: '1px solid rgba(217,164,65,0.35)',
                 boxShadow: '0 24px 60px rgba(0,0,0,0.75), 0 0 0 1px rgba(217,164,65,0.08)',
@@ -834,7 +829,7 @@ const IAP = () => {
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gold/20">
+              <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-gold/20 bg-[rgba(20,15,10,0.96)] backdrop-blur-md">
                 <span className="font-orbitron text-sm font-bold text-gold tracking-widest">PURCHASE</span>
                 <button
                   type="button"

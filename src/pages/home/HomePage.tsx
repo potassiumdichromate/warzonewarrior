@@ -324,7 +324,7 @@ export function HomePage() {
 
         {/* ===== HERO ===== */}
         <section ref={heroRef} id="home" className="relative min-h-screen flex items-center overflow-hidden">
-           <div className="absolute inset-x-0 top-0 h-[50vh] md:h-[56.25vw] md:max-h-screen z-0 hero-bg-parallax">
+           <div className="absolute inset-x-0 top-0 h-[50vh] overflow-hidden md:h-[56.25vw] md:max-h-screen z-0 hero-bg-parallax">
             {/* Video background for both desktop and mobile */}
             <video
               autoPlay
@@ -344,6 +344,14 @@ export function HomePage() {
             <div className="absolute inset-0 bg-gradient-to-r from-background/60 via-background/20 to-transparent hidden md:block" />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent md:hidden" />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent hidden md:block" />
+            <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-background via-background/65 to-transparent md:hidden" />
+            <img
+              src={decoRubble}
+              alt=""
+              className="absolute -bottom-3 -right-6 w-[5.5rem] z-[2] opacity-70 pointer-events-none md:hidden -scale-x-100"
+              style={{ filter: "sepia(0.35) hue-rotate(165deg) saturate(1.15) brightness(0.78)" }}
+              loading="lazy"
+            />
           </div>
 
           {/* Decorative chains */}

@@ -185,6 +185,7 @@ const IapMarketplaceLayout = ({
   const [currentPage, setCurrentPage] = useState(1);
 
   const items = itemsByCategory[activeCategory];
+  const isGunCategory = activeCategory === "guns";
   const { accent, glow, soft, border, panel, button } = CATEGORY_STYLE[activeCategory];
   const totalPages = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
   const currentItems = items.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
@@ -209,7 +210,7 @@ const IapMarketplaceLayout = ({
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-x-hidden pb-24 sm:pb-0">
+    <div className="min-h-screen bg-background relative overflow-x-hidden pb-36 sm:pb-0">
 
       {/* ── Video background ── */}
       <div className="fixed inset-0 z-0">
@@ -223,8 +224,8 @@ const IapMarketplaceLayout = ({
       {/* ── Header ── */}
       <header className="fixed top-0 left-0 right-0 z-50">
         <div className="bg-background/95 backdrop-blur-md border-b border-border">
-          <div className="container mx-auto px-4 flex items-center justify-between h-14 sm:h-16">
-            <Link to="/">
+          <div className="container mx-auto px-4 relative flex items-center justify-between h-14 sm:h-16">
+            <Link to="/" className="relative z-10 shrink-0">
               <motion.div
                 whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card/50 border border-border hover:border-gold transition-all group"
@@ -234,11 +235,11 @@ const IapMarketplaceLayout = ({
                 <span className="font-russo text-xs text-muted-foreground group-hover:text-gold transition-colors hidden sm:block">HOME</span>
               </motion.div>
             </Link>
-            <div className="flex items-center gap-2">
-              <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-gold animate-pulse-glow" />
-              <h1 className="font-orbitron text-base sm:text-lg md:text-xl font-bold text-gradient-sunset">MARKETPLACE</h1>
+            <div className="pointer-events-none absolute left-1/2 top-1/2 z-0 flex max-w-[calc(100%-120px)] -translate-x-1/2 -translate-y-1/2 items-center justify-center gap-2 px-2 text-center sm:max-w-none">
+              <ShoppingCart className="w-4 h-4 sm:w-6 sm:h-6 shrink-0 text-gold animate-pulse-glow" />
+              <h1 className="font-orbitron text-sm sm:text-lg md:text-xl font-bold leading-none text-gradient-sunset whitespace-nowrap">MARKETPLACE</h1>
             </div>
-            <div className="hidden sm:flex items-center gap-2">
+            <div className="relative z-10 hidden sm:flex items-center gap-2">
               {showFundsButton && (
                 <motion.button
                   type="button"
@@ -436,7 +437,9 @@ const IapMarketplaceLayout = ({
                     {/* Aura blob */}
                     <div className="absolute w-28 h-28 rounded-full blur-2xl animate-aura" style={{ background: glow, opacity: 0.18 }} />
 
-                    <div className="absolute inset-x-5 top-5 h-24 rounded-2xl border border-white/5 bg-background/25" />
+                    {!isGunCategory && (
+                      <div className="absolute inset-x-5 top-5 h-24 rounded-2xl border border-white/5 bg-background/25" />
+                    )}
 
                     {/* Main image */}
                     <motion.img
@@ -494,6 +497,7 @@ const IapMarketplaceLayout = ({
               >
                 {currentItems.map((item, index) => {
                   const rarity = rarityColors[item.rarity ?? "COMMON"];
+                  const showGunArtWithoutFrame = item.iapType === "Guns";
                   return (
                     <motion.div
                       key={item.id}
@@ -538,22 +542,28 @@ const IapMarketplaceLayout = ({
                         <div
                           className="relative flex justify-center items-center rounded-2xl mb-3 sm:mb-4 -mx-2 -mt-2 px-2 py-4 sm:py-8 overflow-hidden"
                           style={{
-                            background: `radial-gradient(ellipse at 50% 60%, ${soft} 0%, rgba(18, 13, 10, 0.98) 60%), linear-gradient(180deg, rgba(18, 13, 10, 0.98) 0%, rgba(33, 22, 16, 0.94) 100%)`,
-                            border: `1px solid ${border}`,
+                            background: showGunArtWithoutFrame
+                              ? "transparent"
+                              : `radial-gradient(ellipse at 50% 60%, ${soft} 0%, rgba(18, 13, 10, 0.98) 60%), linear-gradient(180deg, rgba(18, 13, 10, 0.98) 0%, rgba(33, 22, 16, 0.94) 100%)`,
+                            border: showGunArtWithoutFrame ? "1px solid transparent" : `1px solid ${border}`,
                             minHeight: "140px",
                           }}
                         >
-                          <div className="absolute inset-x-0 top-0 h-1 hazard-stripe-sm opacity-80" />
-                          <div
-                            className="absolute inset-x-6 bottom-4 h-14 rounded-full blur-3xl"
-                            style={{ background: accent, opacity: 0.15 }}
-                          />
-                          <motion.div
-                            className="absolute inset-0 rounded-xl"
-                            animate={{ opacity: [0.04, 0.16, 0.04] }}
-                            transition={{ duration: 2.5, repeat: Infinity }}
-                            style={{ background: `radial-gradient(ellipse at 50% 55%, ${soft} 0%, transparent 72%)` }}
-                          />
+                          {!showGunArtWithoutFrame && <div className="absolute inset-x-0 top-0 h-1 hazard-stripe-sm opacity-80" />}
+                          {!showGunArtWithoutFrame && (
+                            <div
+                              className="absolute inset-x-6 bottom-4 h-14 rounded-full blur-3xl"
+                              style={{ background: accent, opacity: 0.15 }}
+                            />
+                          )}
+                          {!showGunArtWithoutFrame && (
+                            <motion.div
+                              className="absolute inset-0 rounded-xl"
+                              animate={{ opacity: [0.04, 0.16, 0.04] }}
+                              transition={{ duration: 2.5, repeat: Infinity }}
+                              style={{ background: `radial-gradient(ellipse at 50% 55%, ${soft} 0%, transparent 72%)` }}
+                            />
+                          )}
                           <motion.img
                             src={item.image ?? categoryImages[activeCategory]}
                             alt={item.name}
@@ -563,7 +573,9 @@ const IapMarketplaceLayout = ({
                             transition={{ duration: 3 + index * 0.15, repeat: Infinity, ease: "easeInOut" }}
                             style={{ filter: `drop-shadow(0 12px 28px ${soft}) drop-shadow(0 0 12px ${soft})` }}
                           />
-                          <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-card/80 to-transparent rounded-b-xl" />
+                          {!showGunArtWithoutFrame && (
+                            <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-card/80 to-transparent rounded-b-xl" />
+                          )}
                         </div>
 
                         {/* Info */}
@@ -619,10 +631,7 @@ const IapMarketplaceLayout = ({
                               {item.owned ? (
                                 <>OWNED</>
                               ) : isConnected ? (
-                                <>
-                                  <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
-                                  BUY NOW
-                                </>
+                                <span className="whitespace-nowrap">BUY</span>
                               ) : (
                                 <>
                                   <Lock className="w-3.5 h-3.5 mr-1.5" />
