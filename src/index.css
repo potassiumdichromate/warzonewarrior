@@ -1,3 +1,450 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@import url('https://fonts.googleapis.com/css2?family=Russo+One&family=Orbitron:wght@700;900&family=Rajdhani:wght@500;600;700&family=Press+Start+2P&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 20 35% 6%;
+    --foreground: 38 40% 92%;
+
+    --card: 20 30% 10%;
+    --card-foreground: 38 40% 92%;
+
+    --popover: 20 30% 10%;
+    --popover-foreground: 38 40% 92%;
+
+    --primary: 28 100% 50%;
+    --primary-foreground: 20 35% 6%;
+
+    --secondary: 45 80% 50%;
+    --secondary-foreground: 20 35% 6%;
+
+    --muted: 20 25% 16%;
+    --muted-foreground: 35 20% 55%;
+
+    --accent: 100 40% 35%;
+    --accent-foreground: 38 40% 92%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 38 40% 92%;
+
+    --border: 25 30% 20%;
+    --input: 25 30% 20%;
+    --ring: 28 100% 50%;
+
+    --radius: 0.5rem;
+
+    /* Game theme colors */
+    --sunset-orange: 28 100% 50%;
+    --sunset-red: 15 85% 45%;
+    --military-green: 100 40% 35%;
+    --military-dark: 100 30% 20%;
+    --metal-gray: 25 15% 30%;
+    --metal-light: 30 12% 45%;
+    --gold: 42 100% 50%;
+    --desert-sand: 35 50% 75%;
+    --rust: 15 60% 25%;
+    --hazard-yellow: 50 100% 50%;
+    --red-light: 0 80% 50%;
+    
+    /* Gradients */
+    --gradient-sunset: linear-gradient(180deg, hsl(28, 100%, 55%) 0%, hsl(15, 85%, 40%) 100%);
+    --gradient-metal: linear-gradient(180deg, hsl(25, 15%, 35%) 0%, hsl(20, 20%, 12%) 100%);
+    --gradient-gold: linear-gradient(180deg, hsl(42, 100%, 60%) 0%, hsl(35, 100%, 40%) 100%);
+    --gradient-military: linear-gradient(180deg, hsl(100, 40%, 40%) 0%, hsl(100, 30%, 20%) 100%);
+    
+    /* Shadows */
+    --shadow-glow-orange: 0 0 30px hsl(28 100% 50% / 0.5);
+    --shadow-glow-gold: 0 0 20px hsl(42 100% 50% / 0.4);
+    --shadow-metal: 0 4px 20px hsl(0 0% 0% / 0.5), inset 0 1px 0 hsl(30 12% 50% / 0.3);
+    --shadow-industrial: 0 8px 32px hsl(0 0% 0% / 0.7), inset 0 1px 0 hsl(30 12% 40% / 0.2);
+  }
+
+  .dark {
+    --background: 20 35% 6%;
+    --foreground: 38 40% 92%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-rajdhani;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .font-russo {
+    font-family: 'Russo One', sans-serif;
+  }
+  
+  .font-orbitron {
+    font-family: 'Orbitron', sans-serif;
+  }
+  
+  .font-rajdhani {
+    font-family: 'Rajdhani', sans-serif;
+  }
+
+  .font-pixel {
+    font-family: 'Press Start 2P', cursive;
+  }
+
+  .text-gradient-gold {
+    background: linear-gradient(180deg, hsl(45, 100%, 70%) 0%, hsl(38, 100%, 45%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-sunset {
+    background: linear-gradient(180deg, hsl(40, 100%, 60%) 0%, hsl(20, 100%, 50%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bg-metal {
+    background: linear-gradient(180deg, hsl(25, 15%, 35%) 0%, hsl(20, 20%, 18%) 100%);
+    box-shadow: inset 0 1px 0 hsl(30 12% 50% / 0.4), inset 0 -1px 0 hsl(0 0% 0% / 0.3);
+  }
+
+  .bg-metal-border {
+    background: linear-gradient(180deg, hsl(25, 15%, 28%) 0%, hsl(20, 20%, 12%) 100%);
+    box-shadow: inset 0 2px 0 hsl(30 12% 40% / 0.3), inset 0 -2px 0 hsl(0 0% 0% / 0.4);
+  }
+
+  .border-metal {
+    border: 3px solid;
+    border-image: linear-gradient(180deg, hsl(30, 12%, 45%) 0%, hsl(20, 15%, 20%) 100%) 1;
+  }
+
+  /* Hazard stripe pattern like the game */
+  .hazard-stripe {
+    background: repeating-linear-gradient(
+      -45deg,
+      hsl(50, 100%, 50%),
+      hsl(50, 100%, 50%) 8px,
+      hsl(0, 0%, 10%) 8px,
+      hsl(0, 0%, 10%) 16px
+    );
+  }
+
+  .hazard-stripe-sm {
+    background: repeating-linear-gradient(
+      -45deg,
+      hsl(50, 100%, 45%),
+      hsl(50, 100%, 45%) 4px,
+      hsl(0, 0%, 12%) 4px,
+      hsl(0, 0%, 12%) 8px
+    );
+  }
+
+  /* Industrial rivet/bolt styling */
+  .rivet {
+    @apply w-3 h-3 rounded-full;
+    background: radial-gradient(circle at 40% 35%, hsl(30, 12%, 55%), hsl(25, 15%, 25%));
+    box-shadow: inset 0 1px 2px hsl(0 0% 0% / 0.5), 0 1px 0 hsl(30 12% 45% / 0.3);
+  }
+
+  .rivet-sm {
+    @apply w-2 h-2 rounded-full;
+    background: radial-gradient(circle at 40% 35%, hsl(30, 12%, 50%), hsl(25, 15%, 22%));
+    box-shadow: inset 0 1px 1px hsl(0 0% 0% / 0.5);
+  }
+
+  /* Red indicator light like game UI */
+  .indicator-light-red {
+    @apply w-2.5 h-2.5 rounded-full;
+    background: radial-gradient(circle, hsl(0, 80%, 55%), hsl(0, 80%, 30%));
+    box-shadow: 0 0 8px hsl(0 80% 50% / 0.6), 0 0 16px hsl(0 80% 50% / 0.3);
+  }
+
+  .indicator-light-green {
+    @apply w-2.5 h-2.5 rounded-full;
+    background: radial-gradient(circle, hsl(120, 80%, 45%), hsl(120, 80%, 25%));
+    box-shadow: 0 0 8px hsl(120 80% 45% / 0.6);
+  }
+
+  .indicator-light-orange {
+    @apply w-2.5 h-2.5 rounded-full;
+    background: radial-gradient(circle, hsl(28, 100%, 55%), hsl(28, 100%, 30%));
+    box-shadow: 0 0 8px hsl(28 100% 50% / 0.6);
+  }
+
+  .glow-orange {
+    box-shadow: 0 0 30px hsl(28 100% 50% / 0.5), 0 0 60px hsl(28 100% 50% / 0.3);
+  }
+
+  .glow-gold {
+    box-shadow: 0 0 20px hsl(42 100% 50% / 0.4);
+  }
+
+  /* Metal plate texture */
+  .metal-plate {
+    background: 
+      linear-gradient(180deg, hsl(25, 18%, 22%) 0%, hsl(20, 20%, 14%) 100%);
+    box-shadow: 
+      inset 0 2px 0 hsl(30 12% 35% / 0.4),
+      inset 0 -2px 0 hsl(0 0% 0% / 0.5),
+      inset 2px 0 0 hsl(30 12% 30% / 0.3),
+      inset -2px 0 0 hsl(0 0% 0% / 0.3),
+      0 8px 24px hsl(0 0% 0% / 0.6);
+  }
+
+  .animate-pulse-glow {
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-shake {
+    animation: shake 0.5s ease-in-out;
+  }
+
+  .animate-flicker {
+    animation: flicker 3s ease-in-out infinite;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px hsl(28 100% 50% / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 40px hsl(28 100% 50% / 0.7), 0 0 60px hsl(28 100% 50% / 0.4);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+  75% { opacity: 1; }
+  80% { opacity: 0.8; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s ease-out forwards;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 20s linear infinite;
+}
+
+/* Scan line effect for hero */
+@keyframes scanLine {
+  0% {
+    top: -10%;
+  }
+  100% {
+    top: 110%;
+  }
+}
+
+.scan-line {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, hsl(42, 100%, 50%, 0.15), transparent);
+  animation: scanLine 4s linear infinite;
+  pointer-events: none;
+}
+
+/* Hero title glow pulse */
+.hero-title-glow {
+  filter: drop-shadow(0 0 30px hsl(42,100%,50%,0.5));
+  animation: titleGlow 3s ease-in-out infinite;
+}
+
+@keyframes titleGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 30px hsl(42,100%,50%,0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 50px hsl(42,100%,50%,0.8)) drop-shadow(0 0 80px hsl(28,100%,50%,0.3));
+  }
+}
+
+/* Smooth section transitions */
+section {
+  will-change: transform;
+}
+
+/* Enhanced card hover with 3D tilt */
+.card-3d-hover {
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+  perspective: 1000px;
+}
+
+.card-3d-hover:hover {
+  transform: translateY(-8px) rotateX(2deg) rotateY(-2deg);
+  box-shadow: 0 20px 40px hsl(0 0% 0% / 0.4), 0 0 20px hsl(28 100% 50% / 0.15);
+}
+
+/* Glitch text effect for headings */
+@keyframes glitch {
+  0%, 100% { clip-path: inset(0 0 0 0); }
+  20% { clip-path: inset(20% 0 60% 0); transform: translate(-2px, 2px); }
+  40% { clip-path: inset(60% 0 5% 0); transform: translate(2px, -2px); }
+  60% { clip-path: inset(40% 0 40% 0); transform: translate(-1px, 1px); }
+  80% { clip-path: inset(10% 0 80% 0); transform: translate(1px, -1px); }
+}
+
+/* Smooth scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(20, 35%, 6%);
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(25, 15%, 30%);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(28, 100%, 50%);
+}
+
+/* Selection color */
+::selection {
+  background: hsl(28, 100%, 50%, 0.3);
+  color: hsl(38, 40%, 92%);
+}
+
+/* ===== MARKETPLACE ANIMATIONS ===== */
+
+@keyframes orbitCW {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes orbitCCW {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+.animate-orbit-cw  { animation: orbitCW  12s linear infinite; }
+.animate-orbit-ccw { animation: orbitCCW  8s linear infinite; }
+
+@keyframes popularGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 12px hsl(42 100% 50% / 0.4),
+      0 0 24px hsl(42 100% 50% / 0.2),
+      inset 0 0 12px hsl(42 100% 50% / 0.05);
+  }
+  50% {
+    box-shadow:
+      0 0 24px hsl(42 100% 50% / 0.75),
+      0 0 48px hsl(42 100% 50% / 0.45),
+      0 0 80px hsl(42 100% 50% / 0.15),
+      inset 0 0 24px hsl(42 100% 50% / 0.1);
+  }
+}
+.animate-popular-glow { animation: popularGlow 2.5s ease-in-out infinite; }
+
+@keyframes shimmerSlide {
+  0%   { transform: translateX(-120%) skewX(-15deg); }
+  100% { transform: translateX(220%)  skewX(-15deg); }
+}
+/* card shimmer on hover */
+.card-shimmer { position: relative; overflow: hidden; }
+.card-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 55%;
+  background: linear-gradient(90deg, transparent, hsl(42 100% 80% / 0.09), transparent);
+  transform: translateX(-120%) skewX(-15deg);
+  pointer-events: none;
+}
+.card-shimmer:hover::after {
+  animation: shimmerSlide 0.75s ease forwards;
+}
+
+@keyframes auraGlow {
+  0%, 100% { opacity: 0.15; transform: scale(1); }
+  50%       { opacity: 0.35; transform: scale(1.15); }
+}
+.animate-aura { animation: auraGlow 3s ease-in-out infinite; }
+
+@keyframes heroTextGlow {
+  0%, 100% { text-shadow: 0 0 30px hsl(42 100% 50% / 0.5), 0 0 60px hsl(28 100% 50% / 0.25); }
+  50%       { text-shadow: 0 0 50px hsl(42 100% 50% / 0.85), 0 0 90px hsl(28 100% 50% / 0.45), 0 0 130px hsl(42 100% 50% / 0.2); }
+}
+.animate-hero-text-glow { animation: heroTextGlow 3s ease-in-out infinite; }
+
+@keyframes categoryImgFloat {
+  0%, 100% { transform: translateY(0px)   drop-shadow(0 0 24px currentColor); }
+  50%       { transform: translateY(-16px) drop-shadow(0 0 40px currentColor); }
+}
+
+@keyframes scanLineFast {
+  0%   { top: -4px; }
+  100% { top: 100%; }
+}
+.scan-line-fast {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, hsl(42 100% 50% / 0.25), transparent);
+  animation: scanLineFast 2.5s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes particleRise {
+  0%   { transform: translateY(0) scale(1); opacity: 0.9; }
+  100% { transform: translateY(-90px) scale(0); opacity: 0; }
+}

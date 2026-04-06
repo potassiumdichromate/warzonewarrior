@@ -9,7 +9,6 @@ import {
   useCreateWallet,
 } from '@privy-io/react-auth'
 
-import centerWarzoneLogo from '../assets/images/abc1.png'
 import intraverseLogo from '../assets/Intraverse_logo-cropped.png'
 import { buildApiUrl } from '../config/api'
 import { getWalletConnectProjectId } from '../lib/privyEnv'
@@ -118,8 +117,12 @@ function HeaderLogos({
 function TitleCard() {
   return (
     <div className="wz-login-title-card">
-      <span className="wz-login-eyebrow">Warzone Warriors</span>
-      <h2 className="wz-login-title">Connect Your Wallet</h2>
+      <h2 className="wz-login-title" id="wz-login-title">
+        Sign in
+      </h2>
+      <p className="wz-login-subtitle">
+        Email, Google, wallet, or Intraverse.
+      </p>
     </div>
   )
 }
@@ -186,7 +189,7 @@ function EmailForm({
   return (
     <form className="grid gap-3" onSubmit={onEmailSubmit}>
       <label className="grid gap-2">
-        <span className="text-sm text-white/70">Email address</span>
+        <span className="wz-login-field-label">Email address</span>
         <input
           type="email"
           required
@@ -231,7 +234,7 @@ function CodeForm({
   return (
     <form className="grid gap-3" onSubmit={onCodeSubmit}>
       <label className="grid gap-2">
-        <span className="text-sm text-[#d6c190]">Enter 6-digit code</span>
+        <span className="wz-login-field-label">Enter 6-digit code</span>
         <input
           type="text"
           pattern="[0-9]{6}"
@@ -276,19 +279,6 @@ type WalletId =
   | 'wallet_connect'
   | 'universal_profile'
 
-const isMobileBrowser =
-  typeof navigator !== 'undefined' &&
-  /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
-
-const mobileBrowserWalletList: WalletId[] = [
-  'bitget_wallet',
-  'okx_wallet',
-  'metamask',
-  'coinbase_wallet',
-  'rainbow',
-  'wallet_connect',
-]
-
 const walletOptions: Array<{ id: WalletId; label: string; hint: string }> = [
   { id: 'metamask', label: 'MetaMask', hint: 'Browser Extension' },
   { id: 'coinbase_wallet', label: 'Coinbase Wallet', hint: 'App / Extension' },
@@ -306,9 +296,8 @@ const walletOptions: Array<{ id: WalletId; label: string; hint: string }> = [
 
 function WalletRow({
   label,
-  hint,
   onClick,
-}: { label: string; hint?: string; onClick?: () => void }) {
+}: { label: string; onClick?: () => void }) {
   return (
     <button
       type="button"
@@ -316,12 +305,11 @@ function WalletRow({
       className="wz-login-option"
     >
       <span className="inline-flex items-center gap-3">
-        <span className="inline-flex size-8 items-center justify-center rounded-full border border-white/10 bg-[rgba(255,198,71,0.08)] text-[#ffc647]">
-          <WalletIcon />
+        <span className="inline-flex size-7 items-center justify-center rounded-full border border-white/10 bg-[rgba(255,198,71,0.08)] text-[#ffc647]">
+          <WalletIcon size={16} />
         </span>
         {label}
       </span>
-      {hint ? <span className="wz-login-option-hint">{hint}</span> : null}
     </button>
   )
 }
@@ -338,19 +326,12 @@ function WalletPickerScrollable({
     <div className="grid gap-2">
       <div className="wz-login-panel-note">Choose a wallet to continue</div>
 
-      <div className="max-h-[48vh] overflow-y-auto pr-1">
-        <style>{`
-          .wallet-scroll::-webkit-scrollbar { width: 8px; }
-          .wallet-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.06); border-radius: 9999px; }
-          .wallet-scroll::-webkit-scrollbar-thumb { background: rgba(255,198,71,0.25); border-radius: 9999px; }
-          .wallet-scroll:hover::-webkit-scrollbar-thumb { background: rgba(255,198,71,0.4); }
-        `}</style>
+      <div className="wz-login-wallet-list-wrap">
         <div className="wallet-scroll grid gap-2">
           {walletOptions.map((wallet) => (
             <WalletRow
               key={wallet.id}
               label={wallet.label}
-              hint={wallet.hint}
               onClick={() => connectWith(wallet.id)}
             />
           ))}
@@ -377,13 +358,18 @@ function GoogleButton({
 }) {
   return (
     <button
-      className="wz-login-secondary"
+      type="button"
+      className="wz-login-secondary wz-login-secondary--google"
       disabled={disabled}
       onClick={onClick}
       aria-label="Continue with Google"
     >
-      <GoogleIcon />
-      <span className="ml-2">Google</span>
+      <span className="wz-login-method-icon wz-login-method-icon--google" aria-hidden="true">
+        <GoogleIcon size={18} />
+      </span>
+      <span className="wz-login-method-text">
+        <span className="wz-login-method-title">Google</span>
+      </span>
     </button>
   )
 }
@@ -399,18 +385,24 @@ function IntraverseButton({
 }) {
   return (
     <button
+      type="button"
       className="wz-login-secondary wz-login-secondary--intraverse"
       disabled={disabled}
       onClick={onClick}
       aria-label="Continue with Intraverse"
     >
-      <img
-        src={intraverseLogo}
-        alt=""
-        className="wz-login-intraverse-logo"
-        aria-hidden="true"
-      />
-      <span>{loading ? 'Opening Intraverse...' : 'Intraverse Login'}</span>
+      <span className="wz-login-method-icon wz-login-method-icon--intraverse" aria-hidden="true">
+        <img
+          src={intraverseLogo}
+          alt=""
+          className="wz-login-intraverse-logo"
+        />
+      </span>
+      <span className="wz-login-method-text">
+        <span className="wz-login-method-title">
+          {loading ? 'Opening secure link…' : 'Intraverse'}
+        </span>
+      </span>
     </button>
   )
 }
@@ -421,7 +413,7 @@ export default function LoginModal({
   onClose,
   logoSrc,
   leftLogoSrc,
-  centerLogoSrc = centerWarzoneLogo,
+  centerLogoSrc,
   rightLogoSrc,
 }: LoginModalProps) {
   const dialogRef = useRef<HTMLDialogElement | null>(null)
@@ -760,16 +752,15 @@ export default function LoginModal({
       ref={dialogRef}
       onCancel={requestClose}
       className="wz-login-modal"
+      aria-labelledby="wz-login-title"
     >
       <div className="wz-login-shell">
-        <span className="wz-login-orb wz-login-orb--one" aria-hidden="true" />
-        <span className="wz-login-orb wz-login-orb--two" aria-hidden="true" />
         <div className="wz-login-card">
           {(centerLogoSrc ?? logoSrc) && (
             <div className="wz-login-crest-shell">
               <img
                 src={centerLogoSrc ?? logoSrc}
-                alt="Center logo"
+                alt=""
                 className="wz-login-crest"
               />
             </div>
@@ -803,7 +794,7 @@ export default function LoginModal({
             <EmbeddedWalletBadge address={authenticated ? existingAddress : undefined} />
 
             {showCustomCreateUI ? (
-              <div className="grid gap-4">
+              <div className="grid gap-3">
                 <div className="wz-login-alert wz-login-alert--neutral">
                   {creating
                     ? 'Creating your wallet…'
@@ -827,7 +818,7 @@ export default function LoginModal({
                 ) : null}
               </div>
             ) : (
-              <div className="grid gap-4">
+              <div className="grid gap-3">
                 {!authenticated && (
                   <>
                     {!walletMode ? (
@@ -861,21 +852,20 @@ export default function LoginModal({
 
                         {/* CONNECT WALLET triggers Privy wallet login to create an authenticated session */}
                         <button
+                          type="button"
                           className="wz-login-primary wz-login-primary--wallet"
                           onClick={handleWalletButtonPress}
                           disabled={emailStep === 'enter-code' || authDisabled}
                         >
-                          <span className="mr-2 inline-flex items-center">
-                            <WalletIcon />
+                          <span className="wz-login-wallet-row">
+                            <span className="wz-login-wallet-icon" aria-hidden="true">
+                              <WalletIcon size={18} />
+                            </span>
+                            <span className="wz-login-wallet-text">
+                              <span className="wz-login-wallet-title">Connect wallet</span>
+                            </span>
                           </span>
-                          <span>Connect Wallet</span>
                         </button>
-
-                      {isMobileBrowser && (
-                        <div className="wz-login-alert wz-login-alert--neutral">
-                          On mobile browsers, open your wallet app or use the WalletConnect fallback if direct wallet launch does not work.
-                        </div>
-                      )}
 
                       <IntraverseButton
                         disabled={emailStep === 'enter-code' || intraverseLoading}
