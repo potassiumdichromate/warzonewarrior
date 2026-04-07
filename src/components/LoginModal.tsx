@@ -7,6 +7,7 @@ import {
   useLogin,
   usePrivy,
   useCreateWallet,
+  useWallets,
 } from '@privy-io/react-auth'
 
 import intraverseLogo from '../assets/Intraverse_logo-cropped.png'
@@ -434,11 +435,18 @@ export default function LoginModal({
   // Email/social: embedded wallet is created automatically (no manual “Create wallet” step)
   const [creating, setCreating] = useState(false)
   const [intraverseLoading, setIntraverseLoading] = useState(false)
+  const [walletFlowPending, setWalletFlowPending] = useState(false)
+  const [walletFlowBusy, setWalletFlowBusy] = useState(false)
   const autoCreateEmbeddedRef = useRef(false)
+  const retryCreateEmbeddedRef = useRef(false)
+  const walletFlowInFlightRef = useRef(false)
 
   const { createWallet } = useCreateWallet()
+  const { wallets } = useWallets()
   const [existingAddress, setExistingAddress] = useState<string | undefined>(getPrimaryWalletAddress(user))
   const hasAnyWallet = Boolean(existingAddress)
+  const activeWallet = wallets[0]
+  const targetChainId = Number((import.meta as any).env?.VITE_ALLOWED_CHAIN_ID ?? 5031)
 
   const setFriendlyPrivyError = (errorCode: string | undefined, fallback?: string) => {
     const nextMessage = getFriendlyPrivyErrorMessage(errorCode, fallback)
@@ -587,10 +595,12 @@ export default function LoginModal({
     window.setTimeout(() => {
       void (async () => {
         try {
+          setWalletFlowPending(true)
           // Let Privy run connect → network switch to defaultChain (Somnia) → SIWE in one flow;
           // a pre-Privy switch caused an extra wallet popup and evmAsk issues with multiple extensions.
           login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
         } catch (err: any) {
+          setWalletFlowPending(false)
           setFriendlyPrivyError(
             err?.privyErrorCode ?? err?.code,
             err?.message || 'Failed to connect wallet'
@@ -652,6 +662,9 @@ export default function LoginModal({
     setEmailStep('enter-email')
     setWalletMode(false)
     autoCreateEmbeddedRef.current = false
+    retryCreateEmbeddedRef.current = false
+    setWalletFlowPending(false)
+    setWalletFlowBusy(false)
     setExistingAddress(getPrimaryWalletAddress(user))
     setLoginMethod(deriveAuthMethodFromUser(user))
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -676,6 +689,9 @@ export default function LoginModal({
     const currentAddress = getPrimaryWalletAddress(user)
     if (currentAddress) {
       setExistingAddress(currentAddress)
+      if (walletFlowPending) {
+        return
+      }
       // Wallet exists → close
       onClose?.()
       return
@@ -683,6 +699,57 @@ export default function LoginModal({
     // No wallet yet → keep modal open; email/social triggers auto createWallet in separate effect
     setLoginMethod((prev) => prev ?? deriveAuthMethodFromUser(user) ?? 'email')
   }, [ready, authenticated, user, onClose])
+
+  // Wallet flow: connect -> switch chain -> sign (for wallet login path only)
+  useEffect(() => {
+    if (!open || !ready || !authenticated || !walletFlowPending) return
+    if (!activeWallet?.address) return
+    if (walletFlowInFlightRef.current) return
+
+    walletFlowInFlightRef.current = true
+
+    void (async () => {
+      try {
+        setWalletFlowBusy(true)
+        setError('')
+
+        await activeWallet.switchChain(targetChainId)
+
+        const provider =
+          (typeof activeWallet.getEthereumProvider === 'function'
+            ? await activeWallet.getEthereumProvider()
+            : null) || (window as Window & { ethereum?: any }).ethereum
+
+        if (!provider?.request) {
+          throw new Error('No wallet provider available for signing.')
+        }
+
+        const message = `Warzone wallet verification on chain ${targetChainId} at ${new Date().toISOString()}`
+        await provider.request({
+          method: 'personal_sign',
+          params: [message, activeWallet.address],
+        })
+
+        setWalletFlowPending(false)
+        onClose?.()
+      } catch (err: any) {
+        const code = err?.code
+        const msg = String(err?.message || '')
+        if (code === -32002 || /already pending/i.test(msg)) {
+          setError('A wallet request is already pending. Please complete it in wallet first.')
+        } else if (code === 4001 || /rejected/i.test(msg)) {
+          setError('You rejected the wallet request. Please try again.')
+        } else {
+          setError(err?.message || 'Wallet verification failed. Please try again.')
+        }
+        setWalletFlowPending(false)
+        reopenDialog()
+      } finally {
+        setWalletFlowBusy(false)
+        walletFlowInFlightRef.current = false
+      }
+    })()
+  }, [open, ready, authenticated, walletFlowPending, activeWallet, targetChainId, onClose])
 
   // Auto-create embedded wallet after email / Google login (Privy createOnLogin may lag behind custom UI)
   useEffect(() => {
@@ -695,6 +762,24 @@ export default function LoginModal({
       autoCreateEmbeddedRef.current = false
     })
   }, [open, ready, authenticated, user, runEmbeddedWalletCreation])
+
+  // Safety retry: on some sessions Privy wallet provisioning can lag after OTP/OAuth auth.
+  // Retry createWallet once if no wallet address is still present shortly after first attempt.
+  useEffect(() => {
+    if (!open || !ready || !authenticated || !user) return
+    if (getPrimaryWalletAddress(user)) return
+    if (!isEmailOrSocialPrivyUser(user)) return
+    if (creating || retryCreateEmbeddedRef.current) return
+
+    retryCreateEmbeddedRef.current = true
+    const timeoutId = window.setTimeout(() => {
+      void runEmbeddedWalletCreation().catch(() => {
+        // keep existing error surfaced by runEmbeddedWalletCreation
+      })
+    }, 1800)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [open, ready, authenticated, user, creating, runEmbeddedWalletCreation])
 
   // Handlers for forms
   const onEmailSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
@@ -855,7 +940,7 @@ export default function LoginModal({
                           type="button"
                           className="wz-login-primary wz-login-primary--wallet"
                           onClick={handleWalletButtonPress}
-                          disabled={emailStep === 'enter-code' || authDisabled}
+                          disabled={emailStep === 'enter-code' || authDisabled || walletFlowBusy}
                         >
                           <span className="wz-login-wallet-row">
                             <span className="wz-login-wallet-icon" aria-hidden="true">

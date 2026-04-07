@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../../contexts/WalletContext';
 import { buildApiUrl } from '../../config/api';
 import centerImage from "../../assets/images/abc1.png";
+import gameBackground from '../../assets/hero-web3.png';
 import ThemedBackButton from '../../components/ThemedBackButton';
-import VideoBackground from '../../components/VideoBackground';
 
 export const Game = () => {
   const [isLoading, setIsLoading]   = useState(true);
@@ -208,7 +208,9 @@ export const Game = () => {
       ref={containerRef}
       className={`game-page-container${isFullscreen ? ' is-fullscreen' : ''}`}
     >
-      <VideoBackground />
+      <div className="game-image-bg" aria-hidden="true">
+        <img src={gameBackground} alt="" className="game-image-bg-content" />
+      </div>
       {/* Round picker — shown when multiple rounds are simultaneously active */}
       {showRoundPicker && (
         <div className="round-picker-overlay">
