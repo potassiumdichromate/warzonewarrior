@@ -14,6 +14,13 @@ import { createPublicClient, http } from 'viem';
 import { buildApiUrl } from '../config/api';
 import { getStableInjectedProvider } from '../lib/injectedEthereum';
 
+const DEBUG_LOGIN_TRACE = String(import.meta.env.VITE_DEBUG_LOGIN_TRACE || '').toLowerCase() === 'true';
+const trace = (...args: unknown[]) => {
+  if (DEBUG_LOGIN_TRACE) {
+    console.log('[wallet-trace]', ...args);
+  }
+};
+
 // Somnia Network Configuration (Mainnet)
 export const somniaTestnet = {
   id: 5031,
@@ -81,6 +88,7 @@ function readStoredSession() {
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [isNFTOwner, setIsNFTOwner] = useState(false);
   const backendLoginSentRef = useRef(null);
+  const backendLoginSentFromConnectedRef = useRef(null);
   const [privyAddress, setPrivyAddress] = useState(null);
   const [storedSession, setStoredSession] = useState(readStoredSession);
   
@@ -191,6 +199,12 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!privyAuthenticated) {
       backendLoginSentRef.current = null;
+    }
+  }, [privyAuthenticated]);
+
+  useEffect(() => {
+    if (!privyAuthenticated) {
+      backendLoginSentFromConnectedRef.current = null;
     }
   }, [privyAuthenticated]);
 
@@ -466,17 +480,22 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       if (!_address) {
         throw new Error('Could not get wallet address');
       }
+      trace('setUserToken:start', { address: _address });
       
       const loginResult = await loginUser(_address);
+      trace('setUserToken:loginUser:done', { hasToken: Boolean(loginResult?.token) });
       if (loginResult.token) {
         localStorage.setItem('token', loginResult.token);
         localStorage.setItem('walletAddress', _address);
         const playerInfo = await checkPlayerName(_address);
+        trace('setUserToken:checkPlayerName:done', { hasPlayerInfo: Boolean(playerInfo) });
         return playerInfo;
       }
+      trace('setUserToken:noToken');
       return null;  
     } catch (error) {
       console.error("Wallet connection error:", error);
+      trace('setUserToken:error', error);
       return null;
     }
   }, [checkPlayerName]);
@@ -484,9 +503,18 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   // When a Privy session is authenticated, mirror it into our wallet state
   useEffect(() => {
     if (!privyReady || !privyAuthenticated) return;
+    trace('privySession:authenticated', {
+      privyReady,
+      privyAuthenticated,
+      wallets: Array.isArray(privyWallets) ? privyWallets.length : 0,
+    });
 
     const addr = getPrimaryPrivyAddress(privyUser, privyWallets);
-    if (!addr) return;
+    if (!addr) {
+      trace('privySession:noAddressResolved');
+      return;
+    }
+    trace('privySession:addressResolved', { addr });
 
     setPrivyAddress(addr);
 
@@ -495,6 +523,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     if (token && stored && stored.toLowerCase() === addr.toLowerCase()) {
       backendLoginSentRef.current = addr;
       localStorage.setItem('walletConnected', 'true');
+      trace('privySession:alreadyLoggedIn', { addr });
       return;
     }
 
@@ -505,17 +534,72 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         await setUserToken(addr);
         if (!localStorage.getItem('token')) {
           console.error('[WalletContext] Backend /login failed after Privy auth; address:', addr);
+          trace('privySession:backendLoginFailed', { addr });
           backendLoginSentRef.current = null;
           return;
         }
         localStorage.setItem('walletConnected', 'true');
         localStorage.setItem('walletAddress', addr);
+        trace('privySession:backendLoginSuccess', { addr });
       } catch (err) {
         console.warn('Failed to persist Privy wallet info:', err);
+        trace('privySession:persistFailed', err);
         backendLoginSentRef.current = null;
       }
     })();
   }, [privyReady, privyAuthenticated, privyUser, privyWallets, getPrimaryPrivyAddress, setUserToken]);
+
+  // Mobile fallback: if wallet is connected but Privy auth is delayed, still try backend login by address.
+  // This unblocks gameplay flows that only require wallet address + backend token.
+  useEffect(() => {
+    if (!privyReady || privyAuthenticated) return;
+    const connectedAddr = Array.isArray(privyWallets) ? privyWallets[0]?.address : undefined;
+    trace('privyConnectedFallback:check', {
+      privyReady,
+      privyAuthenticated,
+      connectedAddr: connectedAddr || null,
+      wallets: Array.isArray(privyWallets) ? privyWallets.length : 0,
+    });
+    if (!connectedAddr) return;
+
+    setPrivyAddress(connectedAddr);
+    const stored = localStorage.getItem('walletAddress');
+    const token = localStorage.getItem('token');
+    if (token && stored && stored.toLowerCase() === connectedAddr.toLowerCase()) {
+      localStorage.setItem('walletConnected', 'true');
+      trace('privyConnectedFallback:alreadyLoggedIn', { connectedAddr });
+      backendLoginSentFromConnectedRef.current = connectedAddr;
+      return;
+    }
+
+    if (
+      backendLoginSentFromConnectedRef.current &&
+      String(backendLoginSentFromConnectedRef.current).toLowerCase() === connectedAddr.toLowerCase()
+    ) {
+      trace('privyConnectedFallback:skipDuplicate', { connectedAddr });
+      return;
+    }
+
+    backendLoginSentFromConnectedRef.current = connectedAddr;
+    trace('privyConnectedFallback:loginAttempt', { connectedAddr });
+    (async () => {
+      try {
+        await setUserToken(connectedAddr);
+        const nextToken = localStorage.getItem('token');
+        if (!nextToken) {
+          trace('privyConnectedFallback:loginFailedNoToken', { connectedAddr });
+          backendLoginSentFromConnectedRef.current = null;
+          return;
+        }
+        localStorage.setItem('walletConnected', 'true');
+        localStorage.setItem('walletAddress', connectedAddr);
+        trace('privyConnectedFallback:loginSuccess', { connectedAddr });
+      } catch (err) {
+        trace('privyConnectedFallback:loginError', err);
+        backendLoginSentFromConnectedRef.current = null;
+      }
+    })();
+  }, [privyReady, privyAuthenticated, privyWallets, setUserToken]);
 
   const connectWallet = useCallback(async () => {
     try {
@@ -559,7 +643,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const sessionAddress = storedSession.walletAddress || null;
   const sessionConnected = Boolean(storedSession.walletAddress && storedSession.token);
   const effectiveAddress = wagmiAddress || privyAddress || sessionAddress;
-  const isPrivyConnected = Boolean(privyReady && privyAuthenticated && privyAddress);
+  const hasConnectedPrivyWallet = Boolean(Array.isArray(privyWallets) && privyWallets[0]?.address);
+  const isPrivyConnected = Boolean((privyReady && privyAuthenticated && privyAddress) || (privyReady && hasConnectedPrivyWallet));
   const effectiveIsConnected = Boolean(wagmiIsConnected || isPrivyConnected || sessionConnected);
 
   return (

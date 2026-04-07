@@ -15,6 +15,11 @@ import { buildApiUrl } from '../config/api'
 import { getWalletConnectProjectId } from '../lib/privyEnv'
 import './LoginModal.css'
 
+const DEBUG_LOGIN_TRACE = String((import.meta as any).env?.VITE_DEBUG_LOGIN_TRACE || '').toLowerCase() === 'true'
+const trace = (...args: unknown[]) => {
+  if (DEBUG_LOGIN_TRACE) console.log('[login-modal-trace]', ...args)
+}
+
 /* ============================== Helpers ============================== */
 function getPrimaryWalletAddress(user: any | undefined | null): string | undefined {
   if (!user) return undefined
@@ -147,10 +152,28 @@ function getFriendlyPrivyErrorMessage(errorCode: string | undefined, fallback?: 
       return 'This site origin is not allowed for wallet login in the current Privy configuration.'
     case 'generic_connect_wallet_error':
     case 'unknown_connect_wallet_error':
-      return 'Could not connect to the wallet. Please try again or use WalletConnect.'
+      return 'Could not connect to the wallet. Try WalletConnect, and ensure you are on HTTPS or an allowed app domain.'
     default:
       return fallback || ''
   }
+}
+
+function getOriginInfo() {
+  if (typeof window === 'undefined') {
+    return { origin: 'unknown', protocol: 'unknown', hostname: 'unknown' }
+  }
+  return {
+    origin: window.location.origin,
+    protocol: window.location.protocol,
+    hostname: window.location.hostname,
+  }
+}
+
+function isMobilePrivyOriginSupported() {
+  const { protocol, hostname } = getOriginInfo()
+  const isHttps = protocol === 'https:'
+  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1'
+  return isHttps || isLocalhost
 }
 
 function EmbeddedWalletBadge({ address }: { address?: string }) {
@@ -443,6 +466,8 @@ export default function LoginModal({
 
   // Toggle that replaces email + social UI with wallet list after clicking "Connect Wallet"
   const [walletMode, setWalletMode] = useState(false)
+  const [debugLines, setDebugLines] = useState<string[]>([])
+  const [showMobileContinue, setShowMobileContinue] = useState(false)
 
   // Email/social: embedded wallet is created automatically (no manual “Create wallet” step)
   const [creating, setCreating] = useState(false)
@@ -455,6 +480,25 @@ export default function LoginModal({
     typeof navigator !== 'undefined' &&
     /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
   const walletFlowInFlightRef = useRef(false)
+  const mobileConnectWatchdogRef = useRef<number | null>(null)
+  const mobileContinuePendingTimerRef = useRef<number | null>(null)
+  // Keep a ref so async callbacks (onSuccess timers) can check current auth state without stale closure
+  const authenticatedRef = useRef(authenticated)
+  const debugEnabled = DEBUG_LOGIN_TRACE
+  const pushDebug = useCallback((msg: string, data?: unknown) => {
+    if (!debugEnabled) return
+    const ts = new Date().toLocaleTimeString()
+    let suffix = ''
+    if (typeof data !== 'undefined') {
+      try {
+        suffix = ` ${JSON.stringify(data)}`
+      } catch {
+        suffix = ` ${String(data)}`
+      }
+    }
+    const line = `${ts} ${msg}${suffix}`
+    setDebugLines(prev => [...prev.slice(-79), line])
+  }, [debugEnabled])
 
   const { createWallet } = useCreateWallet()
   const { wallets } = useWallets()
@@ -484,25 +528,85 @@ export default function LoginModal({
     } catch {}
   }
 
+  // Keep authenticatedRef in sync so async timer callbacks can read current value
+  useEffect(() => { authenticatedRef.current = authenticated }, [authenticated])
+
+  const clearMobileContinuePendingTimer = useCallback(() => {
+    if (mobileContinuePendingTimerRef.current !== null) {
+      window.clearTimeout(mobileContinuePendingTimerRef.current)
+      mobileContinuePendingTimerRef.current = null
+    }
+  }, [])
+
+  const clearMobileConnectWatchdog = useCallback(() => {
+    if (mobileConnectWatchdogRef.current !== null) {
+      window.clearTimeout(mobileConnectWatchdogRef.current)
+      mobileConnectWatchdogRef.current = null
+    }
+  }, [])
+
+  const startMobileConnectWatchdog = useCallback(() => {
+    clearMobileConnectWatchdog()
+    mobileConnectWatchdogRef.current = window.setTimeout(() => {
+      if (authenticated) return
+      pushDebug('mobile connect timeout: waiting for callback')
+      setShowMobileContinue(true)
+      setWalletFlowPending(false)
+      setError('If wallet opened and connected, tap "Continue Login" to finish authentication.')
+      reopenDialog()
+    }, 12000)
+  }, [authenticated, clearMobileConnectWatchdog, pushDebug])
+
   // External wallet connect
   const { connectWallet } = useConnectWallet({
     onSuccess: async (result: any) => {
+      clearMobileConnectWatchdog()
+      clearMobileContinuePendingTimer()
+      setShowMobileContinue(false)
+      pushDebug('connectWallet:onSuccess')
       const connectedWallet = result?.wallet ?? result
 
-      if (authenticated) {
+      pushDebug('connectWallet:wallet info', {
+        address: connectedWallet?.address,
+        hasLoginOrLink: typeof connectedWallet?.loginOrLink === 'function',
+        walletClientType: connectedWallet?.walletClientType,
+        connectorType: connectedWallet?.connectorType,
+      })
+
+      if (authenticatedRef.current) {
+        pushDebug('connectWallet:onSuccess already authenticated, closing')
         onClose?.()
         return
       }
 
       try {
         if (typeof connectedWallet?.loginOrLink === 'function') {
+          pushDebug('connectWallet:loginOrLink start')
           await connectedWallet.loginOrLink()
+          pushDebug('connectWallet:loginOrLink success')
         } else {
-          // Some mobile wallet flows return a connected wallet object without loginOrLink.
-          // Fallback to Privy's wallet login to complete authentication.
-          login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
+          // loginOrLink not available — Privy's login() flow handles auth async.
+          // Wait 3 s before showing "Continue Login": if Privy sets authenticated in that
+          // window the authenticatedRef check cancels the prompt so no button appears.
+          pushDebug('connectWallet:no loginOrLink, waiting 3 s for Privy auth to settle', {
+            walletClientType: connectedWallet?.walletClientType,
+            connectorType: connectedWallet?.connectorType,
+          })
+          mobileContinuePendingTimerRef.current = window.setTimeout(() => {
+            mobileContinuePendingTimerRef.current = null
+            if (authenticatedRef.current) {
+              pushDebug('connectWallet:delayed check - auth resolved, no continue button needed')
+              return
+            }
+            pushDebug('connectWallet:delayed check - auth still pending, showing continue button')
+            setWalletFlowPending(false)
+            setShowMobileContinue(true)
+            setError('Wallet connected. Tap "Continue Login" to complete authentication.')
+            reopenDialog()
+          }, 3000)
         }
       } catch (err: any) {
+        pushDebug('connectWallet:onSuccess branch error', err?.message || String(err))
         setFriendlyPrivyError(
           err?.privyErrorCode ?? err?.code,
           (err?.message ?? err?.code ?? String(err)) || 'Failed to authenticate wallet'
@@ -511,6 +615,11 @@ export default function LoginModal({
       }
     },
     onError: (err: any) => {
+      clearMobileConnectWatchdog()
+      clearMobileContinuePendingTimer()
+      setShowMobileContinue(false)
+      setWalletFlowPending(false)
+      pushDebug('connectWallet:onError', err?.message || String(err))
       setFriendlyPrivyError(
         typeof err === 'string' ? err : err?.privyErrorCode ?? err?.code,
         (err?.message ?? err?.code ?? String(err)) || 'Failed to connect wallet'
@@ -539,7 +648,11 @@ export default function LoginModal({
 
   // Privy modal login (use for wallet auth so `authenticated` becomes true)
   const { login } = useLogin({
+    onComplete: () => {
+      pushDebug('privy:login onComplete')
+    },
     onError: (errorCode: any) => {
+      pushDebug('privy:login onError', errorCode)
       if (errorCode === 'exited_auth_flow' || String(errorCode).includes('exited_auth_flow')) {
         setError('')
         reopenDialog()
@@ -557,6 +670,7 @@ export default function LoginModal({
   })
 
   const walletConnectProjectId = getWalletConnectProjectId()
+  const originInfo = getOriginInfo()
   // Match guess_the_ai_frontend: any window.ethereum counts as “injected” for gating + chain preflight.
   const hasInjectedWallet =
     typeof window !== 'undefined' &&
@@ -599,36 +713,48 @@ export default function LoginModal({
     setError('')
 
     if (!walletConnectProjectId && !hasInjectedWallet) {
+      pushDebug('walletPress:blocked missing walletconnect project id')
       setError(
         'WalletConnect project ID is missing. Set VITE_WALLET_CONNECT_PROJECT_ID or VITE_WALLETCONNECT_PROJECT_ID in .env and reload, or use a browser with an injected wallet.'
       )
       return
     }
 
+    if (isMobileDevice && !isMobilePrivyOriginSupported()) {
+      pushDebug('walletPress:blocked unsupported mobile origin', originInfo)
+      setError(
+        `Mobile wallet login requires HTTPS or localhost. Current origin is ${originInfo.origin}. Use HTTPS tunnel and add this domain in Privy allowed domains.`
+      )
+      return
+    }
+
     try {
       setWalletFlowPending(true)
+      trace('walletPress:start', { isMobileDevice, emailStep, authDisabled })
+      pushDebug('walletPress:start', { isMobileDevice, emailStep, authDisabled })
 
       if (isMobileDevice) {
-        // Mobile: close custom dialog first and then trigger wallet connect in same
-        // user gesture; this improves deep-link behavior in Safari/Chrome mobile.
+        // Mobile: trigger Privy wallet auth modal directly in the tap gesture.
+        // Connector-first paths can fail with generic errors on some mobile browsers.
+        setShowMobileContinue(false)
         closeDialogForPrivyFlow()
-        try {
-          await connectWallet({
-            walletList: mobileWalletList,
-            walletChainType: 'ethereum-only',
-          })
-        } catch {
-          // Fallback to Privy's built-in wallet login modal.
-          login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
-        }
+        clearMobileConnectWatchdog()
+        trace('walletPress:mobilePrivyModal')
+        pushDebug('mobile connect: privy modal direct')
+        login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
         return
       }
 
       closeDialogForPrivyFlow()
       // Desktop: use Privy's wallet auth modal flow.
+      trace('walletPress:desktopPrivyModal')
+      pushDebug('desktop connect: privy modal')
       login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
     } catch (err: any) {
       setWalletFlowPending(false)
+      trace('walletPress:error', err)
+      pushDebug('walletPress:error', err?.message || String(err))
+      clearMobileConnectWatchdog()
       setFriendlyPrivyError(
         err?.privyErrorCode ?? err?.code,
         err?.message || 'Failed to connect wallet'
@@ -637,13 +763,107 @@ export default function LoginModal({
     }
   }
 
+  const handleMobileContinueLogin = useCallback(async () => {
+    setError('')
+    pushDebug('mobile continue login tapped')
+    pushDebug('mobile continue:state snapshot', {
+      walletsCount: Array.isArray(wallets) ? wallets.length : 0,
+      activeWalletAddress: activeWallet?.address || null,
+      wallets0Address: wallets[0]?.address || null,
+      wallets0HasLoginOrLink: typeof (wallets[0] as any)?.loginOrLink === 'function',
+      activeHasLoginOrLink: typeof (activeWallet as any)?.loginOrLink === 'function',
+      authenticated: authenticatedRef.current,
+    })
+
+    // Guard: already authenticated — just close
+    if (authenticatedRef.current) {
+      pushDebug('mobile continue: already authenticated, closing')
+      onClose?.()
+      return
+    }
+
+    const attemptLoginOrLink = async (wallet: any, label: string): Promise<boolean> => {
+      if (!wallet || typeof wallet.loginOrLink !== 'function') {
+        pushDebug(`mobile continue: ${label}.loginOrLink not available`, {
+          hasWallet: Boolean(wallet),
+          address: wallet?.address,
+          walletClientType: wallet?.walletClientType,
+        })
+        return false
+      }
+      try {
+        pushDebug(`mobile continue: ${label}.loginOrLink start`, { address: wallet.address })
+        // Hide the button immediately so user doesn't double-tap while waiting for wallet signature.
+        // loginOrLink() on WalletConnect dispatches a deep-link to the wallet app and returns
+        // quickly — the actual auth completes when the user signs in their wallet app and returns.
+        setShowMobileContinue(false)
+        setError('Check your wallet app — approve the signature request to sign in.')
+        await wallet.loginOrLink()
+        pushDebug(`mobile continue: ${label}.loginOrLink returned`, {
+          authenticated: authenticatedRef.current,
+        })
+        if (authenticatedRef.current) {
+          pushDebug(`mobile continue: ${label}.loginOrLink auth complete`)
+          return true
+        }
+        // loginOrLink returned but auth not yet set — Privy may still be processing.
+        // Set a watchdog: if auth doesn't resolve in 12 s, re-show the button.
+        pushDebug(`mobile continue: ${label}.loginOrLink returned but auth pending, starting watchdog`)
+        startMobileConnectWatchdog()
+        return true
+      } catch (err: any) {
+        pushDebug(`mobile continue: ${label}.loginOrLink error`, err?.message || String(err))
+        // If user exited, re-show the button so they can try again
+        if (
+          err?.privyErrorCode === 'exited_auth_flow' ||
+          String(err?.message || '').includes('exited_auth_flow')
+        ) {
+          pushDebug(`mobile continue: ${label} exited_auth_flow, re-showing continue button`)
+          setError('')
+          setShowMobileContinue(true)
+          return true // handled
+        }
+        return false
+      }
+    }
+
+    // Try loginOrLink on the first connected wallet
+    const connected = wallets[0]
+    if (await attemptLoginOrLink(connected, 'wallets[0]')) return
+
+    // Try activeWallet if different from wallets[0]
+    if (activeWallet && activeWallet !== connected) {
+      if (await attemptLoginOrLink(activeWallet, 'activeWallet')) return
+    }
+
+    // No loginOrLink available on any connected wallet.
+    // Do NOT call connectWallet() again — that causes an infinite loop back to this handler.
+    // Instead re-trigger Privy's login() which will pick up the existing connection and
+    // prompt only for the signature step needed to complete authentication.
+    pushDebug('mobile continue: no loginOrLink on any wallet, re-triggering privy login modal', {
+      walletsCount: Array.isArray(wallets) ? wallets.length : 0,
+    })
+    clearMobileContinuePendingTimer()
+    setShowMobileContinue(false)
+    closeDialogForPrivyFlow()
+    try {
+      login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
+    } catch (err: any) {
+      pushDebug('mobile continue: privy login call error', err?.message || String(err))
+      setError('Failed to complete authentication. Please try again.')
+      reopenDialog()
+    }
+  }, [wallets, activeWallet, login, closeDialogForPrivyFlow, clearMobileContinuePendingTimer, startMobileConnectWatchdog, pushDebug, onClose])
+
   const startIntraverseLogin = async () => {
     try {
       setError('')
       setIntraverseLoading(true)
+      pushDebug('intraverse:start')
 
       const response = await fetch(buildApiUrl('/intraverse/auth/magic-link'))
       const data = await response.json()
+      pushDebug('intraverse:response', { ok: response.ok, success: data?.success })
 
       if (!response.ok || !data?.success || !data?.magicLoginUrl) {
         throw new Error(data?.message || 'Failed to start Intraverse login')
@@ -653,8 +873,10 @@ export default function LoginModal({
       localStorage.setItem('intraverseClientKey', data.clientKey || '')
       localStorage.setItem('intraverseMagicLoginUrl', data.magicLoginUrl)
 
+      pushDebug('intraverse:redirect')
       window.location.assign(data.magicLoginUrl)
     } catch (err: any) {
+      pushDebug('intraverse:error', err?.message || String(err))
       setError(err?.message || 'Failed to start Intraverse login')
       setIntraverseLoading(false)
     }
@@ -687,6 +909,13 @@ export default function LoginModal({
     setCode('')
     setEmailStep('enter-email')
     setWalletMode(false)
+    setShowMobileContinue(false)
+    clearMobileConnectWatchdog()
+    clearMobileContinuePendingTimer()
+    if (debugEnabled) {
+      setDebugLines([])
+      pushDebug('modal opened')
+    }
     autoCreateEmbeddedRef.current = false
     retryCreateEmbeddedRef.current = false
     setWalletFlowPending(false)
@@ -694,6 +923,28 @@ export default function LoginModal({
     setExistingAddress(getPrimaryWalletAddress(user))
     setLoginMethod(deriveAuthMethodFromUser(user))
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (authenticated) {
+      clearMobileConnectWatchdog()
+      clearMobileContinuePendingTimer()
+      setShowMobileContinue(false)
+      pushDebug('auth:authenticated true')
+    }
+  }, [authenticated, clearMobileConnectWatchdog, clearMobileContinuePendingTimer])
+
+  useEffect(() => {
+    pushDebug('auth:state', {
+      ready,
+      authenticated,
+      activeWallet: activeWallet?.address || null,
+      existingAddress: existingAddress || null,
+    })
+  }, [ready, authenticated, activeWallet, existingAddress, pushDebug])
+
+  useEffect(() => {
+    pushDebug('mobile continue visibility', { showMobileContinue })
+  }, [showMobileContinue, pushDebug])
 
   // Open/close dialog
   useEffect(() => {
@@ -707,22 +958,37 @@ export default function LoginModal({
     setExistingAddress(getPrimaryWalletAddress(user))
     // If loginMethod wasn’t set by hooks, derive it from the user object
     setLoginMethod((prev) => prev ?? deriveAuthMethodFromUser(user))
+    pushDebug('user:update', {
+      linkedAccounts: user?.linkedAccounts?.length ?? 0,
+      hasWalletOnUser: Boolean((user as any)?.wallet?.address),
+      hasEmbeddedWallets: Boolean((user as any)?.embeddedWallets?.length),
+      derivedAddress: getPrimaryWalletAddress(user) || null,
+    })
   }, [user])
 
   // Single source of truth: decide create-wallet vs close after auth
   useEffect(() => {
     if (!ready || !authenticated) return
     const currentAddress = getPrimaryWalletAddress(user)
+    pushDebug('auth:post-login check', {
+      ready,
+      authenticated,
+      currentAddress: currentAddress || null,
+      walletFlowPending,
+    })
     if (currentAddress) {
       setExistingAddress(currentAddress)
       if (walletFlowPending) {
+        pushDebug('auth:address present but walletFlowPending')
         return
       }
       // Wallet exists → close
+      pushDebug('auth:address present closing modal')
       onClose?.()
       return
     }
     // No wallet yet → keep modal open; email/social triggers auto createWallet in separate effect
+    pushDebug('auth:no address keep modal open')
     setLoginMethod((prev) => prev ?? deriveAuthMethodFromUser(user) ?? 'email')
   }, [ready, authenticated, user, onClose])
 
@@ -731,6 +997,8 @@ export default function LoginModal({
     if (!open || !ready || !authenticated || !walletFlowPending) return
     if (!activeWallet?.address) return
     if (walletFlowInFlightRef.current) return
+    trace('walletFlow:begin', { address: activeWallet?.address, isMobileDevice })
+    pushDebug('walletFlow:begin', { address: activeWallet?.address, isMobileDevice })
 
     walletFlowInFlightRef.current = true
 
@@ -743,11 +1011,14 @@ export default function LoginModal({
           // On mobile, avoid extra post-login switch/sign prompts.
           // Privy authentication already handled proof-of-ownership.
           setWalletFlowPending(false)
+          trace('walletFlow:mobileSkipSwitchSign')
+          pushDebug('walletFlow:mobile skip switch/sign')
           onClose?.()
           return
         }
 
         await activeWallet.switchChain(targetChainId)
+        pushDebug('walletFlow:switchChain success', { targetChainId })
 
         const provider =
           (typeof activeWallet.getEthereumProvider === 'function'
@@ -763,10 +1034,14 @@ export default function LoginModal({
           method: 'personal_sign',
           params: [message, activeWallet.address],
         })
+        trace('walletFlow:desktopSignSuccess')
+        pushDebug('walletFlow:desktop sign success')
 
         setWalletFlowPending(false)
         onClose?.()
       } catch (err: any) {
+        trace('walletFlow:error', err)
+        pushDebug('walletFlow:error', err?.message || String(err))
         const code = err?.code
         const msg = String(err?.message || '')
         if (code === -32002 || /already pending/i.test(msg)) {
@@ -791,8 +1066,10 @@ export default function LoginModal({
     if (getPrimaryWalletAddress(user)) return
     if (!isEmailOrSocialPrivyUser(user)) return
     if (autoCreateEmbeddedRef.current) return
+    pushDebug('embedded:auto-create start')
     autoCreateEmbeddedRef.current = true
     void runEmbeddedWalletCreation().catch(() => {
+      pushDebug('embedded:auto-create failed')
       autoCreateEmbeddedRef.current = false
     })
   }, [open, ready, authenticated, user, runEmbeddedWalletCreation])
@@ -806,9 +1083,12 @@ export default function LoginModal({
     if (creating || retryCreateEmbeddedRef.current) return
 
     retryCreateEmbeddedRef.current = true
+    pushDebug('embedded:retry scheduled')
     const timeoutId = window.setTimeout(() => {
+      pushDebug('embedded:retry running')
       void runEmbeddedWalletCreation().catch(() => {
         // keep existing error surfaced by runEmbeddedWalletCreation
+        pushDebug('embedded:retry failed')
       })
     }, 1800)
 
@@ -819,16 +1099,20 @@ export default function LoginModal({
   const onEmailSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault()
     setError('')
+    pushDebug('email:sendCode start', { emailLength: email.trim().length })
     if (!ready) {
+      pushDebug('email:sendCode blocked not ready')
       setError('Login is still initializing. Please wait a few seconds and try again.')
       return
     }
     try {
       setLoginMethod('email')
       await sendCode({ email })
+      pushDebug('email:sendCode success')
       setEmailStep('enter-code')
       setWalletMode(false) // ensure wallets panel is hidden while entering code
     } catch (err: any) {
+      pushDebug('email:sendCode error', err?.message || String(err))
       setError(err?.message || 'Failed to send code')
     }
   }
@@ -836,13 +1120,17 @@ export default function LoginModal({
   const onCodeSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault()
     setError('')
+    pushDebug('email:verifyCode start', { codeLength: code.trim().length })
     if (!ready) {
+      pushDebug('email:verifyCode blocked not ready')
       setError('Login is still initializing. Please wait a few seconds and try again.')
       return
     }
     try {
       await loginWithCode({ code })
+      pushDebug('email:verifyCode success')
     } catch (err: any) {
+      pushDebug('email:verifyCode error', err?.message || String(err))
       setError(err?.message || 'Invalid code')
     }
   }
@@ -855,6 +1143,7 @@ export default function LoginModal({
   // Unified close handler: if user is authenticated but lacks a wallet
   // (embedded wallet still provisioning), closing should log them out.
   const requestClose = () => {
+    pushDebug('modal:requestClose', { showCustomCreateUI, authenticated })
     if (showCustomCreateUI && authenticated) {
       // Best-effort logout; do not block UI on awaiting.
       logout().catch(() => {})
@@ -898,6 +1187,19 @@ export default function LoginModal({
             <HeaderLogos leftLogoSrc={leftLogoSrc} rightLogoSrc={rightLogoSrc} />
             <TitleCard />
             <ErrorBanner error={error} />
+            {debugEnabled && (
+              <div className="wz-login-alert wz-login-alert--neutral">
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Debug trace (mobile-visible)</div>
+                <div style={{ marginBottom: 6, fontSize: 11, opacity: 0.85 }}>
+                  {`status: ready=${ready} auth=${authenticated} walletFlowPending=${walletFlowPending} walletFlowBusy=${walletFlowBusy} activeWallet=${activeWallet?.address ?? 'none'} existing=${existingAddress ?? 'none'} emailStep=${emailStep} method=${loginMethod ?? 'none'} protocol=${originInfo.protocol} host=${originInfo.hostname} wcProjectId=${walletConnectProjectId ? 'set' : 'missing'}`}
+                </div>
+                <div style={{ maxHeight: 140, overflowY: 'auto', fontSize: 12, lineHeight: 1.35, whiteSpace: 'pre-wrap' }}>
+                  {debugLines.length > 0
+                    ? debugLines.map((line, idx) => <div key={`${idx}-${line}`}>{line}</div>)
+                    : <div>No debug events yet.</div>}
+                </div>
+              </div>
+            )}
             {!privyConfigured && (
               <div className="wz-login-alert wz-login-alert--error">
                 Login is not configured because `VITE_PRIVY_APP_ID` is missing in this environment.
@@ -940,6 +1242,15 @@ export default function LoginModal({
               <div className="grid gap-3">
                 {!authenticated && (
                   <>
+                    {showMobileContinue && (
+                      <button
+                        type="button"
+                        className="wz-login-primary"
+                        onClick={() => { void handleMobileContinueLogin() }}
+                      >
+                        Continue Login
+                      </button>
+                    )}
                     {!walletMode ? (
                       <>
                         {emailStep === 'enter-email' ? (
@@ -996,10 +1307,12 @@ export default function LoginModal({
                         disabled={oauthLoading || emailStep === 'enter-code' || authDisabled || intraverseLoading}
                         onClick={() => {
                           if (authDisabled) {
+                            pushDebug('oauth:blocked not ready')
                             setError('Login is still initializing. Please wait a few seconds and try again.')
                               return
                             }
                             if (emailStep === 'enter-code') return
+                            pushDebug('oauth:start google')
                             setLoginMethod('oauth')
                             initOAuth({ provider: 'google' })
                           }}

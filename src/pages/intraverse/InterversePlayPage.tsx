@@ -12,6 +12,11 @@ import decoChain from '@/assets/images/deco-chain.png';
 import decoRubble from '@/assets/images/deco-rubble.png';
 import './InterversePlayPage.css';
 
+const DEBUG_LOGIN_TRACE = String(import.meta.env.VITE_DEBUG_LOGIN_TRACE || '').toLowerCase() === 'true';
+const trace = (...args: unknown[]) => {
+  if (DEBUG_LOGIN_TRACE) console.log('[intraverse-page-trace]', ...args);
+};
+
 const TOURNAMENT_MARQUEE_ITEMS = [
   'BRACKETS',
   'LIVE OPS',
@@ -337,13 +342,22 @@ export default function InterversePlayPage() {
   const load = useCallback(() => {
     setLoading(true);
     setError('');
+    trace('load:start');
     getTournaments()
       .then((res) => {
+        trace('load:getTournaments:response', { status: res?.status, hasData: Boolean(res?.body?.data) });
         if (!res?.body?.data) throw new Error(res?.body?.message || 'No tournaments found');
         setTournaments(res.body.data);
+        trace('load:getTournaments:success', { count: Array.isArray(res.body.data) ? res.body.data.length : 0 });
       })
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false));
+      .catch((e) => {
+        trace('load:getTournaments:error', e);
+        setError(e.message);
+      })
+      .finally(() => {
+        trace('load:done');
+        setLoading(false);
+      });
   }, []);
 
   useEffect(() => { load(); }, [load]);
