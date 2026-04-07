@@ -280,6 +280,18 @@ type WalletId =
   | 'wallet_connect'
   | 'universal_profile'
 
+const mobileWalletList: WalletId[] = [
+  'metamask',
+  'coinbase_wallet',
+  'rainbow',
+  'phantom',
+  'okx_wallet',
+  'bitget_wallet',
+  'cryptocom',
+  'uniswap',
+  'wallet_connect',
+]
+
 const walletOptions: Array<{ id: WalletId; label: string; hint: string }> = [
   { id: 'metamask', label: 'MetaMask', hint: 'Browser Extension' },
   { id: 'coinbase_wallet', label: 'Coinbase Wallet', hint: 'App / Extension' },
@@ -482,14 +494,14 @@ export default function LoginModal({
         return
       }
 
-      if (typeof connectedWallet?.loginOrLink !== 'function') {
-        setError('Wallet connected, but login could not be completed. Please try again.')
-        reopenDialog()
-        return
-      }
-
       try {
-        await connectedWallet.loginOrLink()
+        if (typeof connectedWallet?.loginOrLink === 'function') {
+          await connectedWallet.loginOrLink()
+        } else {
+          // Some mobile wallet flows return a connected wallet object without loginOrLink.
+          // Fallback to Privy's wallet login to complete authentication.
+          login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
+        }
       } catch (err: any) {
         setFriendlyPrivyError(
           err?.privyErrorCode ?? err?.code,
@@ -593,25 +605,36 @@ export default function LoginModal({
       return
     }
 
-    closeDialogForPrivyFlow()
+    try {
+      setWalletFlowPending(true)
 
-    window.setTimeout(() => {
-      void (async () => {
+      if (isMobileDevice) {
+        // Mobile: close custom dialog first and then trigger wallet connect in same
+        // user gesture; this improves deep-link behavior in Safari/Chrome mobile.
+        closeDialogForPrivyFlow()
         try {
-          setWalletFlowPending(true)
-          // Let Privy run connect → network switch to defaultChain (Somnia) → SIWE in one flow;
-          // a pre-Privy switch caused an extra wallet popup and evmAsk issues with multiple extensions.
+          await connectWallet({
+            walletList: mobileWalletList,
+            walletChainType: 'ethereum-only',
+          })
+        } catch {
+          // Fallback to Privy's built-in wallet login modal.
           login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
-        } catch (err: any) {
-          setWalletFlowPending(false)
-          setFriendlyPrivyError(
-            err?.privyErrorCode ?? err?.code,
-            err?.message || 'Failed to connect wallet'
-          )
-          reopenDialog()
         }
-      })()
-    }, 0)
+        return
+      }
+
+      closeDialogForPrivyFlow()
+      // Desktop: use Privy's wallet auth modal flow.
+      login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
+    } catch (err: any) {
+      setWalletFlowPending(false)
+      setFriendlyPrivyError(
+        err?.privyErrorCode ?? err?.code,
+        err?.message || 'Failed to connect wallet'
+      )
+      reopenDialog()
+    }
   }
 
   const startIntraverseLogin = async () => {

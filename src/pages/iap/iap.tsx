@@ -13,28 +13,12 @@ import gunAwpImage from '../../assets/images/gun-awp-clean.png';
 import gunBullpupImage from '../../assets/images/gun-bullpup-clean.png';
 import gunShotgunImage from '../../assets/images/gun-shotgun-clean.png';
 import gunSniperRifleImage from '../../assets/images/gun-sniper-rifle-clean.png';
-// import b1Image from '../../assets/images/b1.png';
-// import b2Image from '../../assets/images/b2.png';
-// import b3Image from '../../assets/images/b3.png';
-// import b4Image from '../../assets/images/b4.png';
-// import b5Image from '../../assets/images/b5.png';
-// import b6Image from '../../assets/images/b6.png';
-// import e1Image from '../../assets/images/E1.png';
-// import e2Image from '../../assets/images/E2.png';
 import coin100Image from '../../assets/images/100-coins.png';
 import coin500Image from '../../assets/images/500-coins.png';
 import coin1000Image from '../../assets/images/1000-coins.png';
 import coin2000Image from '../../assets/images/2000-coins.png';
 import gunTeslaMiniImage from '../../assets/images/gun-tesla-mini-clean.png';
 import gunScarHImage from '../../assets/images/gun-scar-h-clean.png';
-// import essen1ImageDetail from '../../assets/images/essen1.png';
-// import essen2ImageDetail from '../../assets/images/essen2.png';
-// import boos1ImageDetail from '../../assets/images/boos1.png';
-// import boos2ImageDetail from '../../assets/images/boos2.png';
-// import boos3ImageDetail from '../../assets/images/boos3.png';
-// import boos4ImageDetail from '../../assets/images/boos4.png';
-// import boos5ImageDetail from '../../assets/images/boos5.png';
-// import boos6ImageDetail from '../../assets/images/boos6.png';
 import './iap.css';
 import { getMarketplacePurchaseStatus, getPlayerProfile, updateMarketplaceData } from '../../utils/api';
 import { useAccount, useChainId, useWaitForTransactionReceipt, useWalletClient } from 'wagmi';
@@ -190,29 +174,6 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
     blockExplorerUrls: ['https://explorer.somnia.network'],
   };
 
-
-  //     console.log("privy Ready ",privyReady);
-  // console.log("privy Authenticated ",privyAuthenticated);
-  // console.log("canUsePrivy ",canUsePrivy);
-  // console.log("currentChainId ",currentChainId);
-  // console.log("isConnected ",isConnected);
-  // console.log("isSending ",isSending);
-  // console.log("isConfirming ",isConfirming);
-  // console.log("isConfirmed ",isConfirmed);
-  // console.log("waitError ",waitError);
-  // console.log("sendError ",sendError);
-  // console.log("pendingOrder ",pendingOrder);
-  // console.log("txHash ",txHash);
-  // console.log("showSuccess ",showSuccess);
-  // console.log("contractAddress ",contractAddress);
-  // console.log("address ",address);
-  // console.log("walletClient ",walletClient);
-  // console.log("type ",type);
-  // console.log("value ",value);
-  // console.log("onPurchased ",onPurchased);
-  // console.log("onClose ",onClose);
-  // console.log("coinImage ",coinImage);
-  
 
   useEffect(() => {
     // After confirmation, call backend to finalize purchase

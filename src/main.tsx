@@ -59,6 +59,9 @@ export const privyConfig: PrivyClientConfig = {
       }
     : {}),
   loginMethods: ['wallet', 'email', 'google'],
+  ...(walletConnectProjectId
+    ? { walletConnectCloudProjectId: walletConnectProjectId }
+    : {}),
   supportedChains: [somniaChain],
   defaultChain: somniaChain,
   intl: {
