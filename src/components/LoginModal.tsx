@@ -439,6 +439,9 @@ export default function LoginModal({
   const [walletFlowBusy, setWalletFlowBusy] = useState(false)
   const autoCreateEmbeddedRef = useRef(false)
   const retryCreateEmbeddedRef = useRef(false)
+  const isMobileDevice =
+    typeof navigator !== 'undefined' &&
+    /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
   const walletFlowInFlightRef = useRef(false)
 
   const { createWallet } = useCreateWallet()
@@ -713,6 +716,14 @@ export default function LoginModal({
         setWalletFlowBusy(true)
         setError('')
 
+        if (isMobileDevice) {
+          // On mobile, avoid extra post-login switch/sign prompts.
+          // Privy authentication already handled proof-of-ownership.
+          setWalletFlowPending(false)
+          onClose?.()
+          return
+        }
+
         await activeWallet.switchChain(targetChainId)
 
         const provider =
@@ -749,7 +760,7 @@ export default function LoginModal({
         walletFlowInFlightRef.current = false
       }
     })()
-  }, [open, ready, authenticated, walletFlowPending, activeWallet, targetChainId, onClose])
+  }, [open, ready, authenticated, walletFlowPending, activeWallet, targetChainId, onClose, isMobileDevice])
 
   // Auto-create embedded wallet after email / Google login (Privy createOnLogin may lag behind custom UI)
   useEffect(() => {
