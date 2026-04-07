@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Home, Trophy, Star, X, CalendarRange, Layers } from 'lucide-react';
 import { buildApiUrl } from '../../config/api';
+import { getTournaments } from '../../utils/api';
 import { useWallet } from '../../contexts/WalletContext';
 import MobileBottomNav from '../../components/MobileBottomNav';
 import PageWalletControls from '../../components/PageWalletControls';
@@ -21,8 +22,6 @@ const TOURNAMENT_MARQUEE_ITEMS = [
   'CLAIM GLORY',
   'TOURNAMENT SEASON',
 ];
-
-const TOURNAMENT_SLUG = 'kult-games';
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 function fmtDate(ms) {
@@ -184,7 +183,7 @@ function TournamentCard({ t, walletAddress }) {
     setJoining(true);
     setError('');
     try {
-      const r = await apiFetch(`/test/intraverse/tournaments/${t.id}/rounds/${activeRound.id}/join`, {
+      const r = await apiFetch(`/intraverse/tournaments/${t.id}/rounds/${activeRound.id}/join`, {
         method: 'POST',
         body: JSON.stringify({ walletAddress }),
       });
@@ -338,12 +337,10 @@ export default function InterversePlayPage() {
   const load = useCallback(() => {
     setLoading(true);
     setError('');
-    apiFetch(`/test/intraverse/tournaments?slug=${TOURNAMENT_SLUG}&size=20`)
-      .then(r => {
-        console.log('[Tournaments] API response:', r);
-        if (!r.data?.body?.data) throw new Error(r.data?.body?.message || 'No tournaments found');
-        console.log('[Tournaments] data:', r.data.body.data);
-        setTournaments(r.data.body.data);
+    getTournaments()
+      .then((res) => {
+        if (!res?.body?.data) throw new Error(res?.body?.message || 'No tournaments found');
+        setTournaments(res.body.data);
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
@@ -471,7 +468,7 @@ export default function InterversePlayPage() {
                   <TournamentSection title="Active Tournaments" tournaments={active} walletAddress={address} />
                   <TournamentSection title="Upcoming Tournaments" tournaments={upcoming} walletAddress={address} />
                   <TournamentSection title="Previous Tournaments" tournaments={previous} walletAddress={address} />
-                  <TournamentSection title="Tournaments" tournaments={others} walletAddress={address} />
+                  <TournamentSection title="Other Tournaments" tournaments={others} walletAddress={address} />
                   {tournaments.length === 0 && (
                     <div className="intraverse-feedback-card">No tournaments found.</div>
                   )}

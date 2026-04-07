@@ -619,7 +619,7 @@ export default function LoginModal({
       setError('')
       setIntraverseLoading(true)
 
-      const response = await fetch(buildApiUrl('/test/intraverse/auth/magic-link'))
+      const response = await fetch(buildApiUrl('/intraverse/auth/magic-link'))
       const data = await response.json()
 
       if (!response.ok || !data?.success || !data?.magicLoginUrl) {

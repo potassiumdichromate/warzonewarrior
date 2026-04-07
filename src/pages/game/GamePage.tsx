@@ -58,7 +58,7 @@ export const Game = () => {
 
   // Fetch active tournament rounds on mount
   useEffect(() => {
-    fetch(buildApiUrl('/test/intraverse/tournaments?slug=kult-games&size=10'))
+    fetch(buildApiUrl('/intraverse/tournaments?slug=kult-games&size=10'))
       .then((r) => r.json())
       .then((data) => {
         const list = data?.body?.data || [];
@@ -92,7 +92,7 @@ export const Game = () => {
         return;
       }
 
-      fetch(buildApiUrl('/test/intraverse/game-point'), {
+      fetch(buildApiUrl('/intraverse/game-point'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -271,10 +271,9 @@ export const logout = () => {
   window.location.href = '/';
 };
 
-// NFT Ownership Check
 export const getTournaments = async () => {
   const response = await fetch(
-    buildApiUrl('/test/intraverse/tournaments?slug=kult-games&size=10'),
+    buildApiUrl('/intraverse/tournaments?slug=warzone-warriors&size=20'),
   );
   return response.json();
 };
