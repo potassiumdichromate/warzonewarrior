@@ -52,7 +52,7 @@ const MARQUEE_ITEMS = ["CAMPAIGN", "ARMORY", "CHARACTERS", "BATTLE", "EARN", "UP
 export function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<Section>("home");
-  const { isConnected, address, disconnect, setUserToken } = useWallet();
+  const { isConnected, address, disconnect, setUserToken, playerProfile, profileLoading } = useWallet();
   const { ready: privyReady } = usePrivy();
   const navigate = useNavigate();
   const location = useLocation();
@@ -63,6 +63,9 @@ export function HomePage() {
   const [copied, setCopied] = useState(false);
 
   const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "";
+  const coins = Number(playerProfile?.PlayerResources?.coin ?? 0);
+  const gems = Number(playerProfile?.PlayerResources?.gem ?? 0);
+  const formatResource = (value: number) => value.toLocaleString();
 
   useEffect(() => {
     if (!isConnected || !address) return;
@@ -191,8 +194,8 @@ export function HomePage() {
               <div className="flex items-center gap-2 sm:gap-3">
                 {isConnected && (
                   <div className="hidden lg:flex items-center gap-2 mr-1">
-                    <CurrencyPill icon={iconCoins} value="1,000" />
-                    <CurrencyPill icon={iconGems} value="0" />
+                    <CurrencyPill icon={iconCoins} value={profileLoading ? "..." : formatResource(coins)} />
+                    <CurrencyPill icon={iconGems} value={profileLoading ? "..." : formatResource(gems)} />
                   </div>
                 )}
                 <div className="hidden sm:flex items-center gap-1.5 shrink-0">

@@ -87,53 +87,52 @@
     50%       { opacity: 0.6; }
   }
   
-  /* ── Top bar (back + fullscreen) ── */
-  .game-topbar {
+  /* ── Absolute controls ── */
+  .game-overlay-button {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 60;
-    display: flex;
+    top: max(16px, calc(env(safe-area-inset-top, 0px) + 8px));
+    z-index: 80;
+    width: 52px;
+    height: 52px;
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px;
-    background: linear-gradient(to bottom, rgba(20, 26, 38, 0.82) 0%, transparent 100%);
-    pointer-events: none; /* children override */
-  }
-  
-  .back-to-home-button,
-  .fullscreen-button {
+    justify-content: center;
+    border: 1px solid rgba(255, 198, 71, 0.34);
+    border-radius: 999px;
+    background: rgba(9, 13, 20, 0.76);
+    color: #f8d77d;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.36), 0 0 0 1px rgba(255, 198, 71, 0.08);
+    backdrop-filter: blur(10px);
     pointer-events: all;
     cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
 
-  .fullscreen-button {
-    font-size: 12px;
-    min-width: 120px;
-  }
-  
-  .back-to-home-button:hover,
-  .fullscreen-button:hover {
-    filter: brightness(1.1);
-    transform: translateY(-1px);
+  .game-overlay-button--back {
+    left: max(16px, calc(env(safe-area-inset-left, 0px) + 8px));
   }
 
-  .back-to-home-button {
-    min-width: 148px;
-    min-height: 56px;
+  .game-overlay-button--fullscreen {
+    right: max(16px, calc(env(safe-area-inset-right, 0px) + 8px));
   }
-  
-  .back-to-home-button:active,
-  .fullscreen-button:active {
-    transform: translateY(1px);
-    filter: brightness(0.95);
+
+  .game-overlay-button:hover {
+    transform: translateY(-1px) scale(1.03);
+    border-color: rgba(255, 198, 71, 0.55);
+    background: rgba(13, 18, 28, 0.9);
+    color: #ffe39a;
+  }
+
+  .game-overlay-button:active {
+    transform: translateY(1px) scale(0.97);
+  }
+
+  .game-overlay-button__icon {
+    width: 22px;
+    height: 22px;
+    stroke-width: 2.2;
   }
   
   /* ── Iframe fills everything ── */
@@ -141,19 +140,16 @@
     position: absolute;
     inset: 0;
     z-index: 20;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 74px 20px 20px;
+    padding: 0;
   }
   
   .game-iframe {
-    width: min(1400px, 100%);
-    height: calc(100vh - 94px);
-    height: calc(100dvh - 94px);
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
     border: none;
-    border-radius: 18px;
-    box-shadow: 0 20px 56px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 198, 71, 0.18);
+    border-radius: 0;
+    box-shadow: none;
     opacity: 0;
     transition: opacity 0.4s ease-in;
     background: #000;
@@ -164,14 +160,8 @@
     opacity: 1;
   }
   
-  /* ── Fullscreen state: hide topbar until hover ── */
-  .game-page-container.is-fullscreen .game-topbar {
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-  .game-page-container.is-fullscreen:hover .game-topbar,
-  .game-page-container.is-fullscreen:focus-within .game-topbar {
-    opacity: 1;
+  .game-page-container.is-fullscreen .game-overlay-button {
+    opacity: 0.92;
   }
   
 /* ── Round picker overlay ── */
@@ -246,33 +236,34 @@
   font-size: 18px;
 }
 
+.round-picker-back-button {
+  margin-top: 24px;
+}
+
   /* ── Mobile ── */
   @media (max-width: 768px) {
-    .game-iframe-wrapper {
-      padding: 66px 10px 10px;
+    .game-overlay-button {
+      top: max(12px, calc(env(safe-area-inset-top, 0px) + 6px));
+      width: 46px;
+      height: 46px;
     }
 
-    .game-iframe {
-      width: 100%;
-      height: calc(100vh - 76px);
-      height: calc(100dvh - 76px);
-      border-radius: 12px;
+    .game-overlay-button--back {
+      left: max(12px, calc(env(safe-area-inset-left, 0px) + 6px));
+    }
+
+    .game-overlay-button--fullscreen {
+      right: max(12px, calc(env(safe-area-inset-right, 0px) + 6px));
+    }
+
+    .game-overlay-button__icon {
+      width: 20px;
+      height: 20px;
     }
 
     .loading-text {
       font-size: 20px;
       letter-spacing: 2px;
-    }
-  
-    .game-topbar {
-      padding: 8px 10px;
-    }
-  
-    .back-to-home-button,
-    .fullscreen-button {
-      font-size: 11px;
-      padding: 8px 12px;
-      letter-spacing: 0.5px;
     }
   }
   

@@ -3,6 +3,7 @@ import './GamePage.css';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../../contexts/WalletContext';
 import { buildApiUrl } from '../../config/api';
+import { ChevronLeft, Maximize2, Minimize2 } from 'lucide-react';
 import centerImage from "../../assets/images/abc1.png";
 import gameBackground from '../../assets/hero-web3.png';
 import ThemedBackButton from '../../components/ThemedBackButton';
@@ -233,7 +234,7 @@ export const Game = () => {
               ))}
             </div>
             <ThemedBackButton
-              className="back-to-home-button"
+              className="round-picker-back-button"
               compact
               label="Back"
               onClick={() => navigate('/')}
@@ -252,19 +253,32 @@ export const Game = () => {
         </div>
       )}
 
-      {/* Top bar with back + fullscreen */}
+      {/* Absolute overlay controls */}
       {showIframe && (
-        <div className="game-topbar">
-          <ThemedBackButton className="back-to-home-button" compact label="Back" onClick={() => navigate('/')} />
+        <>
           <button
             type="button"
-            className="wz-btn wz-btn--sm wz-btn--primary fullscreen-button"
-            onClick={toggleFullscreen}
-            title="Toggle fullscreen"
+            className="game-overlay-button game-overlay-button--back"
+            onClick={() => navigate('/')}
+            aria-label="Back to home"
+            title="Back"
           >
-            {isFullscreen ? 'Exit' : 'Fullscreen'}
+            <ChevronLeft className="game-overlay-button__icon" />
           </button>
-        </div>
+          <button
+            type="button"
+            className="game-overlay-button game-overlay-button--fullscreen"
+            onClick={toggleFullscreen}
+            aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+            title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+          >
+            {isFullscreen ? (
+              <Minimize2 className="game-overlay-button__icon" />
+            ) : (
+              <Maximize2 className="game-overlay-button__icon" />
+            )}
+          </button>
+        </>
       )}
 
       {/* Game iframe — full container */}

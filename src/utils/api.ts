@@ -1,6 +1,14 @@
 import axios from 'axios';
 import { API_BASE_URL, buildApiUrl } from '../config/api';
 
+const SESSION_CHANGED_EVENT = 'warzone-session-changed';
+
+function notifySessionChanged() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(SESSION_CHANGED_EVENT));
+  }
+}
+
 // Create an axios instance with default config
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -195,6 +203,8 @@ export const loginUser = async (walletAddress) => {
       } else {
         console.warn('No token received in login response');
       }
+
+      notifySessionChanged();
       
       return response.data;
     } else {
@@ -205,6 +215,7 @@ export const loginUser = async (walletAddress) => {
     // Clear any partial auth data on error
     localStorage.removeItem('token');
     localStorage.removeItem('walletAddress');
+    notifySessionChanged();
     
     // Return a more detailed error message
     const errorMessage = error.response?.data?.message || 
@@ -267,6 +278,7 @@ export const getWalletAddress = () => {
 export const logout = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('walletAddress');
+  notifySessionChanged();
   // Redirect to home or login page if needed
   window.location.href = '/';
 };

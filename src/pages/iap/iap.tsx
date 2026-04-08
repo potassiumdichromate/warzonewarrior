@@ -149,7 +149,7 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
   const { isLoading: isConfirming, isSuccess: isConfirmed, error: waitError } = useWaitForTransactionReceipt({
     hash: txHash,
   });
-  const { switchToSomnia } = useWallet();
+  const { switchToSomnia, refreshProfile } = useWallet();
   const {
     privyReady,
     privyAuthenticated,
@@ -192,6 +192,7 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
       try {
         const response = await updateMarketplaceData(payload);
         console.log('Purchase accepted:', response);
+        void refreshProfile();
         const purchase = response?.data?.purchase || null;
         const isDelivered =
           purchase?.delivered === true || purchase?.status === 'completed';
@@ -226,6 +227,10 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
               const completed =
                 statusPurchase?.delivered === true ||
                 statusPurchase?.status === 'completed';
+
+              if (completed) {
+                void refreshProfile();
+              }
 
               if (type === 'Guns' && completed) {
                 const addr = localStorage.getItem('walletAddress');

@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { useAccount, useDisconnect, useConnect, useSwitchChain, useChainId, useConnectors } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
-import { loginUser } from '../utils/api';
+import { getPlayerProfile, loginUser } from '../utils/api';
 import { createPublicClient, http } from 'viem';
 import { buildApiUrl } from '../config/api';
 import { getStableInjectedProvider } from '../lib/injectedEthereum';
@@ -60,6 +60,9 @@ export type WalletContextValue = {
   isNFTOwner: boolean;
   checkNFTOwnership: (walletAddress?: string | null) => Promise<boolean>;
   switchToSomnia: () => Promise<boolean>;
+  playerProfile: any | null;
+  profileLoading: boolean;
+  refreshProfile: (walletAddress?: string | null) => Promise<any | null>;
 };
 
 const defaultWalletContext: WalletContextValue = {
@@ -71,6 +74,9 @@ const defaultWalletContext: WalletContextValue = {
   isNFTOwner: false,
   checkNFTOwnership: async () => false,
   switchToSomnia: async () => false,
+  playerProfile: null,
+  profileLoading: false,
+  refreshProfile: async () => null,
 };
 
 const WalletContext = createContext<WalletContextValue>(defaultWalletContext);
@@ -91,6 +97,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const backendLoginSentFromConnectedRef = useRef(null);
   const [privyAddress, setPrivyAddress] = useState(null);
   const [storedSession, setStoredSession] = useState(readStoredSession);
+  const [playerProfile, setPlayerProfile] = useState<any | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
   
   // Wagmi hooks (optional path alongside Privy)
   const { address: wagmiAddress, isConnected: wagmiIsConnected } = useAccount();
@@ -101,6 +109,37 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const chainId = useChainId();
   const { ready: privyReady, authenticated: privyAuthenticated, user: privyUser, logout: privyLogout } = usePrivy();
   const { wallets: privyWallets } = useWallets();
+
+  const syncStoredSession = useCallback(() => {
+    setStoredSession(readStoredSession());
+  }, []);
+
+  const refreshProfile = useCallback(async (walletAddress?: string | null) => {
+    const addressToLoad =
+      walletAddress ||
+      wagmiAddress ||
+      privyAddress ||
+      readStoredSession().walletAddress;
+
+    const token = localStorage.getItem('token');
+    if (!addressToLoad || !token) {
+      setPlayerProfile(null);
+      setProfileLoading(false);
+      return null;
+    }
+
+    setProfileLoading(true);
+    try {
+      const profile = await getPlayerProfile(addressToLoad);
+      setPlayerProfile(profile);
+      return profile;
+    } catch (error) {
+      console.error('Failed to refresh player profile:', error);
+      return null;
+    } finally {
+      setProfileLoading(false);
+    }
+  }, [privyAddress, wagmiAddress]);
   
   // Handle disconnection
   const handleDisconnect = useCallback(async () => {
@@ -117,6 +156,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem('intraverseUserId');
       localStorage.removeItem('intraverseUserInfo');
       setStoredSession({ walletAddress: null, token: null });
+      setPlayerProfile(null);
+      setProfileLoading(false);
 
       // Always attempt Privy logout — privyAuthenticated may be false on mobile
       // even when the user has an active wallet session
@@ -134,17 +175,15 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   }, [disconnect, privyLogout]);
 
   useEffect(() => {
-    const syncStoredSession = () => {
-      setStoredSession(readStoredSession());
-    };
-
     window.addEventListener('storage', syncStoredSession);
     window.addEventListener('intraverse-user-saved', syncStoredSession);
+    window.addEventListener('warzone-session-changed', syncStoredSession);
     return () => {
       window.removeEventListener('storage', syncStoredSession);
       window.removeEventListener('intraverse-user-saved', syncStoredSession);
+      window.removeEventListener('warzone-session-changed', syncStoredSession);
     };
-  }, []);
+  }, [syncStoredSession]);
   
   // Check if wallet is connected on mount and on address change
   useEffect(() => {
@@ -491,6 +530,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       if (loginResult.token) {
         localStorage.setItem('token', loginResult.token);
         localStorage.setItem('walletAddress', _address);
+        setStoredSession({ walletAddress: _address, token: loginResult.token });
+        await refreshProfile(_address);
         const playerInfo = await checkPlayerName(_address);
         trace('setUserToken:checkPlayerName:done', { hasPlayerInfo: Boolean(playerInfo) });
         return playerInfo;
@@ -502,7 +543,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       trace('setUserToken:error', error);
       return null;
     }
-  }, [checkPlayerName]);
+  }, [checkPlayerName, refreshProfile]);
 
   // When a Privy session is authenticated, mirror it into our wallet state
   useEffect(() => {
@@ -651,6 +692,16 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const isPrivyConnected = Boolean((privyReady && privyAuthenticated && privyAddress) || (privyReady && hasConnectedPrivyWallet));
   const effectiveIsConnected = Boolean(wagmiIsConnected || isPrivyConnected || sessionConnected);
 
+  useEffect(() => {
+    if (!effectiveIsConnected || !effectiveAddress || !storedSession.token) {
+      setPlayerProfile(null);
+      setProfileLoading(false);
+      return;
+    }
+
+    void refreshProfile(effectiveAddress);
+  }, [effectiveAddress, effectiveIsConnected, refreshProfile, storedSession.token]);
+
   return (
     <WalletContext.Provider
       value={{
@@ -661,7 +712,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         isNFTOwner,
         checkNFTOwnership,
         switchToSomnia,
-        setUserToken
+        setUserToken,
+        playerProfile,
+        profileLoading,
+        refreshProfile,
       }}
     >
       {children}
