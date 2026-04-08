@@ -57,9 +57,9 @@ export const Game = () => {
     return [];
   }
 
-  // Fetch active tournament rounds on mount
+  // Same slug/size as tournament listing so round ids match what users join
   useEffect(() => {
-    fetch(buildApiUrl('/intraverse/tournaments?slug=kult-games&size=10'))
+    fetch(buildApiUrl('/intraverse/tournaments?slug=warzone-warriors&size=20'))
       .then((r) => r.json())
       .then((data) => {
         const list = data?.body?.data || [];
@@ -93,9 +93,13 @@ export const Game = () => {
         return;
       }
 
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
       fetch(buildApiUrl('/intraverse/game-point'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           roundId: resolvedRoundId,
           roomId: roomId || `warzone-${Date.now()}`,

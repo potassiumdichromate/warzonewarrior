@@ -296,6 +296,18 @@ export const getTournaments = async () => {
   return response.json();
 };
 
+/** Saved coin-delta for this wallet on an active tournament round (no join step). */
+export const getRoundParticipation = async (roundId: string, walletAddress: string) => {
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+  const q = new URLSearchParams({ walletAddress });
+  const res = await fetch(buildApiUrl(`/intraverse/rounds/${encodeURIComponent(roundId)}/participation?${q}`), {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  return res.json();
+};
+
 export const checkNFTOwnership = async (walletAddress) => {
   try {
     const response = await api.get(`/check-nft?wallet=${walletAddress}`);

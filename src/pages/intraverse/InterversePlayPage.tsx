@@ -2,8 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Home, Trophy, Star, X, CalendarRange, Layers } from 'lucide-react';
-import { buildApiUrl } from '../../config/api';
-import { getTournaments } from '../../utils/api';
+import { getTournaments, getRoundParticipation } from '../../utils/api';
 import { useWallet } from '../../contexts/WalletContext';
 import MobileBottomNav from '../../components/MobileBottomNav';
 import PageWalletControls from '../../components/PageWalletControls';
@@ -20,7 +19,7 @@ const trace = (...args: unknown[]) => {
 const TOURNAMENT_MARQUEE_ITEMS = [
   'BRACKETS',
   'LIVE OPS',
-  'JOIN WINDOWS',
+  'LIVE WINDOWS',
   'ACTIVE ROUNDS',
   'COMPETE',
   'WARZONE CIRCUIT',
@@ -43,14 +42,6 @@ function isRoundActive(round) {
   if (!Array.isArray(round?.intervals) || round.intervals.length === 0) return false;
   const now = Date.now();
   return round.intervals.some(iv => now >= iv.startDate && now <= iv.endDate);
-}
-
-async function apiFetch(path, opts = {}) {
-  const token = localStorage.getItem('token');
-  const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
-  const res = await fetch(buildApiUrl(path), { headers, ...opts });
-  const json = await res.json();
-  return { ok: res.ok, status: res.status, data: json };
 }
 
 /* ─── Rounds Modal ───────────────────────────────────────────────────────── */
@@ -174,32 +165,43 @@ function RoundsModal({ tournament, onClose }) {
 
 /* ─── Tournament Card ────────────────────────────────────────────────────── */
 function TournamentCard({ t, walletAddress }) {
-  const [joined, setJoined] = useState(false);
-  const [joining, setJoining] = useState(false);
-  const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
+  const [myRoundPoints, setMyRoundPoints] = useState(null);
+  const [pointsLoading, setPointsLoading] = useState(false);
 
   const activeRound = (t.rounds || []).find(isRoundActive);
-  const canJoin = !!activeRound && !!walletAddress;
   const statusClass = String(t.status || '').toLowerCase();
   const roundCount = t.rounds?.length || 0;
 
-  const handleJoin = async () => {
-    setJoining(true);
-    setError('');
-    try {
-      const r = await apiFetch(`/intraverse/tournaments/${t.id}/rounds/${activeRound.id}/join`, {
-        method: 'POST',
-        body: JSON.stringify({ walletAddress }),
-      });
-      if (!r.ok) throw new Error(r.data?.error || 'Failed to join');
-      setJoined(true);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setJoining(false);
+  useEffect(() => {
+    if (!walletAddress || !activeRound?.id) {
+      setMyRoundPoints(null);
+      return;
     }
-  };
+    let cancelled = false;
+    setPointsLoading(true);
+    getRoundParticipation(activeRound.id, walletAddress)
+      .then((data) => {
+        if (cancelled) return;
+        if (data?.success && typeof data.roundPoints === 'number') {
+          setMyRoundPoints(data.roundPoints);
+        } else {
+          setMyRoundPoints(0);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setMyRoundPoints(null);
+      })
+      .finally(() => {
+        if (!cancelled) setPointsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [walletAddress, activeRound?.id]);
+
+  const pointsLabel =
+    !walletAddress ? '—' : !activeRound ? '—' : pointsLoading ? '…' : myRoundPoints == null ? '—' : String(Math.max(0, myRoundPoints));
 
   return (
     <>
@@ -223,7 +225,11 @@ function TournamentCard({ t, walletAddress }) {
           <div className="t-card-info">
             <div className="t-card-title">{t.name}</div>
             <div className="t-card-date">{fmtDate(t.startDate)} — {fmtDate(t.endDate)}</div>
-            <div className="t-card-rounds">{activeRound ? `Live now: ${activeRound.name || 'Active round'}` : 'Waiting for next active round'}</div>
+            <div className="t-card-rounds">
+              {activeRound
+                ? `Live now: ${activeRound.name || 'Active round'}`
+                : 'No round in play window right now'}
+            </div>
           </div>
         </div>
         <div className="t-card-strip" aria-hidden="true" />
@@ -233,26 +239,18 @@ function TournamentCard({ t, walletAddress }) {
             <strong className="t-card-meta-value">{walletAddress ? 'Wallet Ready' : 'Connect Wallet'}</strong>
           </div>
           <div className="t-card-meta-box">
-            <span className="t-card-meta-label">Join Window</span>
-            <strong className="t-card-meta-value">{activeRound ? 'Open' : 'Closed'}</strong>
+            <span className="t-card-meta-label">Round</span>
+            <strong className="t-card-meta-value">{activeRound ? 'Live' : 'Waiting'}</strong>
+          </div>
+          <div className="t-card-meta-box">
+            <span className="t-card-meta-label">Your coin Δ</span>
+            <strong className="t-card-meta-value" title="Coins earned vs baseline when the live window started (updates after you play)">
+              {pointsLabel}
+            </strong>
           </div>
         </div>
-        {error && <div className="t-card-error">{error}</div>}
         <div className="t-card-actions" onClick={(e) => e.stopPropagation()}>
-          {!joined ? (
-            <button
-              type="button"
-              className="wz-btn wz-btn--sm wz-btn--primary wz-btn--grow t-btn t-btn-join"
-              onClick={handleJoin}
-              disabled={!canJoin || joining}
-              title={!walletAddress ? 'Connect wallet first' : !activeRound ? 'No active round' : ''}
-            >
-              {joining ? 'Joining…' : 'Join'}
-            </button>
-          ) : (
-            <span className="t-joined-badge">✓ Joined</span>
-          )}
-          <button type="button" className="wz-btn wz-btn--sm wz-btn--secondary wz-btn--grow t-btn t-btn-view" onClick={() => setModalOpen(true)}>
+          <button type="button" className="wz-btn wz-btn--sm wz-btn--secondary wz-btn--grow t-btn t-btn-view w-full" onClick={() => setModalOpen(true)}>
             View
           </button>
         </div>
@@ -306,11 +304,14 @@ function TournamentSkeletonCard() {
           <div className="wz-skeleton t-skeleton-box-label" />
           <div className="wz-skeleton t-skeleton-box-value" />
         </div>
+        <div className="t-card-meta-box">
+          <div className="wz-skeleton t-skeleton-box-label" />
+          <div className="wz-skeleton t-skeleton-box-value" />
+        </div>
       </div>
 
       <div className="t-card-actions">
-        <div className="wz-skeleton t-skeleton-action" />
-        <div className="wz-skeleton t-skeleton-action t-skeleton-action--secondary" />
+        <div className="wz-skeleton t-skeleton-action t-skeleton-action--secondary w-full" />
       </div>
     </div>
   );
@@ -464,7 +465,7 @@ export default function InterversePlayPage() {
             <div className="container mx-auto px-4 relative z-10 pb-28 pt-6 sm:pt-8">
               {!isConnected && (
                 <div className="iplay-wallet-warn mb-6">
-                  Connect your wallet to join tournaments.
+                  Connect your wallet to see your saved coin delta on live rounds.
                 </div>
               )}
 
