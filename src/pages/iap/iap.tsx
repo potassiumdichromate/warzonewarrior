@@ -619,7 +619,9 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
                 }
                 return;
               }
-              if (walletClient && currentChainId === somniaTestnet.id) {
+              // Prefer direct wallet path (MetaMask etc.) when available — it handles
+              // chain switching internally and avoids Privy's "No wallet found" error.
+              if (walletClient) {
                 handleBuyNow();
               } else if (canUsePrivy) {
                 handleBuyWithPrivy();
