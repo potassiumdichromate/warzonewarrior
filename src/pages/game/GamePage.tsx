@@ -3,7 +3,7 @@ import './GamePage.css';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../../contexts/WalletContext';
 import { buildApiUrl } from '../../config/api';
-import { Home, Maximize2, Minimize2 } from 'lucide-react';
+import { Home, Maximize2, X } from 'lucide-react';
 import centerImage from "../../assets/images/abc1.png";
 import gameBackground from '../../assets/hero-web3.png';
 import ThemedBackButton from '../../components/ThemedBackButton';
@@ -253,32 +253,41 @@ export const Game = () => {
         </div>
       )}
 
-      {/* Floating controls — always visible, compact */}
+      {/* Home — top-right, 2 icon-widths from the edge */}
       {showIframe && (
-        <div className="game-controls-tray">
-          <button
-            type="button"
-            className="game-overlay-button game-overlay-button--home"
-            onClick={() => navigate('/')}
-            aria-label="Home"
-            title="Home"
-          >
-            <Home className="game-overlay-button__icon" />
-          </button>
-          <button
-            type="button"
-            className="game-overlay-button game-overlay-button--fullscreen"
-            onClick={toggleFullscreen}
-            aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-            title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-          >
-            {isFullscreen ? (
-              <Minimize2 className="game-overlay-button__icon" />
-            ) : (
-              <Maximize2 className="game-overlay-button__icon" />
-            )}
-          </button>
-        </div>
+        <button
+          type="button"
+          className="game-overlay-button game-overlay-button--home"
+          onClick={() => navigate('/')}
+          aria-label="Home"
+          title="Home"
+        >
+          <Home className="game-overlay-button__icon" />
+        </button>
+      )}
+
+      {/* Fullscreen — bottom-right; in fullscreen mode → close icon at top-center */}
+      {showIframe && !isFullscreen && (
+        <button
+          type="button"
+          className="game-overlay-button game-overlay-button--fullscreen"
+          onClick={toggleFullscreen}
+          aria-label="Enter fullscreen"
+          title="Fullscreen"
+        >
+          <Maximize2 className="game-overlay-button__icon" />
+        </button>
+      )}
+      {showIframe && isFullscreen && (
+        <button
+          type="button"
+          className="game-overlay-button game-overlay-button--exit-fs"
+          onClick={toggleFullscreen}
+          aria-label="Exit fullscreen"
+          title="Exit fullscreen"
+        >
+          <X className="game-overlay-button__icon" />
+        </button>
       )}
 
       {/* Game iframe — full container */}

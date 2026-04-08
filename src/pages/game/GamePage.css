@@ -87,62 +87,76 @@
     50%       { opacity: 0.6; }
   }
   
-  /* ── Floating controls tray — top-right, always visible, compact ── */
-  .game-controls-tray {
-    position: absolute;
-    top: max(12px, calc(env(safe-area-inset-top, 0px) + 8px));
-    right: max(180px, calc(env(safe-area-inset-right, 0px) + 180px));
-    z-index: 80;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 6px;
-    pointer-events: all;
-  }
-
-  .game-controls-toggle {
-    display: none;
-  }
-
+  /* ── Shared overlay button style ── */
   .game-overlay-button {
-    position: relative;
+    position: absolute;
     z-index: 80;
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(255, 198, 71, 0.25);
+    border: 1px solid rgba(255, 198, 71, 0.22);
     border-radius: 999px;
-    background: rgba(9, 13, 20, 0.65);
-    color: rgba(248, 215, 125, 0.7);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    background: rgba(9, 13, 20, 0.6);
+    color: rgba(248, 215, 125, 0.65);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
     backdrop-filter: blur(8px);
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
-    opacity: 0.75;
+    opacity: 0.6;
     transition: opacity 0.2s ease, transform 0.15s ease, border-color 0.2s ease, background 0.2s ease;
     pointer-events: all;
   }
 
   .game-overlay-button:hover {
     opacity: 1;
-    transform: scale(1.08);
+    transform: scale(1.1);
     border-color: rgba(255, 198, 71, 0.5);
     background: rgba(13, 18, 28, 0.85);
     color: #ffe39a;
   }
 
   .game-overlay-button:active {
-    transform: scale(0.92);
+    transform: scale(0.9);
     opacity: 1;
   }
 
   .game-overlay-button__icon {
-    width: 14px;
-    height: 14px;
+    width: 13px;
+    height: 13px;
     stroke-width: 2.2;
+  }
+
+  /* Home icon — top-right, ~2 icon widths from edge */
+  .game-overlay-button--home {
+    top: max(12px, calc(env(safe-area-inset-top, 0px) + 8px));
+    right: max(76px, calc(env(safe-area-inset-right, 0px) + 76px));
+  }
+
+  /* Fullscreen icon — bottom-right, 2px from edge */
+  .game-overlay-button--fullscreen {
+    bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) + 6px));
+    right: 2px;
+  }
+
+  /* Exit fullscreen (X) — top-center, 40% opacity */
+  .game-overlay-button--exit-fs {
+    top: max(12px, calc(env(safe-area-inset-top, 0px) + 8px));
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0.4;
+  }
+
+  .game-overlay-button--exit-fs:hover {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.1);
+  }
+
+  .game-overlay-button--exit-fs:active {
+    transform: translateX(-50%) scale(0.9);
+    opacity: 1;
   }
   
   /* ── Iframe fills everything ── */
@@ -170,12 +184,12 @@
     opacity: 1;
   }
   
-  .game-page-container.is-fullscreen .game-overlay-button {
-    opacity: 0.6;
+  .game-page-container.is-fullscreen .game-overlay-button--home {
+    display: none;
   }
 
-  .game-page-container.is-fullscreen .game-overlay-button:hover {
-    opacity: 1;
+  .game-page-container.is-fullscreen .game-overlay-button--fullscreen {
+    display: none;
   }
   
 /* ── Round picker overlay ── */
@@ -257,19 +271,27 @@
   /* ── Mobile ── */
   @media (max-width: 768px) {
     .game-overlay-button {
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
     }
 
     .game-overlay-button__icon {
-      width: 12px;
-      height: 12px;
+      width: 11px;
+      height: 11px;
     }
 
-    .game-controls-tray {
+    .game-overlay-button--home {
       top: max(8px, calc(env(safe-area-inset-top, 0px) + 6px));
-      right: max(140px, calc(env(safe-area-inset-right, 0px) + 140px));
-      gap: 5px;
+      right: max(64px, calc(env(safe-area-inset-right, 0px) + 64px));
+    }
+
+    .game-overlay-button--fullscreen {
+      bottom: max(6px, calc(env(safe-area-inset-bottom, 0px) + 4px));
+      right: 2px;
+    }
+
+    .game-overlay-button--exit-fs {
+      top: max(8px, calc(env(safe-area-inset-top, 0px) + 6px));
     }
 
     .loading-text {
