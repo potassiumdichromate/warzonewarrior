@@ -141,36 +141,32 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [privyAddress, wagmiAddress]);
   
-  // Handle disconnection
+  // Handle disconnection — always clears local state first so user is
+  // logged out even if Privy's server-side logout returns 400.
   const handleDisconnect = useCallback(async () => {
-    try {
-      backendLoginSentRef.current = null;
-      backendLoginSentFromConnectedRef.current = null;
-      disconnect();
-      setIsNFTOwner(false);
-      setPrivyAddress(null);
-      localStorage.removeItem('walletConnected');
-      localStorage.removeItem('walletAddress');
-      localStorage.removeItem('token');
-      localStorage.removeItem('Intraverse');
-      localStorage.removeItem('intraverseUserId');
-      localStorage.removeItem('intraverseUserInfo');
-      setStoredSession({ walletAddress: null, token: null });
-      setPlayerProfile(null);
-      setProfileLoading(false);
+    backendLoginSentRef.current = null;
+    backendLoginSentFromConnectedRef.current = null;
+    setIsNFTOwner(false);
+    setPrivyAddress(null);
+    setPlayerProfile(null);
+    setProfileLoading(false);
 
-      // Always attempt Privy logout — privyAuthenticated may be false on mobile
-      // even when the user has an active wallet session
-      if (privyLogout) {
-        try {
-          await privyLogout();
-        } catch (err) {
-          console.error('Error logging out of Privy:', err);
-        }
-      }
-    } catch (error) {
-      console.error('Error disconnecting wallet:', error);
-      throw error;
+    localStorage.removeItem('walletConnected');
+    localStorage.removeItem('walletAddress');
+    localStorage.removeItem('token');
+    localStorage.removeItem('Intraverse');
+    localStorage.removeItem('intraverseUserId');
+    localStorage.removeItem('intraverseUserInfo');
+    localStorage.removeItem('intraversePendingAuthHash');
+    localStorage.removeItem('intraverseClientKey');
+    localStorage.removeItem('intraverseMagicLoginUrl');
+    setStoredSession({ walletAddress: null, token: null });
+
+    try { disconnect(); } catch {}
+
+    // Best-effort Privy logout; ignore 400 / network errors on mobile
+    if (privyLogout) {
+      try { await privyLogout(); } catch {}
     }
   }, [disconnect, privyLogout]);
 

@@ -278,8 +278,14 @@ export const getWalletAddress = () => {
 export const logout = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('walletAddress');
+  localStorage.removeItem('walletConnected');
+  localStorage.removeItem('Intraverse');
+  localStorage.removeItem('intraverseUserId');
+  localStorage.removeItem('intraverseUserInfo');
+  localStorage.removeItem('intraversePendingAuthHash');
+  localStorage.removeItem('intraverseClientKey');
+  localStorage.removeItem('intraverseMagicLoginUrl');
   notifySessionChanged();
-  // Redirect to home or login page if needed
   window.location.href = '/';
 };
 
