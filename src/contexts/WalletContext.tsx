@@ -207,20 +207,22 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('walletConnected', 'true');
         localStorage.setItem('walletAddress', wagmiAddress);
 
-        // Check NFT ownership when wallet is connected
         try {
           await setUserToken(wagmiAddress);
-
-          // const hasNFT = await checkNFTOwnership(wagmiAddress);
           setIsNFTOwner(true);
+
+          // After login, prompt chain switch to Somnia
+          if (chainId !== somniaTestnet.id) {
+            try { switchChain({ chainId: somniaTestnet.id }); } catch {}
+          }
         } catch (error) {
-          console.error('Error checking NFT ownership:', error);
+          console.error('Error during wallet connection setup:', error);
         }
       }
     };
 
     checkConnection();
-  }, [wagmiIsConnected, wagmiAddress]);
+  }, [wagmiIsConnected, wagmiAddress, chainId, switchChain]);
 
   // Prefer external (injected) wallet from linkedAccounts — matches Privy + GUESS_THE_AI flow
   // so MetaMask / Bitget / OKX logins resolve the correct address for /login.
@@ -600,12 +602,20 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('walletConnected', 'true');
         localStorage.setItem('walletAddress', addr);
         trace('privySession:backendLoginSuccess', { addr });
+
+        // After successful login, prompt wallet to switch to Somnia
+        try {
+          await switchToSomnia();
+          trace('privySession:switchedToSomnia');
+        } catch {
+          trace('privySession:somniaSwitch skipped or failed');
+        }
       } catch (err) {
         console.warn('Failed to persist Privy wallet info:', err);
         trace('privySession:persistFailed', err);
       }
     })();
-  }, [privyReady, privyAuthenticated, privyUser, privyWallets, getPrimaryPrivyAddress, setUserToken]);
+  }, [privyReady, privyAuthenticated, privyUser, privyWallets, getPrimaryPrivyAddress, setUserToken, switchToSomnia]);
 
   // Mobile fallback: if wallet is connected but Privy auth is delayed, still try backend login by address.
   // Skip entirely if user already has a valid session (e.g. Intraverse login).
