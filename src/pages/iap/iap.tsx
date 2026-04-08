@@ -368,18 +368,15 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
       });
 
       const valueWei = parseEther(priceEth);
-      let valueHex = valueWei.toString(16);
-      if (valueHex.length % 2) {
-        valueHex = `0${valueHex}`;
-      }
-      const valueHexStr = valueWei === 0n ? '0x0' : `0x${valueHex}`;
 
       // Step 3: Send via Privy's sendTransaction
       // Works for MetaMask, Coinbase, embedded wallets — all through one API
+      // value must be a bigint — passing a hex string causes Privy to misread it
+      // as a decimal, producing an astronomically large ETH display amount.
       const receipt = await (sendPrivyTransaction as any)(
         {
           to: contractAddress,
-          value: valueHexStr,
+          value: valueWei,
           data,
           chainId: somniaTestnet.id,
         },
