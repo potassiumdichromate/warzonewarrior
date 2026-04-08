@@ -87,11 +87,11 @@
     50%       { opacity: 0.6; }
   }
   
-  /* ── Floating controls tray — always visible, compact ── */
+  /* ── Floating controls tray — top-right, always visible, compact ── */
   .game-controls-tray {
     position: absolute;
-    bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) + 8px));
-    right: max(14px, calc(env(safe-area-inset-right, 0px) + 8px));
+    top: max(12px, calc(env(safe-area-inset-top, 0px) + 8px));
+    right: max(180px, calc(env(safe-area-inset-right, 0px) + 180px));
     z-index: 80;
     display: flex;
     flex-direction: row;
@@ -267,8 +267,8 @@
     }
 
     .game-controls-tray {
-      bottom: max(8px, calc(env(safe-area-inset-bottom, 0px) + 4px));
-      right: max(8px, calc(env(safe-area-inset-right, 0px) + 4px));
+      top: max(8px, calc(env(safe-area-inset-top, 0px) + 6px));
+      right: max(140px, calc(env(safe-area-inset-right, 0px) + 140px));
       gap: 5px;
     }
 
