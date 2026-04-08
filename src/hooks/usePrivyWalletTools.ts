@@ -19,31 +19,33 @@ const FALLBACK_ALLOWED_CHAIN = {
 
 const isEmbeddedConnector = (a) => String(a?.connectorType || '').toLowerCase() === 'embedded';
 
+/**
+ * Returns a wallet that Privy's `useSendTransaction` can actually use.
+ * Priority: connected wallets from useWallets() first (they have a live provider),
+ * then fall back to user-linked accounts (display-only, no provider).
+ */
 export const getPrimaryPrivyWallet = (user, wallets) => {
+  const connectedList = Array.isArray(wallets) ? wallets : [];
+
+  // Prefer an external (non-embedded) connected wallet
+  const externalConnected = connectedList.find(
+    (w) => w?.address && !isEmbeddedConnector(w)
+  );
+  if (externalConnected) return externalConnected;
+
+  // Any connected wallet (including embedded)
+  if (connectedList[0]?.address) return connectedList[0];
+
+  // Fall back to user object wallets (linked but may not be connected)
   if (!user) return undefined;
 
-  const linked = Array.isArray(user.linkedAccounts) ? user.linkedAccounts : [];
-  const externalLinked = linked.find(
-    (a) => a?.type === 'wallet' && a?.address && !isEmbeddedConnector(a)
-  );
-  if (externalLinked?.address) return externalLinked;
-
-  if (user.wallet?.address && !isEmbeddedConnector(user.wallet)) return user.wallet;
-
-  if (user.wallet && user.wallet.address) return user.wallet;
+  if (user.wallet?.address) return user.wallet;
 
   if (Array.isArray(user.embeddedWallets) && user.embeddedWallets[0]?.address) {
     return user.embeddedWallets[0];
   }
 
-  if (Array.isArray(user.wallets) && user.wallets[0]?.address) {
-    return user.wallets[0];
-  }
-
-  if (Array.isArray(wallets) && wallets[0]?.address) {
-    return wallets[0];
-  }
-
+  const linked = Array.isArray(user.linkedAccounts) ? user.linkedAccounts : [];
   const anyWallet = linked.find((a) => a?.type === 'wallet' && a?.address);
   if (anyWallet?.address) return anyWallet;
 

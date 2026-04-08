@@ -140,7 +140,10 @@ function buildItemsByCategory(ownedGuns: string[]): Record<IapMarketCategory, Ia
 }
 
 const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
-  const { isConnected, address } = useAccount();
+  const { isConnected: wagmiConnected, address: wagmiAddr } = useAccount();
+  const { isConnected: walletCtxConnected, address: walletCtxAddr } = useWallet();
+  const isConnected = wagmiConnected || walletCtxConnected;
+  const address = wagmiAddr || walletCtxAddr;
   const { data: walletClient } = useWalletClient();
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState(null);
@@ -332,6 +335,12 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
       }
 
       if (!walletClient) {
+        // No Wagmi wallet client (common on mobile with Privy-only login).
+        // Route to Privy purchase path instead.
+        if (canUsePrivy) {
+          await handleBuyWithPrivy();
+          return;
+        }
         alert('Wallet is not ready. Please reconnect.');
         return;
       }
