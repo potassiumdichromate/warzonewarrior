@@ -491,28 +491,20 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
       }
       const valueHexStr = valueWei === 0n ? '0x0' : `0x${valueHex}`;
 
-      // Send transaction via Privy's embedded wallet.
-      // `useSendTransaction` returns an EVM-style TransactionReceipt.
-      type SendPrivyTx = (
-        tx: object,
-        opts?: object,
-        _?: unknown,
-        __?: string
-      ) => Promise<{ hash?: string; transactionHash?: string } | string>;
-      const receipt = await (sendPrivyTransaction as SendPrivyTx)(
+      // Per Privy docs: sendTransaction(input, options?)
+      // options.address specifies which wallet to use (required for external wallets)
+      // options.uiOptions.showWalletUIs keeps Privy's confirmation UI visible
+      const receipt = await (sendPrivyTransaction as any)(
         {
-          // If a contract address is configured, send to contract;
           to: contractAddress,
           value: valueHexStr,
           data,
           chainId: effectiveAllowedChain.decimalChainId,
         },
         {
-          // Keep Privy's confirmation UI visible so wallet selection/approval doesn't disappear.
-          showWalletUIs: true,
+          address: walletForPrivy?.address,
+          uiOptions: { showWalletUIs: true },
         },
-        undefined,
-        walletForPrivy?.address,
       );
 
       const txHashFromReceipt =
@@ -617,37 +609,34 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
           <button
             type="button"
             className="wz-btn wz-btn--lg wz-btn--primary wz-btn--block buy-button"
-            onClick={handleBuyNow}
-            disabled={isSending || isConfirming || currentChainId !== somniaTestnet.id}
+            onClick={() => {
+              if (!walletClient && !canUsePrivy) {
+                const isIntraverseOnly = Boolean(localStorage.getItem('intraverseUserId')) && !privyAuthenticated;
+                if (isIntraverseOnly) {
+                  alert('Purchases are not available with Intraverse login. Please log out and sign in with a wallet (MetaMask, Coinbase, etc.) to buy items.');
+                } else {
+                  alert('To purchase items you need a connected wallet. Please log in with MetaMask, Coinbase, or another wallet first.');
+                }
+                return;
+              }
+              if (walletClient && currentChainId === somniaTestnet.id) {
+                handleBuyNow();
+              } else if (canUsePrivy) {
+                handleBuyWithPrivy();
+              } else {
+                handleBuyNow();
+              }
+            }}
+            disabled={isSending || isConfirming}
             title={
-              currentChainId !== somniaTestnet.id
-                ? 'Switch to Somnia to purchase'
-                : isSending
+              isSending
                 ? 'Waiting for wallet'
                 : isConfirming
                 ? 'Waiting for confirmation'
-                : 'Buy with connected wallet'
+                : 'Buy Now'
             }
           >
-            Buy · Wallet
-          </button>
-          <span className="wz-btn-stack-divider buy-or-label">or</span>
-          <button
-            type="button"
-            className="wz-btn wz-btn--lg wz-btn--secondary wz-btn--block privy-buy-button"
-            onClick={handleBuyWithPrivy}
-            disabled={isSending || isConfirming || !canUsePrivy}
-            title={
-              !canUsePrivy
-                ? 'Log in with Privy and connect a wallet to use this option'
-                : isSending
-                ? 'Waiting for wallet'
-                : isConfirming
-                ? 'Waiting for confirmation'
-                : 'Buy using Privy'
-            }
-          >
-            Buy · Privy
+            {isSending ? 'Processing…' : isConfirming ? 'Confirming…' : 'BUY NOW'}
           </button>
         </div>
         <div className="purchase-meta">

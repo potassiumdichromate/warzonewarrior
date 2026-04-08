@@ -96,6 +96,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const backendLoginSentRef = useRef(null);
   const backendLoginSentFromConnectedRef = useRef(null);
   const logoutInProgressRef = useRef(false);
+  const privyLoginAttemptedForRef = useRef<string | null>(null);
+  const fallbackLoginAttemptedForRef = useRef<string | null>(null);
   const [privyAddress, setPrivyAddress] = useState(null);
   const [storedSession, setStoredSession] = useState(readStoredSession);
   const [playerProfile, setPlayerProfile] = useState<any | null>(null);
@@ -142,36 +144,48 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [privyAddress, wagmiAddress]);
   
-  // Handle disconnection — clears all local state, attempts Privy logout,
-  // then forces a full page reload to flush any stale Privy SDK state.
+  // Handle disconnection — Privy logout first (while session is still valid),
+  // then nuke all local state and force reload.
   const handleDisconnect = useCallback(async () => {
     logoutInProgressRef.current = true;
+
+    // 1. Privy logout FIRST while the session cookie is still valid
+    if (privyLogout) {
+      try { await privyLogout(); } catch {}
+    }
+
+    // 2. Wagmi disconnect
+    try { disconnect(); } catch {}
+
+    // 3. Clear ALL React state
     backendLoginSentRef.current = null;
     backendLoginSentFromConnectedRef.current = null;
     setIsNFTOwner(false);
     setPrivyAddress(null);
     setPlayerProfile(null);
     setProfileLoading(false);
-
-    localStorage.removeItem('walletConnected');
-    localStorage.removeItem('walletAddress');
-    localStorage.removeItem('token');
-    localStorage.removeItem('Intraverse');
-    localStorage.removeItem('intraverseUserId');
-    localStorage.removeItem('intraverseUserInfo');
-    localStorage.removeItem('intraversePendingAuthHash');
-    localStorage.removeItem('intraverseClientKey');
-    localStorage.removeItem('intraverseMagicLoginUrl');
     setStoredSession({ walletAddress: null, token: null });
 
-    try { disconnect(); } catch {}
+    // 4. Nuke all app localStorage keys
+    const keysToRemove = [
+      'walletConnected', 'walletAddress', 'token',
+      'Intraverse', 'intraverseUserId', 'intraverseUserInfo',
+      'intraversePendingAuthHash', 'intraverseClientKey', 'intraverseMagicLoginUrl',
+    ];
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
 
-    // Best-effort Privy logout; ignore 400 / network errors on mobile
-    if (privyLogout) {
-      try { await privyLogout(); } catch {}
-    }
+    // Also clear any ownedGuns cache entries
+    const allKeys = Object.keys(localStorage);
+    allKeys.forEach((k) => {
+      if (k.startsWith('ownedGuns:') || k.startsWith('privy:')) {
+        localStorage.removeItem(k);
+      }
+    });
 
-    // Force reload so Privy SDK re-initializes fresh (prevents auto-re-login race)
+    // 5. Clear sessionStorage (Privy may store tokens here)
+    try { sessionStorage.clear(); } catch {}
+
+    // 6. Force full reload so Privy SDK re-initializes with no cached auth
     window.location.href = '/';
   }, [disconnect, privyLogout]);
 
@@ -240,15 +254,18 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     return undefined;
   }, []);
 
+  // Only reset login-attempt guards when Privy auth state goes from true→false (actual logout).
+  // Skip if user was never Privy-authenticated (e.g. Intraverse-only login).
+  const wasPreviouslyPrivyAuthRef = useRef(false);
   useEffect(() => {
-    if (!privyAuthenticated) {
+    if (privyAuthenticated) {
+      wasPreviouslyPrivyAuthRef.current = true;
+    } else if (wasPreviouslyPrivyAuthRef.current) {
+      wasPreviouslyPrivyAuthRef.current = false;
       backendLoginSentRef.current = null;
-    }
-  }, [privyAuthenticated]);
-
-  useEffect(() => {
-    if (!privyAuthenticated) {
       backendLoginSentFromConnectedRef.current = null;
+      privyLoginAttemptedForRef.current = null;
+      fallbackLoginAttemptedForRef.current = null;
     }
   }, [privyAuthenticated]);
 
@@ -546,34 +563,30 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [checkPlayerName, refreshProfile]);
 
-  // When a Privy session is authenticated, mirror it into our wallet state
+  // When a Privy session is authenticated, mirror it into our wallet state.
   useEffect(() => {
     if (logoutInProgressRef.current) return;
     if (!privyReady || !privyAuthenticated) return;
-    trace('privySession:authenticated', {
-      privyReady,
-      privyAuthenticated,
-      wallets: Array.isArray(privyWallets) ? privyWallets.length : 0,
-    });
 
     const addr = getPrimaryPrivyAddress(privyUser, privyWallets);
-    if (!addr) {
-      trace('privySession:noAddressResolved');
-      return;
-    }
-    trace('privySession:addressResolved', { addr });
+    if (!addr) return;
 
     setPrivyAddress(addr);
+
+    // Already handled this address — skip
+    if (privyLoginAttemptedForRef.current?.toLowerCase() === addr.toLowerCase()) return;
 
     const stored = localStorage.getItem('walletAddress');
     const token = localStorage.getItem('token');
     if (token && stored && stored.toLowerCase() === addr.toLowerCase()) {
+      privyLoginAttemptedForRef.current = addr;
       backendLoginSentRef.current = addr;
       localStorage.setItem('walletConnected', 'true');
       trace('privySession:alreadyLoggedIn', { addr });
       return;
     }
 
+    privyLoginAttemptedForRef.current = addr;
     backendLoginSentRef.current = addr;
 
     (async () => {
@@ -582,7 +595,6 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         if (!localStorage.getItem('token')) {
           console.error('[WalletContext] Backend /login failed after Privy auth; address:', addr);
           trace('privySession:backendLoginFailed', { addr });
-          backendLoginSentRef.current = null;
           return;
         }
         localStorage.setItem('walletConnected', 'true');
@@ -591,60 +603,37 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       } catch (err) {
         console.warn('Failed to persist Privy wallet info:', err);
         trace('privySession:persistFailed', err);
-        backendLoginSentRef.current = null;
       }
     })();
   }, [privyReady, privyAuthenticated, privyUser, privyWallets, getPrimaryPrivyAddress, setUserToken]);
 
   // Mobile fallback: if wallet is connected but Privy auth is delayed, still try backend login by address.
+  // Skip entirely if user already has a valid session (e.g. Intraverse login).
   useEffect(() => {
     if (logoutInProgressRef.current) return;
     if (!privyReady || privyAuthenticated) return;
+
+    // If there's already a stored session (Intraverse or prior login), don't override it
+    const existingToken = localStorage.getItem('token');
+    const existingAddr = localStorage.getItem('walletAddress');
+    if (existingToken && existingAddr) return;
+
     const connectedAddr = Array.isArray(privyWallets) ? privyWallets[0]?.address : undefined;
-    trace('privyConnectedFallback:check', {
-      privyReady,
-      privyAuthenticated,
-      connectedAddr: connectedAddr || null,
-      wallets: Array.isArray(privyWallets) ? privyWallets.length : 0,
-    });
     if (!connectedAddr) return;
 
     setPrivyAddress(connectedAddr);
-    const stored = localStorage.getItem('walletAddress');
-    const token = localStorage.getItem('token');
-    if (token && stored && stored.toLowerCase() === connectedAddr.toLowerCase()) {
-      localStorage.setItem('walletConnected', 'true');
-      trace('privyConnectedFallback:alreadyLoggedIn', { connectedAddr });
-      backendLoginSentFromConnectedRef.current = connectedAddr;
-      return;
-    }
 
-    if (
-      backendLoginSentFromConnectedRef.current &&
-      String(backendLoginSentFromConnectedRef.current).toLowerCase() === connectedAddr.toLowerCase()
-    ) {
-      trace('privyConnectedFallback:skipDuplicate', { connectedAddr });
-      return;
-    }
+    if (fallbackLoginAttemptedForRef.current?.toLowerCase() === connectedAddr.toLowerCase()) return;
 
-    backendLoginSentFromConnectedRef.current = connectedAddr;
-    trace('privyConnectedFallback:loginAttempt', { connectedAddr });
+    fallbackLoginAttemptedForRef.current = connectedAddr;
     (async () => {
       try {
         await setUserToken(connectedAddr);
         const nextToken = localStorage.getItem('token');
-        if (!nextToken) {
-          trace('privyConnectedFallback:loginFailedNoToken', { connectedAddr });
-          backendLoginSentFromConnectedRef.current = null;
-          return;
-        }
+        if (!nextToken) return;
         localStorage.setItem('walletConnected', 'true');
         localStorage.setItem('walletAddress', connectedAddr);
-        trace('privyConnectedFallback:loginSuccess', { connectedAddr });
-      } catch (err) {
-        trace('privyConnectedFallback:loginError', err);
-        backendLoginSentFromConnectedRef.current = null;
-      }
+      } catch {}
     })();
   }, [privyReady, privyAuthenticated, privyWallets, setUserToken]);
 
