@@ -96,26 +96,21 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(255, 198, 71, 0.22);
-    border-radius: 999px;
-    background: rgba(9, 13, 20, 0.6);
-    color: rgba(248, 215, 125, 0.65);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-    backdrop-filter: blur(8px);
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: #fff;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
-    opacity: 0.6;
-    transition: opacity 0.2s ease, transform 0.15s ease, border-color 0.2s ease, background 0.2s ease;
+    opacity: 0.7;
+    transition: opacity 0.2s ease, transform 0.15s ease;
     pointer-events: all;
   }
 
   .game-overlay-button:hover {
     opacity: 1;
-    transform: scale(1.1);
-    border-color: rgba(255, 198, 71, 0.5);
-    background: rgba(13, 18, 28, 0.85);
-    color: #ffe39a;
+    transform: scale(1.12);
   }
 
   .game-overlay-button:active {
@@ -124,21 +119,22 @@
   }
 
   .game-overlay-button__icon {
-    width: 13px;
-    height: 13px;
-    stroke-width: 2.2;
+    width: 16px;
+    height: 16px;
+    stroke-width: 2.8;
   }
 
-  /* Home icon — top-right, ~2 icon widths from edge */
+  /* Home icon — top-right, ~1 button space from edge, slightly lower */
   .game-overlay-button--home {
-    top: max(12px, calc(env(safe-area-inset-top, 0px) + 8px));
-    right: max(76px, calc(env(safe-area-inset-right, 0px) + 76px));
+    top: max(8px, calc(env(safe-area-inset-top, 0px) + 4px));
+    right: max(40px, calc(env(safe-area-inset-right, 0px) + 40px));
   }
 
   /* Fullscreen icon — bottom-right, 2px from edge */
   .game-overlay-button--fullscreen {
     bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) + 6px));
     right: 2px;
+    color: #fff;
   }
 
   /* Exit fullscreen (X) — top-center, 40% opacity */
@@ -147,11 +143,12 @@
     left: 50%;
     transform: translateX(-50%);
     opacity: 0.4;
+    color: #fff;
   }
 
   .game-overlay-button--exit-fs:hover {
     opacity: 1;
-    transform: translateX(-50%) scale(1.1);
+    transform: translateX(-50%) scale(1.12);
   }
 
   .game-overlay-button--exit-fs:active {
@@ -271,18 +268,19 @@
   /* ── Mobile ── */
   @media (max-width: 768px) {
     .game-overlay-button {
-      width: 26px;
-      height: 26px;
+      width: 24px;
+      height: 24px;
     }
 
     .game-overlay-button__icon {
-      width: 11px;
-      height: 11px;
+      width: 14px;
+      height: 14px;
+      stroke-width: 2.8;
     }
 
     .game-overlay-button--home {
-      top: max(8px, calc(env(safe-area-inset-top, 0px) + 6px));
-      right: max(64px, calc(env(safe-area-inset-right, 0px) + 64px));
+      top: max(6px, calc(env(safe-area-inset-top, 0px) + 3px));
+      right: max(36px, calc(env(safe-area-inset-right, 0px) + 36px));
     }
 
     .game-overlay-button--fullscreen {
@@ -291,7 +289,7 @@
     }
 
     .game-overlay-button--exit-fs {
-      top: max(8px, calc(env(safe-area-inset-top, 0px) + 6px));
+      top: max(6px, calc(env(safe-area-inset-top, 0px) + 3px));
     }
 
     .loading-text {
