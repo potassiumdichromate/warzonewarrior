@@ -575,7 +575,16 @@ export default function LoginModal({
       // Don’t close. Let effect below decide based on user+wallet.
       setLoginMethod('oauth')
     },
-    onError: (err: any) => setError((err?.message ?? err?.code ?? String(err)) || 'OAuth error'),
+    onError: (err: any) => {
+      const errStr = String(err?.message ?? err?.code ?? err)
+      if (errStr.includes('exited_auth_flow')) {
+        setError('')
+        reopenDialog()
+        return
+      }
+      setError(errStr || 'Google login failed')
+      reopenDialog()
+    },
   })
 
   // Email + OTP
@@ -706,15 +715,19 @@ export default function LoginModal({
     try {
       setWalletFlowPending(false)
       setWalletFlowBusy(true)
+      setError('')
+      setStatusMessage('Opening wallet selector…')
       trace('walletPress:start', { isMobileDevice, emailStep, authDisabled })
       pushDebug('walletPress:start', { isMobileDevice, emailStep, authDisabled })
       setShowMobileContinue(false)
       clearMobileConnectWatchdog()
-      closeDialogForPrivyFlow()
-      trace('walletPress:privyModal')
-      pushDebug('connect: privy modal wallet login')
-      loginFlowActiveRef.current = true
-      login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
+      setTimeout(() => {
+        closeDialogForPrivyFlow()
+        trace('walletPress:privyModal')
+        pushDebug('connect: privy modal wallet login')
+        loginFlowActiveRef.current = true
+        login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
+      }, 150)
     } catch (err: any) {
       setWalletFlowPending(false)
       setWalletFlowBusy(false)
@@ -1309,14 +1322,19 @@ export default function LoginModal({
                           if (authDisabled) {
                             pushDebug('oauth:blocked not ready')
                             setError('Login is still initializing. Please wait a few seconds and try again.')
-                              return
-                            }
-                            if (emailStep === 'enter-code') return
-                            pushDebug('oauth:start google')
-                            setLoginMethod('oauth')
+                            return
+                          }
+                          if (emailStep === 'enter-code') return
+                          pushDebug('oauth:start google')
+                          setError('')
+                          setLoginMethod('oauth')
+                          setStatusMessage('Opening Google sign-in…')
+                          setTimeout(() => {
+                            closeDialogForPrivyFlow()
                             initOAuth({ provider: 'google' })
-                          }}
-                        />
+                          }, 150)
+                        }}
+                      />
                       </>
                     ) : (
                       <WalletPickerScrollable
