@@ -41,11 +41,21 @@ export default defineConfig({
     open: true,
   },
   optimizeDeps: {
+    include: [
+      '@noble/hashes/utils.js',
+      '@noble/hashes/utils',
+    ],
     esbuildOptions: {
       target: 'es2020',
       define: {
         global: 'globalThis',
       },
+    },
+  },
+  build: {
+    commonjsOptions: {
+      // Required for @noble/hashes and WalletConnect CJS interop on Rollup 4
+      transformMixedEsModules: true,
     },
   },
 });
