@@ -10,6 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Works regardless of installed version (older versions only export ./utils not ./utils.js)
 const nobleHashesCompat = {
   name: 'noble-hashes-compat',
+  enforce: 'pre',
   resolveId(id: string) {
     if (id === '@noble/hashes/utils.js') {
       return { id: '@noble/hashes/utils', external: false }
@@ -33,16 +34,18 @@ export default defineConfig({
     postcss: './postcss.config.js',
   },
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      crypto: 'crypto-browserify',
-      stream: 'stream-browserify',
-      util: 'util',
-      http: 'stream-http',
-      https: 'https-browserify',
-      os: 'os-browserify/browser',
-      path: 'path-browserify',
-    },
+    alias: [
+      { find: /^@noble\/hashes\/utils\.js$/, replacement: '@noble/hashes/utils' },
+      { find: '@', replacement: path.resolve(__dirname, './src') },
+      { find: 'crypto', replacement: 'crypto-browserify' },
+      { find: 'stream', replacement: 'stream-browserify' },
+      { find: 'util', replacement: 'util' },
+      { find: 'http', replacement: 'stream-http' },
+      { find: 'https', replacement: 'https-browserify' },
+      { find: 'os', replacement: 'os-browserify/browser' },
+      { find: 'path', replacement: 'path-browserify' },
+    ],
+    dedupe: ['@noble/hashes'],
   },
   define: {
     'process.env': {},
