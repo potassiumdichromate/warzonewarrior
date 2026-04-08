@@ -91,8 +91,8 @@
   .game-overlay-button {
     position: absolute;
     z-index: 80;
-    width: 32px;
-    height: 32px;
+    width: 38px;
+    height: 38px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -121,15 +121,15 @@
   }
 
   .game-overlay-button__icon {
-    width: 14px;
-    height: 14px;
+    width: 17px;
+    height: 17px;
     stroke-width: 2.6;
   }
 
-  /* Home — top-right, 1 button space from edge, fully visible */
+  /* Home — top-right, more spacing from edge on desktop/tablet */
   .game-overlay-button--home {
     top: max(8px, calc(env(safe-area-inset-top, 0px) + 4px));
-    right: max(40px, calc(env(safe-area-inset-right, 0px) + 40px));
+    right: max(80px, calc(env(safe-area-inset-right, 0px) + 80px));
     opacity: 1;
   }
 
