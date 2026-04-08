@@ -7,6 +7,7 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { PrivyProvider, type PrivyClientConfig } from '@privy-io/react-auth';
+import { mainnet } from 'viem/chains';
 import { config, somniaChain } from './wagmi.config';
 import { getPrivyAppId, getWalletConnectProjectId } from './lib/privyEnv';
 import { PRIVY_WALLET_LIST } from './lib/privyWalletList';
@@ -46,8 +47,15 @@ export const privyConfig: PrivyClientConfig = {
   ...(walletConnectProjectId
     ? { walletConnectCloudProjectId: walletConnectProjectId }
     : {}),
-  supportedChains: [somniaChain],
+  // Somnia stays default for the app; including Ethereum mainnet helps MetaMask / mobile web
+  // complete handshake & network prompts when 5031 is not yet added in the wallet.
+  supportedChains: [somniaChain, mainnet],
   defaultChain: somniaChain,
+  externalWallets: {
+    signatureRequestTimeouts: {
+      metamask: 180000,
+    },
+  },
   intl: {
     defaultCountry: 'US',
   },

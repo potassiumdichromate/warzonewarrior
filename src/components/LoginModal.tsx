@@ -13,7 +13,6 @@ import {
 import intraverseLogo from '../assets/Intraverse_logo-cropped.png'
 import { buildApiUrl } from '../config/api'
 import { getWalletConnectProjectId } from '../lib/privyEnv'
-import { PRIVY_WALLET_LIST } from '../lib/privyWalletList'
 import './LoginModal.css'
 
 const DEBUG_LOGIN_TRACE = String((import.meta as any).env?.VITE_DEBUG_LOGIN_TRACE || '').toLowerCase() === 'true'
@@ -151,9 +150,14 @@ function getFriendlyPrivyErrorMessage(errorCode: string | undefined, fallback?: 
       return 'Wallet login took too long. Please keep the wallet app open and try again.'
     case 'allowlist_rejected':
       return 'This site origin is not allowed for wallet login in the current Privy configuration.'
+    case 'unsupported_chain_id':
+      return 'Your wallet could not switch to the Somnia network (chain 5031). In MetaMask, approve adding Somnia when prompted, then try again.'
+    case 'unable_to_sign':
+    case 'invalid_message':
+      return 'Signature was not completed. Unlock MetaMask, approve the network if asked, then sign the login message.'
     case 'generic_connect_wallet_error':
     case 'unknown_connect_wallet_error':
-      return 'Wallet connection failed. Make sure the wallet app is installed and try again.'
+      return 'Wallet connection failed. On mobile: use MetaMask app via WalletConnect, approve Somnia (5031) when prompted, and complete the signature. If it keeps failing, try opening the site inside MetaMask’s browser.'
     default:
       return fallback || ''
   }
@@ -690,13 +694,19 @@ export default function LoginModal({
         reopenDialog()
         return
       }
-      const err = errorCode as { code?: number; details?: { eipCode?: number } }
+      const err = errorCode as { code?: number; details?: { eipCode?: number }; privyErrorCode?: string }
       if (err?.code === -32002 || err?.details?.eipCode === -32002) {
         setError('Wallet connection already pending. Check your wallet app or other browser tabs.')
         reopenDialog()
         return
       }
-      setFriendlyPrivyError(String(errorCode), 'Failed to connect wallet')
+      const code =
+        typeof err?.privyErrorCode === 'string'
+          ? err.privyErrorCode
+          : typeof errorCode === 'string'
+            ? errorCode
+            : String(errorCode)
+      setFriendlyPrivyError(code, 'Failed to connect wallet')
       reopenDialog()
     },
   })
@@ -722,19 +732,43 @@ export default function LoginModal({
   }, [createWallet])
 
   const connectWith = async (wallet: WalletId) => {
+    if (authDisabled) {
+      setError('Login is still initializing. Please wait a few seconds and try again.')
+      return
+    }
+    if (emailStep === 'enter-code') return
+    setError('')
+    setStatusMessage('')
+
+    if (!walletConnectProjectId && !hasInjectedWallet) {
+      setError(
+        'WalletConnect project ID is missing. Set VITE_WALLET_CONNECT_PROJECT_ID in .env and reload, or use a browser with an injected wallet.',
+      )
+      return
+    }
+
+    if (isMobileDevice && !isMobilePrivyOriginSupported()) {
+      setError(
+        `Mobile wallet login requires HTTPS or localhost. Current origin is ${originInfo.origin}. Add this domain in Privy allowed domains.`,
+      )
+      return
+    }
+
     try {
-      setError('')
-      setStatusMessage('')
+      setWalletFlowPending(true)
+      pushDebug('connectWith: login() full wallet auth (not connectWallet)', { wallet })
+      setShowMobileContinue(false)
+      clearMobileConnectWatchdog()
+      clearMobileContinuePendingTimer()
       closeDialogForPrivyFlow()
-      // Privy: `walletList` with a single entry skips the picker and goes straight to
-      // "Waiting for …", which feels broken when the extension isn’t ready. Show the
-      // full app wallet list (user’s choice first) so the proper connect modal appears.
-      const walletList = [...new Set([wallet, ...PRIVY_WALLET_LIST])]
-      await connectWallet({
-        walletList,
-        walletChainType: 'ethereum-only',
-      })
+      loginFlowActiveRef.current = true
+      // connectWallet() only links the provider; login() runs connect + SIWE. Using login()
+      // for row taps matches the main "Connect wallet" button and avoids MetaMask dropping
+      // mid-flow on mobile. Pick the same wallet again inside Privy’s modal.
+      login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
     } catch (err: any) {
+      loginFlowActiveRef.current = false
+      setWalletFlowPending(false)
       console.error('connectWith error', err)
       setStatusMessage('')
       setError(err?.message || 'Failed to connect wallet')
