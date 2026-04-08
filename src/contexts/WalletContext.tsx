@@ -200,7 +200,9 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [syncStoredSession]);
   
-  // Check if wallet is connected on mount and on address change
+  // Check if wallet is connected on mount and on address change.
+  // Deps are intentionally [wagmiIsConnected, wagmiAddress] only — chainId/switchChain
+  // would cause re-runs when the chain switches, looping the backend /login call.
   useEffect(() => {
     const checkConnection = async () => {
       if (wagmiIsConnected && wagmiAddress) {
@@ -210,11 +212,6 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         try {
           await setUserToken(wagmiAddress);
           setIsNFTOwner(true);
-
-          // After login, prompt chain switch to Somnia
-          if (chainId !== somniaTestnet.id) {
-            try { switchChain({ chainId: somniaTestnet.id }); } catch {}
-          }
         } catch (error) {
           console.error('Error during wallet connection setup:', error);
         }
@@ -222,7 +219,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     };
 
     checkConnection();
-  }, [wagmiIsConnected, wagmiAddress, chainId, switchChain]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wagmiIsConnected, wagmiAddress]);
 
   // Prefer external (injected) wallet from linkedAccounts — matches Privy + GUESS_THE_AI flow
   // so MetaMask / Bitget / OKX logins resolve the correct address for /login.
@@ -566,6 +564,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   }, [checkPlayerName, refreshProfile]);
 
   // When a Privy session is authenticated, mirror it into our wallet state.
+  // Deps are kept minimal — privyUser/privyWallets change references every render,
+  // so we rely on the address-based ref guard to prevent duplicate calls.
   useEffect(() => {
     if (logoutInProgressRef.current) return;
     if (!privyReady || !privyAuthenticated) return;
@@ -573,16 +573,18 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     const addr = getPrimaryPrivyAddress(privyUser, privyWallets);
     if (!addr) return;
 
-    setPrivyAddress(addr);
-
-    // Already handled this address — skip
-    if (privyLoginAttemptedForRef.current?.toLowerCase() === addr.toLowerCase()) return;
+    // Already handled this address — only update privyAddress (idempotent)
+    if (privyLoginAttemptedForRef.current?.toLowerCase() === addr.toLowerCase()) {
+      setPrivyAddress((prev) => prev === addr ? prev : addr);
+      return;
+    }
 
     const stored = localStorage.getItem('walletAddress');
     const token = localStorage.getItem('token');
     if (token && stored && stored.toLowerCase() === addr.toLowerCase()) {
       privyLoginAttemptedForRef.current = addr;
       backendLoginSentRef.current = addr;
+      setPrivyAddress(addr);
       localStorage.setItem('walletConnected', 'true');
       trace('privySession:alreadyLoggedIn', { addr });
       return;
@@ -590,32 +592,25 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
     privyLoginAttemptedForRef.current = addr;
     backendLoginSentRef.current = addr;
+    setPrivyAddress(addr);
 
     (async () => {
       try {
         await setUserToken(addr);
         if (!localStorage.getItem('token')) {
-          console.error('[WalletContext] Backend /login failed after Privy auth; address:', addr);
           trace('privySession:backendLoginFailed', { addr });
           return;
         }
         localStorage.setItem('walletConnected', 'true');
         localStorage.setItem('walletAddress', addr);
         trace('privySession:backendLoginSuccess', { addr });
-
-        // After successful login, prompt wallet to switch to Somnia
-        try {
-          await switchToSomnia();
-          trace('privySession:switchedToSomnia');
-        } catch {
-          trace('privySession:somniaSwitch skipped or failed');
-        }
       } catch (err) {
         console.warn('Failed to persist Privy wallet info:', err);
         trace('privySession:persistFailed', err);
       }
     })();
-  }, [privyReady, privyAuthenticated, privyUser, privyWallets, getPrimaryPrivyAddress, setUserToken, switchToSomnia]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [privyReady, privyAuthenticated]);
 
   // Mobile fallback: if wallet is connected but Privy auth is delayed, still try backend login by address.
   // Skip entirely if user already has a valid session (e.g. Intraverse login).
