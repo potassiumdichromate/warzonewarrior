@@ -160,6 +160,7 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
     privyAuthenticated,
     canUsePrivy,
     activeWallet,
+    wallets: privyWallets,
     sendPrivyTransaction,
     allowedChain,
   } = usePrivyWalletTools();
@@ -306,21 +307,6 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
         }
       }
 
-      // Enforce allowed network only (same as login flow)
-      if (currentChainId !== allowedChain.decimalChainId) {
-        try {
-          const switched = await switchToSomnia();
-          if (!switched) {
-            alert('Please switch to Somnia to continue.');
-            return;
-          }
-        } catch (e) {
-          console.error('Network switch failed:', e);
-          alert(e?.message || 'Please switch to Somnia to continue.');
-          return;
-        }
-      }
-
       let priceEth;
       if (type === 'Guns') {
         priceEth = GUN_PRICES_ETH[value];
@@ -336,14 +322,28 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
       }
 
       if (!walletClient) {
-        // No Wagmi wallet client (common on mobile with Privy-only login).
-        // Route to Privy purchase path instead.
         if (canUsePrivy) {
           await handleBuyWithPrivy();
           return;
         }
         alert('Wallet is not ready. Please reconnect.');
         return;
+      }
+
+      // Use Privy wallet.switchChain() — works for both external and embedded wallets
+      // per https://docs.privy.io/wallets/using-wallets/ethereum/switch-chain
+      const privyWallet = Array.isArray(privyWallets) ? privyWallets[0] : null;
+      if (privyWallet?.switchChain) {
+        try {
+          await privyWallet.switchChain(somniaTestnet.id);
+        } catch (e: any) {
+          if (e?.code !== 4001) {
+            console.warn('Privy switchChain failed, continuing:', e?.message);
+          } else {
+            alert('Please switch to the Somnia network to purchase.');
+            return;
+          }
+        }
       }
 
       const addresses = typeof walletClient.getAddresses === 'function'
@@ -376,42 +376,6 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
       if (valueHex.length % 2) {
         valueHex = `0${valueHex}`;
       }
-      const somniaChainHex = `0x${somniaTestnet.id.toString(16)}`;
-
-      // Use window.ethereum directly — walletClient may go through Wagmi's abstraction
-      // which doesn't always trigger MetaMask's chain switch popup.
-      const provider = (window as any).ethereum;
-      if (!provider?.request) {
-        alert('No wallet provider found. Please make sure MetaMask is installed.');
-        return;
-      }
-
-      // Force switch to Somnia before sending
-      const currentChain = await provider.request({ method: 'eth_chainId' });
-      if (typeof currentChain === 'string' && currentChain.toLowerCase() !== somniaChainHex.toLowerCase()) {
-        try {
-          await provider.request({
-            method: 'wallet_switchEthereumChain',
-            params: [{ chainId: somniaChainHex }],
-          });
-        } catch (switchErr: any) {
-          if (switchErr?.code === 4902) {
-            await provider.request({
-              method: 'wallet_addEthereumChain',
-              params: [{
-                chainId: somniaChainHex,
-                chainName: 'Somnia',
-                nativeCurrency: { name: 'Somnia', symbol: 'SOMI', decimals: 18 },
-                rpcUrls: ['https://api.infra.mainnet.somnia.network'],
-                blockExplorerUrls: ['https://explorer.somnia.network/'],
-              }],
-            });
-          } else {
-            alert('Please switch MetaMask to the Somnia network before purchasing.');
-            return;
-          }
-        }
-      }
 
       const txParams = {
         from: accountAddress,
@@ -420,7 +384,7 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
         value: valueWei === 0n ? '0x0' : `0x${valueHex}`,
       };
 
-      const hash = await provider.request({
+      const hash = await walletClient.request({
         method: 'eth_sendTransaction',
         params: [txParams],
       });
@@ -644,99 +608,33 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
       <div className="coin-detail-content">
         <img src={coinImage} alt="Coins" className="coin-detail-image" />
         <div className="wz-btn-stack buy-buttons-stack">
-          {(() => {
-            const hasInjectedProvider = Boolean((window as any).ethereum?.request);
-            const isWalletUser = Boolean(walletClient || (hasInjectedProvider && wagmiConnected));
-            const isIntraverseOnly = Boolean(localStorage.getItem('intraverseUserId')) && !privyAuthenticated && !isWalletUser;
-            const needsChainSwitch = isWalletUser && currentChainId !== somniaTestnet.id;
-
-            if (isIntraverseOnly) {
-              return (
-                <button
-                  type="button"
-                  className="wz-btn wz-btn--lg wz-btn--primary wz-btn--block buy-button"
-                  onClick={() => alert('Purchases are not available with Intraverse login. Please log out and sign in with a wallet (MetaMask, Coinbase, etc.) to buy items.')}
-                >
-                  BUY NOW
-                </button>
-              );
-            }
-
-            if (!isWalletUser && !canUsePrivy) {
-              return (
-                <button
-                  type="button"
-                  className="wz-btn wz-btn--lg wz-btn--primary wz-btn--block buy-button"
-                  onClick={() => alert('To purchase items you need a connected wallet. Please log in with MetaMask, Coinbase, or another wallet first.')}
-                >
-                  BUY NOW
-                </button>
-              );
-            }
-
-            if (needsChainSwitch) {
-              return (
-                <button
-                  type="button"
-                  className="wz-btn wz-btn--lg wz-btn--primary wz-btn--block buy-button"
-                  disabled={switchingNetwork}
-                  onClick={async () => {
-                    setSwitchingNetwork(true);
-                    try {
-                      const provider = (window as any).ethereum;
-                      const somniaHex = `0x${somniaTestnet.id.toString(16)}`;
-                      try {
-                        await provider.request({
-                          method: 'wallet_switchEthereumChain',
-                          params: [{ chainId: somniaHex }],
-                        });
-                      } catch (err: any) {
-                        if (err?.code === 4902) {
-                          await provider.request({
-                            method: 'wallet_addEthereumChain',
-                            params: [{
-                              chainId: somniaHex,
-                              chainName: 'Somnia',
-                              nativeCurrency: { name: 'Somnia', symbol: 'SOMI', decimals: 18 },
-                              rpcUrls: ['https://api.infra.mainnet.somnia.network'],
-                              blockExplorerUrls: ['https://explorer.somnia.network/'],
-                            }],
-                          });
-                        } else {
-                          alert('Please switch to the Somnia network in your wallet.');
-                        }
-                      }
-                    } catch {
-                      alert('Failed to switch network. Please switch to Somnia manually in your wallet.');
-                    } finally {
-                      setSwitchingNetwork(false);
-                    }
-                  }}
-                >
-                  {switchingNetwork ? 'Switching…' : 'Switch to Somnia'}
-                </button>
-              );
-            }
-
-            return (
-              <button
-                type="button"
-                className="wz-btn wz-btn--lg wz-btn--primary wz-btn--block buy-button"
-                onClick={() => {
-                  if (isWalletUser) {
-                    handleBuyNow();
-                  } else if (canUsePrivy) {
-                    handleBuyWithPrivy();
-                  } else {
-                    handleBuyNow();
-                  }
-                }}
-                disabled={isSending || isConfirming}
-              >
-                {isSending ? 'Processing…' : isConfirming ? 'Confirming…' : 'BUY NOW'}
-              </button>
-            );
-          })()}
+          <button
+            type="button"
+            className="wz-btn wz-btn--lg wz-btn--primary wz-btn--block buy-button"
+            disabled={isSending || isConfirming}
+            onClick={() => {
+              const isIntraverseOnly = Boolean(localStorage.getItem('intraverseUserId')) && !privyAuthenticated && !walletClient;
+              if (isIntraverseOnly) {
+                alert('Purchases are not available with Intraverse login. Please log out and sign in with a wallet (MetaMask, Coinbase, etc.) to buy items.');
+                return;
+              }
+              if (!walletClient && !canUsePrivy) {
+                alert('To purchase items you need a connected wallet. Please log in with MetaMask, Coinbase, or another wallet first.');
+                return;
+              }
+              // handleBuyNow uses Privy wallet.switchChain() before tx;
+              // handleBuyWithPrivy uses Privy sendTransaction which handles chain internally.
+              if (walletClient) {
+                handleBuyNow();
+              } else if (canUsePrivy) {
+                handleBuyWithPrivy();
+              } else {
+                handleBuyNow();
+              }
+            }}
+          >
+            {isSending ? 'Processing…' : isConfirming ? 'Confirming…' : 'BUY NOW'}
+          </button>
         </div>
         <div className="purchase-meta">
           {(type === 'Guns' || type === 'Coins' || type === 'Gems') && (
