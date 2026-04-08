@@ -106,8 +106,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const handleDisconnect = useCallback(async () => {
     try {
       backendLoginSentRef.current = null;
+      backendLoginSentFromConnectedRef.current = null;
       disconnect();
       setIsNFTOwner(false);
+      setPrivyAddress(null);
       localStorage.removeItem('walletConnected');
       localStorage.removeItem('walletAddress');
       localStorage.removeItem('token');
@@ -116,7 +118,9 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem('intraverseUserInfo');
       setStoredSession({ walletAddress: null, token: null });
 
-      if (privyAuthenticated && privyLogout) {
+      // Always attempt Privy logout — privyAuthenticated may be false on mobile
+      // even when the user has an active wallet session
+      if (privyLogout) {
         try {
           await privyLogout();
         } catch (err) {
@@ -127,7 +131,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       console.error('Error disconnecting wallet:', error);
       throw error;
     }
-  }, [disconnect, privyAuthenticated, privyLogout]);
+  }, [disconnect, privyLogout]);
 
   useEffect(() => {
     const syncStoredSession = () => {

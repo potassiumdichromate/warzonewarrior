@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Copy, LogOut, Wallet, Zap } from 'lucide-react';
+import { Check, Copy, Loader2, LogOut, Wallet, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { GameButton } from '@/components/ui/game-button';
 
@@ -19,6 +19,7 @@ const PageWalletControls = ({
   showLiveBadge = true,
 }: PageWalletControlsProps) => {
   const [copied, setCopied] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const handleCopy = async () => {
     if (!address) return;
@@ -70,11 +71,18 @@ const PageWalletControls = ({
       </button>
       <button
         type="button"
-        onClick={() => void onDisconnect()}
-        className="p-1 rounded hover:bg-red-500/10 transition-colors"
+        disabled={loggingOut}
+        onClick={async () => {
+          setLoggingOut(true);
+          try { await onDisconnect(); } finally { setLoggingOut(false); }
+        }}
+        className="p-1 rounded hover:bg-red-500/10 transition-colors disabled:opacity-50"
         title="Logout"
       >
-        <LogOut className="w-3.5 h-3.5 text-muted-foreground hover:text-red-400" />
+        {loggingOut
+          ? <Loader2 className="w-3.5 h-3.5 text-muted-foreground animate-spin" />
+          : <LogOut className="w-3.5 h-3.5 text-muted-foreground hover:text-red-400" />
+        }
       </button>
     </motion.div>
   );

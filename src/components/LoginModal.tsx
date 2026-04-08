@@ -152,7 +152,7 @@ function getFriendlyPrivyErrorMessage(errorCode: string | undefined, fallback?: 
       return 'This site origin is not allowed for wallet login in the current Privy configuration.'
     case 'generic_connect_wallet_error':
     case 'unknown_connect_wallet_error':
-      return 'Could not connect to the wallet. Try WalletConnect, and ensure you are on HTTPS or an allowed app domain.'
+      return ''
     default:
       return fallback || ''
   }
