@@ -988,13 +988,13 @@ export default function LoginModal({
     }
   }, [ready, authenticated, user, onClose])
 
-  // Wallet flow: connect -> switch chain -> sign (for wallet login path only)
+  // Wallet flow: after Privy wallet auth, switch chain to Somnia and close.
+  // Privy already handled proof-of-ownership (SIWE), no extra personal_sign needed.
   useEffect(() => {
     if (!open || !ready || !authenticated || !walletFlowPending) return
     if (!activeWallet?.address) return
     if (walletFlowInFlightRef.current) return
-    trace('walletFlow:begin', { address: activeWallet?.address, isMobileDevice })
-    pushDebug('walletFlow:begin', { address: activeWallet?.address, isMobileDevice })
+    pushDebug('walletFlow:begin', { address: activeWallet?.address })
 
     walletFlowInFlightRef.current = true
 
@@ -1002,54 +1002,48 @@ export default function LoginModal({
       try {
         setWalletFlowBusy(true)
         setError('')
-        setStatusMessage('')
+        setStatusMessage('Switching to Somnia network…')
 
-        if (isMobileDevice) {
-          // On mobile, avoid extra post-login switch/sign prompts.
-          // Privy authentication already handled proof-of-ownership.
-          setWalletFlowPending(false)
-          dialogSuppressedRef.current = false
-          trace('walletFlow:mobileSkipSwitchSign')
-          pushDebug('walletFlow:mobile skip switch/sign')
-          onClose?.()
-          return
+        // Switch chain via window.ethereum directly (more reliable than Privy's switchChain)
+        const provider = (window as Window & { ethereum?: any }).ethereum
+        if (provider?.request) {
+          const somniaHex = `0x${targetChainId.toString(16)}`
+          try {
+            const currentChain = await provider.request({ method: 'eth_chainId' })
+            if (typeof currentChain === 'string' && currentChain.toLowerCase() !== somniaHex.toLowerCase()) {
+              try {
+                await provider.request({
+                  method: 'wallet_switchEthereumChain',
+                  params: [{ chainId: somniaHex }],
+                })
+              } catch (switchErr: any) {
+                if (switchErr?.code === 4902) {
+                  await provider.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [{
+                      chainId: somniaHex,
+                      chainName: 'Somnia',
+                      nativeCurrency: { name: 'Somnia', symbol: 'SOMI', decimals: 18 },
+                      rpcUrls: ['https://api.infra.mainnet.somnia.network'],
+                      blockExplorerUrls: ['https://explorer.somnia.network/'],
+                    }],
+                  })
+                }
+              }
+            }
+            pushDebug('walletFlow:chainSwitch done')
+          } catch {
+            pushDebug('walletFlow:chainSwitch skipped')
+          }
         }
-
-        await activeWallet.switchChain(targetChainId)
-        pushDebug('walletFlow:switchChain success', { targetChainId })
-
-        const provider =
-          (typeof activeWallet.getEthereumProvider === 'function'
-            ? await activeWallet.getEthereumProvider()
-            : null) || (window as Window & { ethereum?: any }).ethereum
-
-        if (!provider?.request) {
-          throw new Error('No wallet provider available for signing.')
-        }
-
-        const message = `Warzone wallet verification on chain ${targetChainId} at ${new Date().toISOString()}`
-        await provider.request({
-          method: 'personal_sign',
-          params: [message, activeWallet.address],
-        })
-        trace('walletFlow:desktopSignSuccess')
-        pushDebug('walletFlow:desktop sign success')
 
         setWalletFlowPending(false)
+        setStatusMessage('')
         dialogSuppressedRef.current = false
         onClose?.()
       } catch (err: any) {
-        trace('walletFlow:error', err)
         pushDebug('walletFlow:error', err?.message || String(err))
-        const code = err?.code
-        const msg = String(err?.message || '')
-        if (code === -32002 || /already pending/i.test(msg)) {
-          setError('A wallet request is already pending. Please complete it in wallet first.')
-        } else if (code === 4001 || /rejected/i.test(msg)) {
-          setError('You rejected the wallet request. Please try again.')
-        } else {
-          setError(err?.message || 'Wallet verification failed. Please try again.')
-        }
+        setError(err?.message || 'Failed to complete wallet setup.')
         setStatusMessage('')
         setWalletFlowPending(false)
         reopenDialog()
@@ -1058,7 +1052,7 @@ export default function LoginModal({
         walletFlowInFlightRef.current = false
       }
     })()
-  }, [open, ready, authenticated, walletFlowPending, activeWallet, targetChainId, onClose, isMobileDevice])
+  }, [open, ready, authenticated, walletFlowPending, activeWallet, targetChainId, onClose])
 
   // Auto-create embedded wallet after email / Google login (Privy createOnLogin may lag behind custom UI)
   useEffect(() => {
