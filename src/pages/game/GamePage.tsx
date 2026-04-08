@@ -12,18 +12,6 @@ export const Game = () => {
   const [isLoading, setIsLoading]   = useState(true);
   const [showIframe, setShowIframe] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [controlsVisible, setControlsVisible] = useState(false);
-  const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const showControls = useCallback(() => {
-    setControlsVisible(true);
-    if (controlsTimerRef.current) clearTimeout(controlsTimerRef.current);
-    controlsTimerRef.current = setTimeout(() => setControlsVisible(false), 3500);
-  }, []);
-
-  useEffect(() => {
-    return () => { if (controlsTimerRef.current) clearTimeout(controlsTimerRef.current); };
-  }, []);
   const [openRounds, setOpenRounds]   = useState([]);   // rounds with active intervals
   const [selectedRound, setSelectedRound] = useState(null); // { id, name }
   const [showRoundPicker, setShowRoundPicker] = useState(false);
@@ -265,20 +253,9 @@ export const Game = () => {
         </div>
       )}
 
-      {/* Floating controls — bottom-right, hidden until tapped */}
+      {/* Floating controls — always visible, compact */}
       {showIframe && (
-        <div
-          className={`game-controls-tray${controlsVisible ? ' visible' : ''}`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Tap-target that reveals the buttons */}
-          <button
-            type="button"
-            className="game-controls-toggle"
-            onClick={showControls}
-            aria-label="Show controls"
-          />
-
+        <div className="game-controls-tray">
           <button
             type="button"
             className="game-overlay-button game-overlay-button--home"

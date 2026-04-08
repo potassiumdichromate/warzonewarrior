@@ -87,81 +87,61 @@
     50%       { opacity: 0.6; }
   }
   
-  /* ── Floating controls tray — bottom-right, hidden until tapped ── */
+  /* ── Floating controls tray — always visible, compact ── */
   .game-controls-tray {
     position: absolute;
     bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) + 8px));
     right: max(14px, calc(env(safe-area-inset-right, 0px) + 8px));
     z-index: 80;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 8px;
-    pointer-events: none;
+    gap: 6px;
+    pointer-events: all;
   }
 
-  /* Invisible tap target always present — 44×44 minimum touch area */
   .game-controls-toggle {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 48px;
-    height: 48px;
-    border: none;
-    background: transparent;
-    pointer-events: all;
-    cursor: pointer;
-    z-index: 2;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  /* Buttons hidden by default */
-  .game-controls-tray .game-overlay-button {
-    opacity: 0;
-    transform: scale(0.7) translateY(8px);
-    pointer-events: none;
-    transition: opacity 0.22s ease, transform 0.22s ease, border-color 0.2s ease, background 0.2s ease;
-  }
-
-  .game-controls-tray.visible .game-overlay-button {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-    pointer-events: all;
+    display: none;
   }
 
   .game-overlay-button {
     position: relative;
     z-index: 80;
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(255, 198, 71, 0.34);
+    border: 1px solid rgba(255, 198, 71, 0.25);
     border-radius: 999px;
-    background: rgba(9, 13, 20, 0.78);
-    color: #f8d77d;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.36), 0 0 0 1px rgba(255, 198, 71, 0.08);
-    backdrop-filter: blur(10px);
+    background: rgba(9, 13, 20, 0.65);
+    color: rgba(248, 215, 125, 0.7);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(8px);
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+    opacity: 0.75;
+    transition: opacity 0.2s ease, transform 0.15s ease, border-color 0.2s ease, background 0.2s ease;
+    pointer-events: all;
   }
 
   .game-overlay-button:hover {
-    transform: translateY(-1px) scale(1.06);
-    border-color: rgba(255, 198, 71, 0.55);
-    background: rgba(13, 18, 28, 0.9);
+    opacity: 1;
+    transform: scale(1.08);
+    border-color: rgba(255, 198, 71, 0.5);
+    background: rgba(13, 18, 28, 0.85);
     color: #ffe39a;
   }
 
   .game-overlay-button:active {
-    transform: translateY(1px) scale(0.95);
+    transform: scale(0.92);
+    opacity: 1;
   }
 
   .game-overlay-button__icon {
-    width: 18px;
-    height: 18px;
+    width: 14px;
+    height: 14px;
     stroke-width: 2.2;
   }
   
@@ -190,8 +170,12 @@
     opacity: 1;
   }
   
-  .game-page-container.is-fullscreen .game-controls-tray.visible .game-overlay-button {
-    opacity: 0.92;
+  .game-page-container.is-fullscreen .game-overlay-button {
+    opacity: 0.6;
+  }
+
+  .game-page-container.is-fullscreen .game-overlay-button:hover {
+    opacity: 1;
   }
   
 /* ── Round picker overlay ── */
@@ -273,19 +257,19 @@
   /* ── Mobile ── */
   @media (max-width: 768px) {
     .game-overlay-button {
-      width: 34px;
-      height: 34px;
+      width: 28px;
+      height: 28px;
     }
 
     .game-overlay-button__icon {
-      width: 15px;
-      height: 15px;
+      width: 12px;
+      height: 12px;
     }
 
     .game-controls-tray {
-      bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) + 4px));
-      right: max(10px, calc(env(safe-area-inset-right, 0px) + 4px));
-      gap: 6px;
+      bottom: max(8px, calc(env(safe-area-inset-bottom, 0px) + 4px));
+      right: max(8px, calc(env(safe-area-inset-right, 0px) + 4px));
+      gap: 5px;
     }
 
     .loading-text {
