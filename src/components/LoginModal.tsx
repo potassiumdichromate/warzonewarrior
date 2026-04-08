@@ -11,7 +11,6 @@ import {
 
 import intraverseLogo from '../assets/Intraverse_logo-cropped.png'
 import { buildApiUrl } from '../config/api'
-import { getWalletConnectProjectId } from '../lib/privyEnv'
 import './LoginModal.css'
 
 const DEBUG_LOGIN_TRACE = String((import.meta as any).env?.VITE_DEBUG_LOGIN_TRACE || '').toLowerCase() === 'true'
@@ -630,7 +629,6 @@ export default function LoginModal({
     },
   })
 
-  const walletConnectProjectId = getWalletConnectProjectId()
   const originInfo = getOriginInfo()
   // Match guess_the_ai_frontend: any window.ethereum counts as “injected” for gating + chain preflight.
   const hasInjectedWallet =
@@ -695,13 +693,6 @@ export default function LoginModal({
     setError('')
     setStatusMessage('')
 
-    if (!walletConnectProjectId && !hasInjectedWallet) {
-      setError(
-        'WalletConnect project ID is missing. Set VITE_WALLET_CONNECT_PROJECT_ID in .env and reload, or use a browser with an injected wallet.',
-      )
-      return
-    }
-
     if (isMobileDevice && !isMobilePrivyOriginSupported()) {
       setError(
         `Mobile wallet login requires HTTPS or localhost. Current origin is ${originInfo.origin}. Add this domain in Privy allowed domains.`,
@@ -712,7 +703,7 @@ export default function LoginModal({
     try {
       setWalletFlowPending(false)
       setWalletFlowBusy(true)
-      pushDebug('connectWith: login() full wallet auth (not connectWallet)', { wallet })
+      pushDebug('connectWith: login() full wallet auth', { wallet })
       setShowMobileContinue(false)
       clearMobileConnectWatchdog()
       clearMobileContinuePendingTimer()
@@ -748,14 +739,6 @@ export default function LoginModal({
     if (walletFlowBusy) return
     setError('')
     setStatusMessage('')
-
-    if (!walletConnectProjectId && !hasInjectedWallet) {
-      pushDebug('walletPress:blocked missing walletconnect project id')
-      setError(
-        'WalletConnect project ID is missing. Set VITE_WALLET_CONNECT_PROJECT_ID or VITE_WALLETCONNECT_PROJECT_ID in .env and reload, or use a browser with an injected wallet.'
-      )
-      return
-    }
 
     if (isMobileDevice && !isMobilePrivyOriginSupported()) {
       pushDebug('walletPress:blocked unsupported mobile origin', originInfo)
@@ -1261,7 +1244,7 @@ export default function LoginModal({
               <div className="wz-login-alert wz-login-alert--neutral">
                 <div style={{ fontWeight: 700, marginBottom: 6 }}>Debug trace (mobile-visible)</div>
                 <div style={{ marginBottom: 6, fontSize: 11, opacity: 0.85 }}>
-                  {`status: ready=${ready} auth=${authenticated} walletFlowPending=${walletFlowPending} walletFlowBusy=${walletFlowBusy} activeWallet=${activeWallet?.address ?? 'none'} existing=${existingAddress ?? 'none'} emailStep=${emailStep} method=${loginMethod ?? 'none'} protocol=${originInfo.protocol} host=${originInfo.hostname} wcProjectId=${walletConnectProjectId ? 'set' : 'missing'}`}
+                  {`status: ready=${ready} auth=${authenticated} walletFlowPending=${walletFlowPending} walletFlowBusy=${walletFlowBusy} activeWallet=${activeWallet?.address ?? 'none'} existing=${existingAddress ?? 'none'} emailStep=${emailStep} method=${loginMethod ?? 'none'} protocol=${originInfo.protocol} host=${originInfo.hostname}`}
                 </div>
                 <div style={{ maxHeight: 140, overflowY: 'auto', fontSize: 12, lineHeight: 1.35, whiteSpace: 'pre-wrap' }}>
                   {debugLines.length > 0

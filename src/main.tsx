@@ -7,9 +7,8 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { PrivyProvider, type PrivyClientConfig } from '@privy-io/react-auth';
-import { mainnet } from 'viem/chains';
 import { config, somniaChain } from './wagmi.config';
-import { getPrivyAppId, getWalletConnectProjectId } from './lib/privyEnv';
+import { getPrivyAppId } from './lib/privyEnv';
 import { PRIVY_WALLET_LIST } from './lib/privyWalletList';
 import './index.css';
 import App from './App';
@@ -19,13 +18,15 @@ import { AppToaster } from './components/AppToaster';
 import { Buffer } from 'buffer';
 window.Buffer = Buffer;
 
-const walletConnectProjectId = getWalletConnectProjectId();
 const privyAppId = getPrivyAppId();
 
 // Same rule as guess_the_ai_frontend: embedded wallets need a secure context (HTTPS) in the browser
 const canUseEmbeddedWallets =
   typeof window === 'undefined' || window.isSecureContext;
-// guess_the_ai_frontend does not pass walletConnectCloudProjectId — Privy uses dashboard + defaults.
+// Matches guess_the_ai_frontend/src/lib/privyConfig.ts pattern:
+// - No walletConnectCloudProjectId (Privy uses its dashboard default)
+// - Named wallets only in walletList (no wallet_connect entry)
+// - supportedChains = app chain only
 export const privyConfig: PrivyClientConfig = {
   appearance: {
     theme: 'dark' as const,
@@ -44,28 +45,13 @@ export const privyConfig: PrivyClientConfig = {
       }
     : {}),
   loginMethods: ['wallet', 'email', 'google'],
-  ...(walletConnectProjectId
-    ? { walletConnectCloudProjectId: walletConnectProjectId }
-    : {}),
-  // Somnia stays default for the app; including Ethereum mainnet helps MetaMask / mobile web
-  // complete handshake & network prompts when 5031 is not yet added in the wallet.
-  supportedChains: [somniaChain, mainnet],
+  supportedChains: [somniaChain],
   defaultChain: somniaChain,
-  externalWallets: {
-    signatureRequestTimeouts: {
-      metamask: 180000,
-    },
-  },
   intl: {
     defaultCountry: 'US',
   },
 };
 
-if (!walletConnectProjectId) {
-  console.warn(
-    '[Privy/Wagmi] No WalletConnect project ID. Set VITE_WALLET_CONNECT_PROJECT_ID. Mobile / WalletConnect wallet login will fail without it.'
-  );
-}
 
 if (!privyAppId) {
   console.warn('VITE_PRIVY_APP_ID is not set. Privy login will be disabled.');
