@@ -536,30 +536,48 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const setUserTokenLockRef = useRef<string | null>(null);
+
   const setUserToken = useCallback(async (_address) => {
     try {
       if (!_address) {
         throw new Error('Could not get wallet address');
       }
-      trace('setUserToken:start', { address: _address });
-      
+
+      const normalizedAddr = _address.toLowerCase();
+
+      // Prevent duplicate/concurrent calls for the same address
+      if (setUserTokenLockRef.current === normalizedAddr) {
+        console.log('[WalletContext] setUserToken: skipped (already in progress for', _address, ')');
+        return null;
+      }
+
+      // Skip if already logged in for this address
+      const existingToken = localStorage.getItem('token');
+      const existingAddr = localStorage.getItem('walletAddress');
+      if (existingToken && existingAddr?.toLowerCase() === normalizedAddr) {
+        console.log('[WalletContext] setUserToken: skipped (already logged in for', _address, ')');
+        return null;
+      }
+
+      setUserTokenLockRef.current = normalizedAddr;
+      console.log('[WalletContext] setUserToken: calling /login for', _address);
+
       const loginResult = await loginUser(_address);
-      trace('setUserToken:loginUser:done', { hasToken: Boolean(loginResult?.token) });
       if (loginResult.token) {
         localStorage.setItem('token', loginResult.token);
         localStorage.setItem('walletAddress', _address);
         setStoredSession({ walletAddress: _address, token: loginResult.token });
         await refreshProfile(_address);
         const playerInfo = await checkPlayerName(_address);
-        trace('setUserToken:checkPlayerName:done', { hasPlayerInfo: Boolean(playerInfo) });
         return playerInfo;
       }
-      trace('setUserToken:noToken');
-      return null;  
+      return null;
     } catch (error) {
       console.error("Wallet connection error:", error);
-      trace('setUserToken:error', error);
       return null;
+    } finally {
+      setUserTokenLockRef.current = null;
     }
   }, [checkPlayerName, refreshProfile]);
 
