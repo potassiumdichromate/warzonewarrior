@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState, useRef } from 'react'
 import type React from 'react'
 import {
-  useConnectWallet,
   useLoginWithEmail,
   useLoginWithOAuth,
   useLogin,
@@ -493,9 +492,7 @@ export default function LoginModal({
   // cleared when the Privy flow finishes (success, error, or exit).
   const dialogSuppressedRef = useRef(false)
   // True while login() (Privy's full auth modal) is the active flow.
-  // Prevents useConnectWallet.onError from competing when Privy triggers it internally.
   const loginFlowActiveRef = useRef(false)
-  const mobileWalletConnectFallbackTriedRef = useRef(false)
   // Keep a ref so async callbacks (onSuccess timers) can check current auth state without stale closure
   const authenticatedRef = useRef(authenticated)
   const debugEnabled = DEBUG_LOGIN_TRACE
@@ -570,121 +567,8 @@ export default function LoginModal({
       setError('')
       setStatusMessage('')
       reopenDialog()
-    }, 25000)
+    }, 12000)
   }, [authenticated, clearMobileConnectWatchdog, pushDebug])
-
-  // External wallet connect
-  const { connectWallet } = useConnectWallet({
-    onSuccess: async (result: any) => {
-      clearMobileConnectWatchdog()
-      clearMobileContinuePendingTimer()
-      setShowMobileContinue(false)
-      pushDebug('connectWallet:onSuccess')
-      const connectedWallet = result?.wallet ?? result
-
-      pushDebug('connectWallet:wallet info', {
-        address: connectedWallet?.address,
-        hasLoginOrLink: typeof connectedWallet?.loginOrLink === 'function',
-        walletClientType: connectedWallet?.walletClientType,
-        connectorType: connectedWallet?.connectorType,
-      })
-
-      if (authenticatedRef.current) {
-        pushDebug('connectWallet:onSuccess already authenticated, closing')
-        setStatusMessage('')
-        dialogSuppressedRef.current = false
-        onClose?.()
-        return
-      }
-
-      try {
-        if (typeof connectedWallet?.loginOrLink === 'function') {
-          pushDebug('connectWallet:loginOrLink start')
-          await connectedWallet.loginOrLink()
-          pushDebug('connectWallet:loginOrLink success')
-        } else {
-          // loginOrLink not available — Privy's login() flow handles auth async.
-          // Wait 3 s before showing "Continue Login": if Privy sets authenticated in that
-          // window the authenticatedRef check cancels the prompt so no button appears.
-          pushDebug('connectWallet:no loginOrLink, waiting 3 s for Privy auth to settle', {
-            walletClientType: connectedWallet?.walletClientType,
-            connectorType: connectedWallet?.connectorType,
-          })
-          mobileContinuePendingTimerRef.current = window.setTimeout(() => {
-            mobileContinuePendingTimerRef.current = null
-            if (authenticatedRef.current) {
-              pushDebug('connectWallet:delayed check - auth resolved, no continue button needed')
-              return
-            }
-            pushDebug('connectWallet:delayed check - auth still pending, showing continue button')
-            setWalletFlowPending(false)
-            setShowMobileContinue(true)
-            setError('')
-            setStatusMessage('')
-            reopenDialog()
-          }, 3000)
-        }
-      } catch (err: any) {
-        pushDebug('connectWallet:onSuccess branch error', err?.message || String(err))
-        setFriendlyPrivyError(
-          err?.privyErrorCode ?? err?.code,
-          (err?.message ?? err?.code ?? String(err)) || 'Failed to authenticate wallet'
-        )
-        reopenDialog()
-      }
-    },
-    onError: (err: any) => {
-      pushDebug('connectWallet:onError', err?.message || String(err))
-
-      // When login() is the active flow, Privy may fire connectWallet:onError internally.
-      // Defer to useLogin.onError to avoid competing state changes.
-      if (loginFlowActiveRef.current) {
-        pushDebug('connectWallet:onError ignored (login flow active)')
-        return
-      }
-
-      clearMobileConnectWatchdog()
-      clearMobileContinuePendingTimer()
-      setShowMobileContinue(false)
-      setWalletFlowPending(false)
-      setFriendlyPrivyError(
-        typeof err === 'string' ? err : err?.privyErrorCode ?? err?.code,
-        (err?.message ?? err?.code ?? String(err)) || 'Failed to connect wallet'
-      )
-      reopenDialog()
-    },
-  })
-
-  const tryMobileWalletConnectFallback = useCallback(() => {
-    if (mobileWalletConnectFallbackTriedRef.current) return
-    mobileWalletConnectFallbackTriedRef.current = true
-    pushDebug('mobile fallback: retry via wallet_connect')
-    setStatusMessage('Retrying wallet connection using WalletConnect...')
-    setError('')
-    setWalletFlowPending(true)
-    setShowMobileContinue(false)
-    clearMobileContinuePendingTimer()
-    startMobileConnectWatchdog()
-    closeDialogForPrivyFlow()
-
-    try {
-      connectWallet({
-        walletList: ['wallet_connect', 'metamask', 'coinbase_wallet', 'rainbow'],
-        preSelectedWalletId: 'wallet_connect',
-        walletChainType: 'ethereum-only',
-      })
-    } catch (err: any) {
-      pushDebug('mobile fallback: connectWallet throw', err?.message || String(err))
-      clearMobileConnectWatchdog()
-      setWalletFlowPending(false)
-      setStatusMessage('')
-      setFriendlyPrivyError(
-        err?.privyErrorCode ?? err?.code,
-        err?.message || 'Failed to connect wallet'
-      )
-      reopenDialog()
-    }
-  }, [clearMobileContinuePendingTimer, connectWallet, startMobileConnectWatchdog, pushDebug])
 
   // Social login
   const { initOAuth, loading: oauthLoading } = useLoginWithOAuth({
@@ -713,12 +597,14 @@ export default function LoginModal({
       pushDebug('privy:login onComplete — clearing walletFlowPending')
       loginFlowActiveRef.current = false
       setWalletFlowPending(false)
+      setWalletFlowBusy(false)
       walletFlowInFlightRef.current = false
     },
     onError: (errorCode: any) => {
       pushDebug('privy:login onError', errorCode)
       loginFlowActiveRef.current = false
       setWalletFlowPending(false)
+      setWalletFlowBusy(false)
       walletFlowInFlightRef.current = false
       setStatusMessage('')
       if (errorCode === 'exited_auth_flow' || String(errorCode).includes('exited_auth_flow')) {
@@ -739,18 +625,6 @@ export default function LoginModal({
             ? errorCode
             : String(errorCode)
 
-      if (
-        isMobileDevice &&
-        walletConnectProjectId &&
-        (code === 'generic_connect_wallet_error' ||
-          code === 'unknown_connect_wallet_error' ||
-          code === 'client_request_timeout')
-      ) {
-        pushDebug('privy:login onError -> mobile wallet_connect fallback', { code })
-        tryMobileWalletConnectFallback()
-        return
-      }
-
       setFriendlyPrivyError(code, 'Failed to connect wallet')
       reopenDialog()
     },
@@ -762,6 +636,42 @@ export default function LoginModal({
   const hasInjectedWallet =
     typeof window !== 'undefined' &&
     Boolean((window as unknown as { ethereum?: unknown }).ethereum)
+
+  const ensureInjectedChain = async () => {
+    const ethereum = (window as Window & { ethereum?: any }).ethereum
+    if (!ethereum?.request) return true
+    const chainIdHex = `0x${targetChainId.toString(16)}`
+    try {
+      const current = await ethereum.request({ method: 'eth_chainId' })
+      if (typeof current === 'string' && current.toLowerCase() === chainIdHex.toLowerCase()) {
+        return true
+      }
+      await ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: chainIdHex }],
+      })
+      return true
+    } catch (err: any) {
+      if (err?.code === 4902) {
+        try {
+          await ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: chainIdHex,
+              chainName: 'Somnia',
+              nativeCurrency: { name: 'Somnia', symbol: 'SOMI', decimals: 18 },
+              rpcUrls: ['https://api.infra.mainnet.somnia.network'],
+              blockExplorerUrls: ['https://explorer.somnia.network/'],
+            }],
+          })
+          return true
+        } catch {
+          return false
+        }
+      }
+      return false
+    }
+  }
 
   const runEmbeddedWalletCreation = useCallback(async () => {
     setError('')
@@ -800,21 +710,28 @@ export default function LoginModal({
     }
 
     try {
-      mobileWalletConnectFallbackTriedRef.current = false
-      setWalletFlowPending(true)
+      setWalletFlowPending(false)
+      setWalletFlowBusy(true)
       pushDebug('connectWith: login() full wallet auth (not connectWallet)', { wallet })
       setShowMobileContinue(false)
       clearMobileConnectWatchdog()
       clearMobileContinuePendingTimer()
       closeDialogForPrivyFlow()
       loginFlowActiveRef.current = true
-      // connectWallet() only links the provider; login() runs connect + SIWE. Using login()
-      // for row taps matches the main "Connect wallet" button and avoids MetaMask dropping
-      // mid-flow on mobile. Pick the same wallet again inside Privy’s modal.
+      if (hasInjectedWallet) {
+        const switched = await ensureInjectedChain()
+        if (!switched) {
+          setWalletFlowBusy(false)
+          setError('Please switch your wallet to the Somnia network and try again.')
+          reopenDialog()
+          return
+        }
+      }
       login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
     } catch (err: any) {
       loginFlowActiveRef.current = false
       setWalletFlowPending(false)
+      setWalletFlowBusy(false)
       console.error('connectWith error', err)
       setStatusMessage('')
       setError(err?.message || 'Failed to connect wallet')
@@ -828,6 +745,7 @@ export default function LoginModal({
       return
     }
     if (emailStep === 'enter-code') return
+    if (walletFlowBusy) return
     setError('')
     setStatusMessage('')
 
@@ -848,31 +766,29 @@ export default function LoginModal({
     }
 
     try {
-      mobileWalletConnectFallbackTriedRef.current = false
-      setWalletFlowPending(true)
+      setWalletFlowPending(false)
+      setWalletFlowBusy(true)
       trace('walletPress:start', { isMobileDevice, emailStep, authDisabled })
       pushDebug('walletPress:start', { isMobileDevice, emailStep, authDisabled })
-
-      if (isMobileDevice) {
-        setShowMobileContinue(false)
-        clearMobileConnectWatchdog()
-        closeDialogForPrivyFlow()
-        trace('walletPress:mobilePrivyModal')
-        pushDebug('mobile connect: privy modal direct')
-        loginFlowActiveRef.current = true
-        login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
-        return
-      }
-
-      // Close our dialog so Privy's wallet picker renders without interference.
-      // reopenDialog() is called on any outcome (error / exited_auth_flow / success).
+      setShowMobileContinue(false)
+      clearMobileConnectWatchdog()
       closeDialogForPrivyFlow()
-      trace('walletPress:desktopPrivyModal')
-      pushDebug('desktop connect: privy modal')
+      if (hasInjectedWallet) {
+        const switched = await ensureInjectedChain()
+        if (!switched) {
+          setWalletFlowBusy(false)
+          setError('Please switch your wallet to the Somnia network and try again.')
+          reopenDialog()
+          return
+        }
+      }
+      trace('walletPress:privyModal')
+      pushDebug('connect: privy modal wallet login')
       loginFlowActiveRef.current = true
       login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
     } catch (err: any) {
       setWalletFlowPending(false)
+      setWalletFlowBusy(false)
       trace('walletPress:error', err)
       pushDebug('walletPress:error', err?.message || String(err))
       clearMobileConnectWatchdog()
