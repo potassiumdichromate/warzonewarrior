@@ -6,8 +6,20 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Vite plugin: redirect @noble/hashes/utils.js → @noble/hashes/utils
+// Works regardless of installed version (older versions only export ./utils not ./utils.js)
+const nobleHashesCompat = {
+  name: 'noble-hashes-compat',
+  resolveId(id: string) {
+    if (id === '@noble/hashes/utils.js') {
+      return { id: '@noble/hashes/utils', external: false }
+    }
+  },
+}
+
 export default defineConfig({
   plugins: [
+    nobleHashesCompat,
     react(),
     nodePolyfills({
       include: ['buffer', 'crypto', 'stream', 'util'],
@@ -41,10 +53,6 @@ export default defineConfig({
     open: true,
   },
   optimizeDeps: {
-    include: [
-      '@noble/hashes/utils.js',
-      '@noble/hashes/utils',
-    ],
     esbuildOptions: {
       target: 'es2020',
       define: {
