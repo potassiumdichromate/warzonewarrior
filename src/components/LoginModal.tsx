@@ -495,6 +495,7 @@ export default function LoginModal({
   // True while login() (Privy's full auth modal) is the active flow.
   // Prevents useConnectWallet.onError from competing when Privy triggers it internally.
   const loginFlowActiveRef = useRef(false)
+  const mobileWalletConnectFallbackTriedRef = useRef(false)
   // Keep a ref so async callbacks (onSuccess timers) can check current auth state without stale closure
   const authenticatedRef = useRef(authenticated)
   const debugEnabled = DEBUG_LOGIN_TRACE
@@ -569,7 +570,7 @@ export default function LoginModal({
       setError('')
       setStatusMessage('')
       reopenDialog()
-    }, 12000)
+    }, 25000)
   }, [authenticated, clearMobileConnectWatchdog, pushDebug])
 
   // External wallet connect
@@ -654,6 +655,37 @@ export default function LoginModal({
     },
   })
 
+  const tryMobileWalletConnectFallback = useCallback(() => {
+    if (mobileWalletConnectFallbackTriedRef.current) return
+    mobileWalletConnectFallbackTriedRef.current = true
+    pushDebug('mobile fallback: retry via wallet_connect')
+    setStatusMessage('Retrying wallet connection using WalletConnect...')
+    setError('')
+    setWalletFlowPending(true)
+    setShowMobileContinue(false)
+    clearMobileContinuePendingTimer()
+    startMobileConnectWatchdog()
+    closeDialogForPrivyFlow()
+
+    try {
+      connectWallet({
+        walletList: ['wallet_connect', 'metamask', 'coinbase_wallet', 'rainbow'],
+        preSelectedWalletId: 'wallet_connect',
+        walletChainType: 'ethereum-only',
+      })
+    } catch (err: any) {
+      pushDebug('mobile fallback: connectWallet throw', err?.message || String(err))
+      clearMobileConnectWatchdog()
+      setWalletFlowPending(false)
+      setStatusMessage('')
+      setFriendlyPrivyError(
+        err?.privyErrorCode ?? err?.code,
+        err?.message || 'Failed to connect wallet'
+      )
+      reopenDialog()
+    }
+  }, [clearMobileContinuePendingTimer, connectWallet, startMobileConnectWatchdog, pushDebug])
+
   // Social login
   const { initOAuth, loading: oauthLoading } = useLoginWithOAuth({
     onComplete: async () => {
@@ -706,6 +738,19 @@ export default function LoginModal({
           : typeof errorCode === 'string'
             ? errorCode
             : String(errorCode)
+
+      if (
+        isMobileDevice &&
+        walletConnectProjectId &&
+        (code === 'generic_connect_wallet_error' ||
+          code === 'unknown_connect_wallet_error' ||
+          code === 'client_request_timeout')
+      ) {
+        pushDebug('privy:login onError -> mobile wallet_connect fallback', { code })
+        tryMobileWalletConnectFallback()
+        return
+      }
+
       setFriendlyPrivyError(code, 'Failed to connect wallet')
       reopenDialog()
     },
@@ -755,6 +800,7 @@ export default function LoginModal({
     }
 
     try {
+      mobileWalletConnectFallbackTriedRef.current = false
       setWalletFlowPending(true)
       pushDebug('connectWith: login() full wallet auth (not connectWallet)', { wallet })
       setShowMobileContinue(false)
@@ -802,6 +848,7 @@ export default function LoginModal({
     }
 
     try {
+      mobileWalletConnectFallbackTriedRef.current = false
       setWalletFlowPending(true)
       trace('walletPress:start', { isMobileDevice, emailStep, authDisabled })
       pushDebug('walletPress:start', { isMobileDevice, emailStep, authDisabled })

@@ -245,9 +245,9 @@ export default function IntraverseLogin() {
               candidateCount: callbackData.idTokenCandidates.length,
               tokenLength: typeof idToken === 'string' ? idToken.length : String(idToken).length,
               ok: response.ok,
-              authHashLength: payload.authHash.length,
-              userIdLength: payload.userId.length,
-              clientKeyLength: payload.clientKey.length,
+              authHashLength: typeof payload.authHash === 'string' ? payload.authHash.length : 0,
+              userIdLength: typeof payload.userId === 'string' ? payload.userId.length : 0,
+              clientKeyLength: typeof payload.clientKey === 'string' ? payload.clientKey.length : 0,
               message: lastErrorMessage,
             });
           } catch (candidateError) {
