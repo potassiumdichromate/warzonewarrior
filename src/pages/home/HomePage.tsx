@@ -52,7 +52,7 @@ const MARQUEE_ITEMS = ["CAMPAIGN", "ARMORY", "CHARACTERS", "BATTLE", "EARN", "UP
 export function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<Section>("home");
-  const { isConnected, address, disconnect, setUserToken, playerProfile, profileLoading } = useWallet();
+  const { isConnected, address, disconnect, playerProfile, profileLoading } = useWallet();
   const { ready: privyReady } = usePrivy();
   const navigate = useNavigate();
   const location = useLocation();
@@ -66,11 +66,6 @@ export function HomePage() {
   const coins = Number(playerProfile?.PlayerResources?.coin ?? 0);
   const gems = Number(playerProfile?.PlayerResources?.gem ?? 0);
   const formatResource = (value: number) => value.toLocaleString();
-
-  useEffect(() => {
-    if (!isConnected || !address) return;
-    setUserToken(address).catch(console.error);
-  }, [isConnected, address, setUserToken]);
 
   const handleCopy = async () => {
     if (!address) return;

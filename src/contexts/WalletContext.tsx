@@ -105,7 +105,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   
   // Wagmi hooks (optional path alongside Privy)
   const { address: wagmiAddress, isConnected: wagmiIsConnected } = useAccount();
-  const { disconnect } = useDisconnect();
+  const { disconnectAsync } = useDisconnect();
   const { connectAsync } = useConnect();
   const connectors = useConnectors();
   const { switchChain } = useSwitchChain();
@@ -149,13 +149,27 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const handleDisconnect = useCallback(async () => {
     logoutInProgressRef.current = true;
 
-    // 1. Privy logout FIRST while the session cookie is still valid
+    // 1. Privy logout (bounded wait — on mobile the API can hang; we still must clear locally)
+    const PRIVY_LOGOUT_MAX_MS = 6000;
     if (privyLogout) {
-      try { await privyLogout(); } catch {}
+      try {
+        await Promise.race([
+          privyLogout(),
+          new Promise<void>((resolve) => {
+            window.setTimeout(resolve, PRIVY_LOGOUT_MAX_MS);
+          }),
+        ]);
+      } catch {
+        /* 400 / network — continue with local teardown */
+      }
     }
 
-    // 2. Wagmi disconnect
-    try { disconnect(); } catch {}
+    // 2. Wagmi disconnect (await so connector state clears before reload)
+    try {
+      await disconnectAsync();
+    } catch {
+      /* no active connector */
+    }
 
     // 3. Clear ALL React state
     backendLoginSentRef.current = null;
@@ -171,6 +185,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       'walletConnected', 'walletAddress', 'token',
       'Intraverse', 'intraverseUserId', 'intraverseUserInfo',
       'intraversePendingAuthHash', 'intraverseClientKey', 'intraverseMagicLoginUrl',
+      'loginType', 'loginTimestamp',
     ];
     keysToRemove.forEach((k) => localStorage.removeItem(k));
 
@@ -185,9 +200,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     // 5. Clear sessionStorage (Privy may store tokens here)
     try { sessionStorage.clear(); } catch {}
 
-    // 6. Force full reload so Privy SDK re-initializes with no cached auth
-    window.location.href = '/';
-  }, [disconnect, privyLogout]);
+    // 6. Hard navigation (replace avoids back-forward cache restoring logged-in state on mobile)
+    const origin = window.location.origin;
+    window.location.replace(`${origin}/?logout=${Date.now()}`);
+  }, [disconnectAsync, privyLogout]);
 
   useEffect(() => {
     window.addEventListener('storage', syncStoredSession);
@@ -205,6 +221,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   // would cause re-runs when the chain switches, looping the backend /login call.
   useEffect(() => {
     const checkConnection = async () => {
+      if (logoutInProgressRef.current) return;
       if (wagmiIsConnected && wagmiAddress) {
         localStorage.setItem('walletConnected', 'true');
         localStorage.setItem('walletAddress', wagmiAddress);
