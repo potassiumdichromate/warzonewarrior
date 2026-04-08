@@ -601,12 +601,22 @@ export default function LoginModal({
   // the user is fully authenticated — clear walletFlowPending so the auth effect
   // can close the modal normally instead of waiting for the redundant wallet flow.
   const { login } = useLogin({
-    onComplete: () => {
-      pushDebug('privy:login onComplete — clearing walletFlowPending')
+    onComplete: ({ loginMethod }) => {
+      pushDebug('privy:login onComplete', { loginMethod })
       loginFlowActiveRef.current = false
-      setWalletFlowPending(false)
-      setWalletFlowBusy(false)
       walletFlowInFlightRef.current = false
+
+      const isWalletLogin = loginMethod === 'siwe'
+      if (isWalletLogin) {
+        // Wallet login: trigger chain switch effect
+        pushDebug('privy:login wallet auth done, triggering chain switch')
+        setWalletFlowBusy(false)
+        setWalletFlowPending(true)
+      } else {
+        // Email/Google: no chain switch needed
+        setWalletFlowPending(false)
+        setWalletFlowBusy(false)
+      }
     },
     onError: (errorCode: any) => {
       pushDebug('privy:login onError', errorCode)
