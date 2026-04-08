@@ -154,6 +154,7 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
     hash: txHash,
   });
   const { switchToSomnia, refreshProfile } = useWallet();
+  const [switchingNetwork, setSwitchingNetwork] = useState(false);
   const {
     privyReady,
     privyAuthenticated,
@@ -376,46 +377,50 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
         valueHex = `0${valueHex}`;
       }
       const somniaChainHex = `0x${somniaTestnet.id.toString(16)}`;
+
+      // Use window.ethereum directly — walletClient may go through Wagmi's abstraction
+      // which doesn't always trigger MetaMask's chain switch popup.
+      const provider = (window as any).ethereum;
+      if (!provider?.request) {
+        alert('No wallet provider found. Please make sure MetaMask is installed.');
+        return;
+      }
+
+      // Force switch to Somnia before sending
+      const currentChain = await provider.request({ method: 'eth_chainId' });
+      if (typeof currentChain === 'string' && currentChain.toLowerCase() !== somniaChainHex.toLowerCase()) {
+        try {
+          await provider.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: somniaChainHex }],
+          });
+        } catch (switchErr: any) {
+          if (switchErr?.code === 4902) {
+            await provider.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: somniaChainHex,
+                chainName: 'Somnia',
+                nativeCurrency: { name: 'Somnia', symbol: 'SOMI', decimals: 18 },
+                rpcUrls: ['https://api.infra.mainnet.somnia.network'],
+                blockExplorerUrls: ['https://explorer.somnia.network/'],
+              }],
+            });
+          } else {
+            alert('Please switch MetaMask to the Somnia network before purchasing.');
+            return;
+          }
+        }
+      }
+
       const txParams = {
         from: accountAddress,
         to: contractAddress,
         data,
         value: valueWei === 0n ? '0x0' : `0x${valueHex}`,
-        chainId: somniaChainHex,
       };
 
-      // Double-check MetaMask is on Somnia before sending
-      try {
-        const currentChain = await walletClient.request({ method: 'eth_chainId', params: [] });
-        if (typeof currentChain === 'string' && currentChain.toLowerCase() !== somniaChainHex.toLowerCase()) {
-          try {
-            await walletClient.request({
-              method: 'wallet_switchEthereumChain',
-              params: [{ chainId: somniaChainHex }],
-            });
-          } catch (switchErr: any) {
-            if (switchErr?.code === 4902) {
-              await walletClient.request({
-                method: 'wallet_addEthereumChain',
-                params: [{
-                  chainId: somniaChainHex,
-                  chainName: 'Somnia',
-                  nativeCurrency: { name: 'Somnia', symbol: 'SOMI', decimals: 18 },
-                  rpcUrls: ['https://api.infra.mainnet.somnia.network'],
-                  blockExplorerUrls: ['https://explorer.somnia.network/'],
-                }],
-              });
-            } else {
-              alert('Please switch MetaMask to the Somnia network before purchasing.');
-              return;
-            }
-          }
-        }
-      } catch {
-        // If chain check fails, proceed and let the tx fail naturally
-      }
-
-      const hash = await walletClient.request({
+      const hash = await provider.request({
         method: 'eth_sendTransaction',
         params: [txParams],
       });
@@ -639,40 +644,99 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
       <div className="coin-detail-content">
         <img src={coinImage} alt="Coins" className="coin-detail-image" />
         <div className="wz-btn-stack buy-buttons-stack">
-          <button
-            type="button"
-            className="wz-btn wz-btn--lg wz-btn--primary wz-btn--block buy-button"
-            onClick={() => {
-              if (!walletClient && !canUsePrivy) {
-                const isIntraverseOnly = Boolean(localStorage.getItem('intraverseUserId')) && !privyAuthenticated;
-                if (isIntraverseOnly) {
-                  alert('Purchases are not available with Intraverse login. Please log out and sign in with a wallet (MetaMask, Coinbase, etc.) to buy items.');
-                } else {
-                  alert('To purchase items you need a connected wallet. Please log in with MetaMask, Coinbase, or another wallet first.');
-                }
-                return;
-              }
-              // Prefer direct wallet path (MetaMask etc.) when available — it handles
-              // chain switching internally and avoids Privy's "No wallet found" error.
-              if (walletClient) {
-                handleBuyNow();
-              } else if (canUsePrivy) {
-                handleBuyWithPrivy();
-              } else {
-                handleBuyNow();
-              }
-            }}
-            disabled={isSending || isConfirming}
-            title={
-              isSending
-                ? 'Waiting for wallet'
-                : isConfirming
-                ? 'Waiting for confirmation'
-                : 'Buy Now'
+          {(() => {
+            const hasInjectedProvider = Boolean((window as any).ethereum?.request);
+            const isWalletUser = Boolean(walletClient || (hasInjectedProvider && wagmiConnected));
+            const isIntraverseOnly = Boolean(localStorage.getItem('intraverseUserId')) && !privyAuthenticated && !isWalletUser;
+            const needsChainSwitch = isWalletUser && currentChainId !== somniaTestnet.id;
+
+            if (isIntraverseOnly) {
+              return (
+                <button
+                  type="button"
+                  className="wz-btn wz-btn--lg wz-btn--primary wz-btn--block buy-button"
+                  onClick={() => alert('Purchases are not available with Intraverse login. Please log out and sign in with a wallet (MetaMask, Coinbase, etc.) to buy items.')}
+                >
+                  BUY NOW
+                </button>
+              );
             }
-          >
-            {isSending ? 'Processing…' : isConfirming ? 'Confirming…' : 'BUY NOW'}
-          </button>
+
+            if (!isWalletUser && !canUsePrivy) {
+              return (
+                <button
+                  type="button"
+                  className="wz-btn wz-btn--lg wz-btn--primary wz-btn--block buy-button"
+                  onClick={() => alert('To purchase items you need a connected wallet. Please log in with MetaMask, Coinbase, or another wallet first.')}
+                >
+                  BUY NOW
+                </button>
+              );
+            }
+
+            if (needsChainSwitch) {
+              return (
+                <button
+                  type="button"
+                  className="wz-btn wz-btn--lg wz-btn--primary wz-btn--block buy-button"
+                  disabled={switchingNetwork}
+                  onClick={async () => {
+                    setSwitchingNetwork(true);
+                    try {
+                      const provider = (window as any).ethereum;
+                      const somniaHex = `0x${somniaTestnet.id.toString(16)}`;
+                      try {
+                        await provider.request({
+                          method: 'wallet_switchEthereumChain',
+                          params: [{ chainId: somniaHex }],
+                        });
+                      } catch (err: any) {
+                        if (err?.code === 4902) {
+                          await provider.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [{
+                              chainId: somniaHex,
+                              chainName: 'Somnia',
+                              nativeCurrency: { name: 'Somnia', symbol: 'SOMI', decimals: 18 },
+                              rpcUrls: ['https://api.infra.mainnet.somnia.network'],
+                              blockExplorerUrls: ['https://explorer.somnia.network/'],
+                            }],
+                          });
+                        } else {
+                          alert('Please switch to the Somnia network in your wallet.');
+                        }
+                      }
+                    } catch {
+                      alert('Failed to switch network. Please switch to Somnia manually in your wallet.');
+                    } finally {
+                      setSwitchingNetwork(false);
+                    }
+                  }}
+                >
+                  {switchingNetwork ? 'Switching…' : 'Switch to Somnia'}
+                </button>
+              );
+            }
+
+            return (
+              <button
+                type="button"
+                className="wz-btn wz-btn--lg wz-btn--primary wz-btn--block buy-button"
+                onClick={() => {
+                  if (isWalletUser) {
+                    handleBuyNow();
+                  } else if (canUsePrivy) {
+                    handleBuyWithPrivy();
+                  } else {
+                    handleBuyNow();
+                  }
+                }}
+                disabled={isSending || isConfirming}
+              >
+                {isSending ? 'Processing…' : isConfirming ? 'Confirming…' : 'BUY NOW'}
+              </button>
+            );
+          })()}
         </div>
         <div className="purchase-meta">
           {(type === 'Guns' || type === 'Coins' || type === 'Gems') && (
