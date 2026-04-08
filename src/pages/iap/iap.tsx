@@ -375,12 +375,45 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
       if (valueHex.length % 2) {
         valueHex = `0${valueHex}`;
       }
+      const somniaChainHex = `0x${somniaTestnet.id.toString(16)}`;
       const txParams = {
         from: accountAddress,
         to: contractAddress,
         data,
         value: valueWei === 0n ? '0x0' : `0x${valueHex}`,
+        chainId: somniaChainHex,
       };
+
+      // Double-check MetaMask is on Somnia before sending
+      try {
+        const currentChain = await walletClient.request({ method: 'eth_chainId', params: [] });
+        if (typeof currentChain === 'string' && currentChain.toLowerCase() !== somniaChainHex.toLowerCase()) {
+          try {
+            await walletClient.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: somniaChainHex }],
+            });
+          } catch (switchErr: any) {
+            if (switchErr?.code === 4902) {
+              await walletClient.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: somniaChainHex,
+                  chainName: 'Somnia',
+                  nativeCurrency: { name: 'Somnia', symbol: 'SOMI', decimals: 18 },
+                  rpcUrls: ['https://api.infra.mainnet.somnia.network'],
+                  blockExplorerUrls: ['https://explorer.somnia.network/'],
+                }],
+              });
+            } else {
+              alert('Please switch MetaMask to the Somnia network before purchasing.');
+              return;
+            }
+          }
+        }
+      } catch {
+        // If chain check fails, proceed and let the tx fail naturally
+      }
 
       const hash = await walletClient.request({
         method: 'eth_sendTransaction',
