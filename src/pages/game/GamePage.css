@@ -126,11 +126,30 @@
     stroke-width: 2.6;
   }
 
-  /* Home — top-right, more spacing from edge on desktop/tablet */
+  /* Home — top-right, rectangular box on desktop/tablet */
   .game-overlay-button--home {
-    top: max(8px, calc(env(safe-area-inset-top, 0px) + 4px));
-    right: max(80px, calc(env(safe-area-inset-right, 0px) + 80px));
+    top: max(12px, calc(env(safe-area-inset-top, 0px) + 8px));
+    right: max(100px, calc(env(safe-area-inset-right, 0px) + 100px));
     opacity: 1;
+    width: 56px;
+    height: 42px;
+    border: 2px solid #fff;
+    border-radius: 8px;
+    background: #2a2a2a;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+
+  .game-overlay-button--home:hover {
+    border-color: #fff;
+    background: #3a3a3a;
+  }
+
+  .game-overlay-button--home .game-overlay-button__icon {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke-width: 2.2;
   }
 
   /* Fullscreen — bottom-right, fully visible */
@@ -283,6 +302,13 @@
     .game-overlay-button--home {
       top: max(6px, calc(env(safe-area-inset-top, 0px) + 3px));
       right: max(36px, calc(env(safe-area-inset-right, 0px) + 36px));
+      width: 28px;
+      height: 28px;
+    }
+
+    .game-overlay-button--home .game-overlay-button__icon {
+      width: 13px;
+      height: 13px;
     }
 
     .game-overlay-button--fullscreen {
