@@ -483,6 +483,10 @@ export default function LoginModal({
   const walletFlowInFlightRef = useRef(false)
   const mobileConnectWatchdogRef = useRef<number | null>(null)
   const mobileContinuePendingTimerRef = useRef<number | null>(null)
+  // When true, the open/close effect must NOT reopen the <dialog> and
+  // onCancel must NOT call onClose. Set before closeDialogForPrivyFlow(),
+  // cleared when the Privy flow finishes (success, error, or exit).
+  const dialogSuppressedRef = useRef(false)
   // Keep a ref so async callbacks (onSuccess timers) can check current auth state without stale closure
   const authenticatedRef = useRef(authenticated)
   const debugEnabled = DEBUG_LOGIN_TRACE
@@ -514,7 +518,15 @@ export default function LoginModal({
     setError(nextMessage)
   }
 
+  const closeDialogForPrivyFlow = () => {
+    dialogSuppressedRef.current = true
+    try {
+      if (dialogRef.current?.open) dialogRef.current.close()
+    } catch {}
+  }
+
   const reopenDialog = () => {
+    dialogSuppressedRef.current = false
     try {
       if (open && dialogRef.current && !dialogRef.current.open) {
         dialogRef.current.showModal()
@@ -731,19 +743,18 @@ export default function LoginModal({
       pushDebug('walletPress:start', { isMobileDevice, emailStep, authDisabled })
 
       if (isMobileDevice) {
-        // Mobile: trigger Privy wallet auth modal directly in the tap gesture.
-        // Connector-first paths can fail with generic errors on some mobile browsers.
         setShowMobileContinue(false)
-        setStatusMessage('Choose a wallet in Privy, then approve the sign-in request in your wallet app.')
         clearMobileConnectWatchdog()
+        closeDialogForPrivyFlow()
         trace('walletPress:mobilePrivyModal')
         pushDebug('mobile connect: privy modal direct')
         login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
         return
       }
 
-      setStatusMessage('Choose a wallet in Privy, then approve the sign-in request in MetaMask or your selected wallet.')
-      // Desktop: use Privy's wallet auth modal flow.
+      // Close our dialog so Privy's wallet picker renders without interference.
+      // reopenDialog() is called on any outcome (error / exited_auth_flow / success).
+      closeDialogForPrivyFlow()
       trace('walletPress:desktopPrivyModal')
       pushDebug('desktop connect: privy modal')
       login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
@@ -948,10 +959,15 @@ export default function LoginModal({
     pushDebug('mobile continue visibility', { showMobileContinue })
   }, [showMobileContinue, pushDebug])
 
-  // Open/close dialog
+  // Open/close dialog — skip reopen while Privy flow has suppressed our dialog
   useEffect(() => {
-    if (open && dialogRef.current && !dialogRef.current.open) dialogRef.current.showModal()
-    if (!open && dialogRef.current?.open) dialogRef.current.close()
+    if (open && dialogRef.current && !dialogRef.current.open && !dialogSuppressedRef.current) {
+      dialogRef.current.showModal()
+    }
+    if (!open) {
+      dialogSuppressedRef.current = false
+      if (dialogRef.current?.open) dialogRef.current.close()
+    }
     return () => { try { if (dialogRef.current?.open) dialogRef.current.close() } catch {} }
   }, [open])
 
@@ -986,6 +1002,7 @@ export default function LoginModal({
       }
       // Wallet exists → close
       pushDebug('auth:address present closing modal')
+      dialogSuppressedRef.current = false
       onClose?.()
       return
     }
@@ -1016,6 +1033,7 @@ export default function LoginModal({
           // On mobile, avoid extra post-login switch/sign prompts.
           // Privy authentication already handled proof-of-ownership.
           setWalletFlowPending(false)
+          dialogSuppressedRef.current = false
           trace('walletFlow:mobileSkipSwitchSign')
           pushDebug('walletFlow:mobile skip switch/sign')
           onClose?.()
@@ -1043,6 +1061,7 @@ export default function LoginModal({
         pushDebug('walletFlow:desktop sign success')
 
         setWalletFlowPending(false)
+        dialogSuppressedRef.current = false
         onClose?.()
       } catch (err: any) {
         trace('walletFlow:error', err)
@@ -1151,9 +1170,14 @@ export default function LoginModal({
   // Unified close handler: if user is authenticated but lacks a wallet
   // (embedded wallet still provisioning), closing should log them out.
   const requestClose = () => {
+    // While Privy's login/wallet modal is on screen, ignore browser cancel
+    // events that bleed through to our hidden <dialog>.
+    if (dialogSuppressedRef.current) {
+      pushDebug('modal:requestClose suppressed (privy flow active)')
+      return
+    }
     pushDebug('modal:requestClose', { showCustomCreateUI, authenticated })
     if (showCustomCreateUI && authenticated) {
-      // Best-effort logout; do not block UI on awaiting.
       logout().catch(() => {})
     }
     try { if (dialogRef.current?.open) dialogRef.current.close() } catch {}
