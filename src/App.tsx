@@ -38,6 +38,7 @@ function AppShell() {
           <Route path="/iap" element={<IAP />} />
           <Route path="/tournament" element={<InterversePlayPage />} />
           <Route path="/auth" element={<IntraverseLoginButton />} />
+          <Route path="/callback/*" element={<IntraverseLogin />} />
           <Route path="/auth/callback/intraverse/callback/*" element={<IntraverseLogin />} />
           <Route path="/intraverse-auth/callback/*" element={<IntraverseLogin />} />
           <Route path="/login" element={<LoginPage />} />

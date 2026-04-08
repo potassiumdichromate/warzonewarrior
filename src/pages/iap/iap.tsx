@@ -146,6 +146,7 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
   const [sendError, setSendError] = useState(null);
   const [txHash, setTxHash] = useState(undefined);
   const [pendingOrder, setPendingOrder] = useState(null);
+  const [purchaseMethod, setPurchaseMethod] = useState<'wallet' | 'privy' | null>(null);
   const { isLoading: isConfirming, isSuccess: isConfirmed, error: waitError } = useWaitForTransactionReceipt({
     hash: txHash,
   });
@@ -351,6 +352,7 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
       const orderHash = keccak256(stringToBytes(orderId));
 
       setPendingOrder({ orderId, orderHash, submitted: false });
+      setPurchaseMethod('wallet');
       setIsSending(true);
 
       const data = encodeFunctionData({
@@ -380,6 +382,7 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
     } catch (err) {
       setSendError(err);
       setPendingOrder(null);
+      setPurchaseMethod(null);
       setTxHash(undefined);
       const msg = err?.shortMessage || err?.message || '';
       const code = err?.code ?? err?.cause?.code;
@@ -463,6 +466,7 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
       const orderHash = keccak256(stringToBytes(orderId));
 
       setPendingOrder({ orderId, orderHash, submitted: false });
+      setPurchaseMethod('privy');
       setIsSending(true);
 
       const data = encodeFunctionData({
@@ -495,8 +499,8 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
           chainId: effectiveAllowedChain.decimalChainId,
         },
         {
-          // Keep Privy UI minimal (we already show status locally).
-          showWalletUIs: false,
+          // Keep Privy's confirmation UI visible so wallet selection/approval doesn't disappear.
+          showWalletUIs: true,
         },
         undefined,
         walletForPrivy?.address,
@@ -515,6 +519,7 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
     } catch (err) {
       setSendError(err);
       setPendingOrder(null);
+      setPurchaseMethod(null);
       setTxHash(undefined);
       const msg = err?.shortMessage || err?.message || '';
       const code = err?.code ?? err?.cause?.code;
@@ -586,6 +591,7 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
                 onClick={() => {
                   setShowSuccess(false);
                   setPendingOrder(null);
+                  setPurchaseMethod(null);
                   setTxHash(undefined);
                   onClose?.();
                 }}
@@ -644,7 +650,11 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
             </div>
           )}
           {isSending && (
-            <div className="status-note pending">Awaiting wallet confirmation…</div>
+            <div className="status-note pending">
+              {purchaseMethod === 'privy'
+                ? 'Choose a wallet in Privy and approve the transaction in MetaMask or your selected wallet…'
+                : 'Awaiting wallet confirmation…'}
+            </div>
           )}
           {isConfirming && (
             <div className="status-note confirming">Confirming on-chain…</div>

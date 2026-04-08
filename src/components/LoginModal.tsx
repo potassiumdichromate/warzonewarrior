@@ -457,6 +457,7 @@ export default function LoginModal({
   const [code, setCode] = useState('')
   const [emailStep, setEmailStep] = useState<'enter-email' | 'enter-code'>('enter-email')
   const [error, setError] = useState('')
+  const [statusMessage, setStatusMessage] = useState('')
   const [privyInitTimedOut, setPrivyInitTimedOut] = useState(false)
   const privyConfigured = Boolean((import.meta as any).env?.VITE_PRIVY_APP_ID)
 
@@ -509,6 +510,7 @@ export default function LoginModal({
 
   const setFriendlyPrivyError = (errorCode: string | undefined, fallback?: string) => {
     const nextMessage = getFriendlyPrivyErrorMessage(errorCode, fallback)
+    setStatusMessage('')
     setError(nextMessage)
   }
 
@@ -516,14 +518,6 @@ export default function LoginModal({
     try {
       if (open && dialogRef.current && !dialogRef.current.open) {
         dialogRef.current.showModal()
-      }
-    } catch {}
-  }
-
-  const closeDialogForPrivyFlow = () => {
-    try {
-      if (dialogRef.current?.open) {
-        dialogRef.current.close()
       }
     } catch {}
   }
@@ -552,7 +546,8 @@ export default function LoginModal({
       pushDebug('mobile connect timeout: waiting for callback')
       setShowMobileContinue(true)
       setWalletFlowPending(false)
-      setError('If wallet opened and connected, tap "Continue Login" to finish authentication.')
+      setError('')
+      setStatusMessage('If your wallet opened and connected, tap "Continue Login" to finish authentication.')
       reopenDialog()
     }, 12000)
   }, [authenticated, clearMobileConnectWatchdog, pushDebug])
@@ -575,6 +570,7 @@ export default function LoginModal({
 
       if (authenticatedRef.current) {
         pushDebug('connectWallet:onSuccess already authenticated, closing')
+        setStatusMessage('')
         onClose?.()
         return
       }
@@ -601,7 +597,8 @@ export default function LoginModal({
             pushDebug('connectWallet:delayed check - auth still pending, showing continue button')
             setWalletFlowPending(false)
             setShowMobileContinue(true)
-            setError('Wallet connected. Tap "Continue Login" to complete authentication.')
+            setError('')
+            setStatusMessage('Wallet connected. Tap "Continue Login" to complete authentication.')
             reopenDialog()
           }, 3000)
         }
@@ -653,6 +650,7 @@ export default function LoginModal({
     },
     onError: (errorCode: any) => {
       pushDebug('privy:login onError', errorCode)
+      setStatusMessage('')
       if (errorCode === 'exited_auth_flow' || String(errorCode).includes('exited_auth_flow')) {
         setError('')
         reopenDialog()
@@ -691,14 +689,12 @@ export default function LoginModal({
 
   const connectWith = async (wallet: WalletId) => {
     try {
-      try {
-        if (dialogRef.current?.open) {
-          dialogRef.current.close()
-        }
-      } catch {}
+      setError('')
+      setStatusMessage('Approve the sign-in request in your wallet to continue.')
       await connectWallet({ walletList: [wallet] })
     } catch (err: any) {
       console.error('connectWith error', err)
+      setStatusMessage('')
       setError(err?.message || 'Failed to connect wallet')
       reopenDialog()
     }
@@ -711,6 +707,7 @@ export default function LoginModal({
     }
     if (emailStep === 'enter-code') return
     setError('')
+    setStatusMessage('')
 
     if (!walletConnectProjectId && !hasInjectedWallet) {
       pushDebug('walletPress:blocked missing walletconnect project id')
@@ -737,7 +734,7 @@ export default function LoginModal({
         // Mobile: trigger Privy wallet auth modal directly in the tap gesture.
         // Connector-first paths can fail with generic errors on some mobile browsers.
         setShowMobileContinue(false)
-        closeDialogForPrivyFlow()
+        setStatusMessage('Choose a wallet in Privy, then approve the sign-in request in your wallet app.')
         clearMobileConnectWatchdog()
         trace('walletPress:mobilePrivyModal')
         pushDebug('mobile connect: privy modal direct')
@@ -745,7 +742,7 @@ export default function LoginModal({
         return
       }
 
-      closeDialogForPrivyFlow()
+      setStatusMessage('Choose a wallet in Privy, then approve the sign-in request in MetaMask or your selected wallet.')
       // Desktop: use Privy's wallet auth modal flow.
       trace('walletPress:desktopPrivyModal')
       pushDebug('desktop connect: privy modal')
@@ -797,7 +794,8 @@ export default function LoginModal({
         // loginOrLink() on WalletConnect dispatches a deep-link to the wallet app and returns
         // quickly — the actual auth completes when the user signs in their wallet app and returns.
         setShowMobileContinue(false)
-        setError('Check your wallet app — approve the signature request to sign in.')
+        setError('')
+        setStatusMessage('Check your wallet app and approve the signature request to sign in.')
         await wallet.loginOrLink()
         pushDebug(`mobile continue: ${label}.loginOrLink returned`, {
           authenticated: authenticatedRef.current,
@@ -820,6 +818,7 @@ export default function LoginModal({
         ) {
           pushDebug(`mobile continue: ${label} exited_auth_flow, re-showing continue button`)
           setError('')
+          setStatusMessage('')
           setShowMobileContinue(true)
           return true // handled
         }
@@ -845,19 +844,21 @@ export default function LoginModal({
     })
     clearMobileContinuePendingTimer()
     setShowMobileContinue(false)
-    closeDialogForPrivyFlow()
+    setStatusMessage('Choose a wallet in Privy, then approve the sign-in request in your wallet.')
     try {
       login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
     } catch (err: any) {
       pushDebug('mobile continue: privy login call error', err?.message || String(err))
+      setStatusMessage('')
       setError('Failed to complete authentication. Please try again.')
       reopenDialog()
     }
-  }, [wallets, activeWallet, login, closeDialogForPrivyFlow, clearMobileContinuePendingTimer, startMobileConnectWatchdog, pushDebug, onClose])
+  }, [wallets, activeWallet, login, clearMobileContinuePendingTimer, startMobileConnectWatchdog, pushDebug, onClose])
 
   const startIntraverseLogin = async () => {
     try {
       setError('')
+      setStatusMessage('')
       setIntraverseLoading(true)
       pushDebug('intraverse:start')
 
@@ -905,6 +906,7 @@ export default function LoginModal({
   // Reset on open
   useEffect(() => {
     setError('')
+    setStatusMessage('')
     setEmail('')
     setCode('')
     setEmailStep('enter-email')
@@ -1006,6 +1008,9 @@ export default function LoginModal({
       try {
         setWalletFlowBusy(true)
         setError('')
+        if (!isMobileDevice) {
+          setStatusMessage('Approve the network and signature request in MetaMask to finish login.')
+        }
 
         if (isMobileDevice) {
           // On mobile, avoid extra post-login switch/sign prompts.
@@ -1051,6 +1056,7 @@ export default function LoginModal({
         } else {
           setError(err?.message || 'Wallet verification failed. Please try again.')
         }
+        setStatusMessage('')
         setWalletFlowPending(false)
         reopenDialog()
       } finally {
@@ -1099,6 +1105,7 @@ export default function LoginModal({
   const onEmailSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault()
     setError('')
+    setStatusMessage('')
     pushDebug('email:sendCode start', { emailLength: email.trim().length })
     if (!ready) {
       pushDebug('email:sendCode blocked not ready')
@@ -1120,6 +1127,7 @@ export default function LoginModal({
   const onCodeSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault()
     setError('')
+    setStatusMessage('')
     pushDebug('email:verifyCode start', { codeLength: code.trim().length })
     if (!ready) {
       pushDebug('email:verifyCode blocked not ready')
@@ -1187,6 +1195,11 @@ export default function LoginModal({
             <HeaderLogos leftLogoSrc={leftLogoSrc} rightLogoSrc={rightLogoSrc} />
             <TitleCard />
             <ErrorBanner error={error} />
+            {statusMessage && !error && (
+              <div className="wz-login-alert wz-login-alert--neutral">
+                {statusMessage}
+              </div>
+            )}
             {debugEnabled && (
               <div className="wz-login-alert wz-login-alert--neutral">
                 <div style={{ fontWeight: 700, marginBottom: 6 }}>Debug trace (mobile-visible)</div>
@@ -1306,6 +1319,7 @@ export default function LoginModal({
                       <GoogleButton
                         disabled={oauthLoading || emailStep === 'enter-code' || authDisabled || intraverseLoading}
                         onClick={() => {
+                          setStatusMessage('')
                           if (authDisabled) {
                             pushDebug('oauth:blocked not ready')
                             setError('Login is still initializing. Please wait a few seconds and try again.')
