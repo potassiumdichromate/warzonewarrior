@@ -272,166 +272,30 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
     }
   }, [isConfirmed, txHash]);
 
-  const handleBuyNow = async () => {
+  // Single purchase handler — uses Privy for everything (MetaMask, Coinbase, embedded wallets).
+  // Per https://docs.privy.io/wallets/using-wallets/ethereum/send-a-transaction
+  // and https://docs.privy.io/wallets/using-wallets/ethereum/switch-chain
+  const handlePurchase = async () => {
     try {
       if (isSending || isConfirming) {
         alert('Please wait for the current transaction to finish.');
         return;
       }
-      setShowSuccess(false);
-      setSendError(null);
 
-      // Coins/Gems/Guns all pay with SOMI via MetaMask
-      if (!isConnected) {
-        alert('Please connect your wallet to proceed.');
+      // Intraverse-only: no wallet provider available
+      const isIntraverseOnly = Boolean(localStorage.getItem('intraverseUserId')) && !privyAuthenticated;
+      if (isIntraverseOnly) {
+        alert('Purchases are not available with Intraverse login. Please log out and sign in with a wallet (MetaMask, Coinbase, etc.) to buy items.');
         return;
       }
-      if (!contractAddress) {
-        alert('Purchase contract address is not configured.');
-        return;
-      }
-
-      // Guard: prevent purchasing a gun that's already owned (local cache)
-      if (type === 'Guns') {
-        try {
-          const addr = localStorage.getItem('walletAddress');
-          if (addr) {
-            const owned = JSON.parse(localStorage.getItem(`ownedGuns:${addr.toLowerCase()}`) || '[]');
-            if (owned.includes(String(value))) {
-              alert('You already own this gun.');
-              return;
-            }
-          }
-        } catch (e) {
-          console.warn('Owned guns cache read failed:', e);
-        }
-      }
-
-      let priceEth;
-      if (type === 'Guns') {
-        priceEth = GUN_PRICES_ETH[value];
-      } else if (type === 'Coins') {
-        priceEth = COIN_PRICES_ETH[value];
-      } else if (type === 'Gems') {
-        priceEth = GEM_PRICES_ETH[value];
-      }
-
-      if (!priceEth) {
-        alert('Unknown product/price.');
-        return;
-      }
-
-      if (!walletClient) {
-        if (canUsePrivy) {
-          await handleBuyWithPrivy();
-          return;
-        }
-        alert('Wallet is not ready. Please reconnect.');
-        return;
-      }
-
-      // Use Privy wallet.switchChain() — works for both external and embedded wallets
-      // per https://docs.privy.io/wallets/using-wallets/ethereum/switch-chain
-      const privyWallet = Array.isArray(privyWallets) ? privyWallets[0] : null;
-      if (privyWallet?.switchChain) {
-        try {
-          await privyWallet.switchChain(somniaTestnet.id);
-        } catch (e: any) {
-          if (e?.code !== 4001) {
-            console.warn('Privy switchChain failed, continuing:', e?.message);
-          } else {
-            alert('Please switch to the Somnia network to purchase.');
-            return;
-          }
-        }
-      }
-
-      const addresses = typeof walletClient.getAddresses === 'function'
-        ? await walletClient.getAddresses()
-        : [];
-      const accountAddress = address || addresses[0] || walletClient.account?.address;
-
-      if (!accountAddress) {
-        alert('Unable to determine connected wallet address.');
-        return;
-      }
-
-      const orderId =
-        (typeof crypto !== 'undefined' && crypto.randomUUID?.()) ||
-        `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      const orderHash = keccak256(stringToBytes(orderId));
-
-      setPendingOrder({ orderId, orderHash, submitted: false });
-      setPurchaseMethod('wallet');
-      setIsSending(true);
-
-      const data = encodeFunctionData({
-        abi: contractAbi,
-        functionName: 'purchase',
-        args: [type, value, orderHash],
-      });
-
-      const valueWei = parseEther(priceEth);
-      let valueHex = valueWei.toString(16);
-      if (valueHex.length % 2) {
-        valueHex = `0${valueHex}`;
-      }
-
-      const txParams = {
-        from: accountAddress,
-        to: contractAddress,
-        data,
-        value: valueWei === 0n ? '0x0' : `0x${valueHex}`,
-      };
-
-      const hash = await walletClient.request({
-        method: 'eth_sendTransaction',
-        params: [txParams],
-      });
-
-      setTxHash(hash);
-    } catch (err) {
-      setSendError(err);
-      setPendingOrder(null);
-      setPurchaseMethod(null);
-      setTxHash(undefined);
-      const msg = err?.shortMessage || err?.message || '';
-      const code = err?.code ?? err?.cause?.code;
-      console.error('Payment or purchase failed:', err);
-
-      if (code === 4001 || /rejected/i.test(msg)) {
-        alert('Transaction rejected in wallet.');
-      } else if (/insufficient funds/i.test(msg)) {
-        alert('Insufficient SOMI for this purchase (including gas).');
-      } else if (/chain|network|mismatch/i.test(msg) || err?.name === 'ChainMismatchError') {
-        alert('Wrong network selected. Please switch to Somnia and try again.');
-      } else if (/GunAlreadyPurchased/i.test(msg)) {
-        alert('You already own this gun.');
-      } else {
-        alert(msg || 'Transaction failed. Please try again.');
-      }
-      return;
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  const handleBuyWithPrivy = async () => {
-    try {
-      if (isSending || isConfirming) {
-        alert('Please wait for the current transaction to finish.');
-        return;
-      }
-      setShowSuccess(false);
-      setSendError(null);
 
       if (!privyReady) {
         alert('Wallet is still loading, please wait.');
         return;
       }
 
-      if (!privyAuthenticated || !canUsePrivy || !activeWallet?.address) {
-        alert('Please log in with Privy and create / connect a wallet first.');
+      if (!canUsePrivy || !activeWallet?.address) {
+        alert('Please connect a wallet first to make purchases.');
         return;
       }
 
@@ -440,7 +304,10 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
         return;
       }
 
-      // Guard: prevent purchasing a gun that's already owned (local cache)
+      setShowSuccess(false);
+      setSendError(null);
+
+      // Guard: prevent purchasing a gun that's already owned
       if (type === 'Guns') {
         try {
           const addr = localStorage.getItem('walletAddress');
@@ -470,7 +337,21 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
         return;
       }
 
-      const walletForPrivy = activeWallet;
+      // Step 1: Switch to Somnia via Privy's wallet.switchChain()
+      const privyWallet = Array.isArray(privyWallets) ? privyWallets[0] : null;
+      if (privyWallet?.switchChain) {
+        try {
+          await privyWallet.switchChain(somniaTestnet.id);
+        } catch (e: any) {
+          if (e?.code === 4001 || /rejected|denied/i.test(e?.message || '')) {
+            alert('Please switch to the Somnia network to purchase.');
+            return;
+          }
+          console.warn('Chain switch warning (continuing):', e?.message);
+        }
+      }
+
+      // Step 2: Build transaction
       const orderId =
         (typeof crypto !== 'undefined' && crypto.randomUUID?.()) ||
         `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -493,18 +374,17 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
       }
       const valueHexStr = valueWei === 0n ? '0x0' : `0x${valueHex}`;
 
-      // Per Privy docs: sendTransaction(input, options?)
-      // options.address specifies which wallet to use (required for external wallets)
-      // options.uiOptions.showWalletUIs keeps Privy's confirmation UI visible
+      // Step 3: Send via Privy's sendTransaction
+      // Works for MetaMask, Coinbase, embedded wallets — all through one API
       const receipt = await (sendPrivyTransaction as any)(
         {
           to: contractAddress,
           value: valueHexStr,
           data,
-          chainId: effectiveAllowedChain.decimalChainId,
+          chainId: somniaTestnet.id,
         },
         {
-          address: walletForPrivy?.address,
+          address: activeWallet.address,
           uiOptions: { showWalletUIs: true },
         },
       );
@@ -515,7 +395,7 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
           : receipt.transactionHash || receipt.hash;
 
       if (!txHashFromReceipt) {
-        throw new Error('Unable to determine transaction hash from Privy receipt');
+        throw new Error('Unable to determine transaction hash');
       }
 
       setTxHash(txHashFromReceipt);
@@ -526,7 +406,7 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
       setTxHash(undefined);
       const msg = err?.shortMessage || err?.message || '';
       const code = err?.code ?? err?.cause?.code;
-      console.error('Privy payment or purchase failed:', err);
+      console.error('Purchase failed:', err);
 
       if (code === 4001 || /rejected/i.test(msg)) {
         alert('Transaction rejected in wallet.');
@@ -536,10 +416,11 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
         alert('Wrong network selected. Please switch to Somnia and try again.');
       } else if (/GunAlreadyPurchased/i.test(msg)) {
         alert('You already own this gun.');
+      } else if (/No embedded or connected wallet/i.test(msg)) {
+        alert('Wallet not found. Please reconnect your wallet and try again.');
       } else {
         alert(msg || 'Transaction failed. Please try again.');
       }
-      return;
     } finally {
       setIsSending(false);
     }
@@ -612,26 +493,7 @@ const CoinDetail = ({ coinImage, onClose, type, value, onPurchased }) => {
             type="button"
             className="wz-btn wz-btn--lg wz-btn--primary wz-btn--block buy-button"
             disabled={isSending || isConfirming}
-            onClick={() => {
-              const isIntraverseOnly = Boolean(localStorage.getItem('intraverseUserId')) && !privyAuthenticated && !walletClient;
-              if (isIntraverseOnly) {
-                alert('Purchases are not available with Intraverse login. Please log out and sign in with a wallet (MetaMask, Coinbase, etc.) to buy items.');
-                return;
-              }
-              if (!walletClient && !canUsePrivy) {
-                alert('To purchase items you need a connected wallet. Please log in with MetaMask, Coinbase, or another wallet first.');
-                return;
-              }
-              // handleBuyNow uses Privy wallet.switchChain() before tx;
-              // handleBuyWithPrivy uses Privy sendTransaction which handles chain internally.
-              if (walletClient) {
-                handleBuyNow();
-              } else if (canUsePrivy) {
-                handleBuyWithPrivy();
-              } else {
-                handleBuyNow();
-              }
-            }}
+            onClick={handlePurchase}
           >
             {isSending ? 'Processing…' : isConfirming ? 'Confirming…' : 'BUY NOW'}
           </button>
