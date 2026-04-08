@@ -13,6 +13,7 @@ import {
 import intraverseLogo from '../assets/Intraverse_logo-cropped.png'
 import { buildApiUrl } from '../config/api'
 import { getWalletConnectProjectId } from '../lib/privyEnv'
+import { PRIVY_WALLET_LIST } from '../lib/privyWalletList'
 import './LoginModal.css'
 
 const DEBUG_LOGIN_TRACE = String((import.meta as any).env?.VITE_DEBUG_LOGIN_TRACE || '').toLowerCase() === 'true'
@@ -152,7 +153,7 @@ function getFriendlyPrivyErrorMessage(errorCode: string | undefined, fallback?: 
       return 'This site origin is not allowed for wallet login in the current Privy configuration.'
     case 'generic_connect_wallet_error':
     case 'unknown_connect_wallet_error':
-      return ''
+      return 'Wallet connection failed. Make sure the wallet app is installed and try again.'
     default:
       return fallback || ''
   }
@@ -487,6 +488,9 @@ export default function LoginModal({
   // onCancel must NOT call onClose. Set before closeDialogForPrivyFlow(),
   // cleared when the Privy flow finishes (success, error, or exit).
   const dialogSuppressedRef = useRef(false)
+  // True while login() (Privy's full auth modal) is the active flow.
+  // Prevents useConnectWallet.onError from competing when Privy triggers it internally.
+  const loginFlowActiveRef = useRef(false)
   // Keep a ref so async callbacks (onSuccess timers) can check current auth state without stale closure
   const authenticatedRef = useRef(authenticated)
   const debugEnabled = DEBUG_LOGIN_TRACE
@@ -625,11 +629,19 @@ export default function LoginModal({
       }
     },
     onError: (err: any) => {
+      pushDebug('connectWallet:onError', err?.message || String(err))
+
+      // When login() is the active flow, Privy may fire connectWallet:onError internally.
+      // Defer to useLogin.onError to avoid competing state changes.
+      if (loginFlowActiveRef.current) {
+        pushDebug('connectWallet:onError ignored (login flow active)')
+        return
+      }
+
       clearMobileConnectWatchdog()
       clearMobileContinuePendingTimer()
       setShowMobileContinue(false)
       setWalletFlowPending(false)
-      pushDebug('connectWallet:onError', err?.message || String(err))
       setFriendlyPrivyError(
         typeof err === 'string' ? err : err?.privyErrorCode ?? err?.code,
         (err?.message ?? err?.code ?? String(err)) || 'Failed to connect wallet'
@@ -663,11 +675,13 @@ export default function LoginModal({
   const { login } = useLogin({
     onComplete: () => {
       pushDebug('privy:login onComplete — clearing walletFlowPending')
+      loginFlowActiveRef.current = false
       setWalletFlowPending(false)
       walletFlowInFlightRef.current = false
     },
     onError: (errorCode: any) => {
       pushDebug('privy:login onError', errorCode)
+      loginFlowActiveRef.current = false
       setWalletFlowPending(false)
       walletFlowInFlightRef.current = false
       setStatusMessage('')
@@ -712,7 +726,14 @@ export default function LoginModal({
       setError('')
       setStatusMessage('')
       closeDialogForPrivyFlow()
-      await connectWallet({ walletList: [wallet] })
+      // Privy: `walletList` with a single entry skips the picker and goes straight to
+      // "Waiting for …", which feels broken when the extension isn’t ready. Show the
+      // full app wallet list (user’s choice first) so the proper connect modal appears.
+      const walletList = [...new Set([wallet, ...PRIVY_WALLET_LIST])]
+      await connectWallet({
+        walletList,
+        walletChainType: 'ethereum-only',
+      })
     } catch (err: any) {
       console.error('connectWith error', err)
       setStatusMessage('')
@@ -757,6 +778,7 @@ export default function LoginModal({
         closeDialogForPrivyFlow()
         trace('walletPress:mobilePrivyModal')
         pushDebug('mobile connect: privy modal direct')
+        loginFlowActiveRef.current = true
         login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
         return
       }
@@ -766,6 +788,7 @@ export default function LoginModal({
       closeDialogForPrivyFlow()
       trace('walletPress:desktopPrivyModal')
       pushDebug('desktop connect: privy modal')
+      loginFlowActiveRef.current = true
       login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
     } catch (err: any) {
       setWalletFlowPending(false)
@@ -865,8 +888,10 @@ export default function LoginModal({
     setStatusMessage('')
     closeDialogForPrivyFlow()
     try {
+      loginFlowActiveRef.current = true
       login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
     } catch (err: any) {
+      loginFlowActiveRef.current = false
       pushDebug('mobile continue: privy login call error', err?.message || String(err))
       setStatusMessage('')
       setError('Failed to complete authentication. Please try again.')
@@ -939,6 +964,7 @@ export default function LoginModal({
     }
     autoCreateEmbeddedRef.current = false
     retryCreateEmbeddedRef.current = false
+    loginFlowActiveRef.current = false
     setWalletFlowPending(false)
     setWalletFlowBusy(false)
     setExistingAddress(getPrimaryWalletAddress(user))

@@ -9,6 +9,7 @@ import { WagmiProvider } from 'wagmi';
 import { PrivyProvider, type PrivyClientConfig } from '@privy-io/react-auth';
 import { config, somniaChain } from './wagmi.config';
 import { getPrivyAppId, getWalletConnectProjectId } from './lib/privyEnv';
+import { PRIVY_WALLET_LIST } from './lib/privyWalletList';
 import './index.css';
 import App from './App';
 import { AppToaster } from './components/AppToaster';
@@ -23,23 +24,6 @@ const privyAppId = getPrivyAppId();
 // Same rule as guess_the_ai_frontend: embedded wallets need a secure context (HTTPS) in the browser
 const canUseEmbeddedWallets =
   typeof window === 'undefined' || window.isSecureContext;
-// Same walletList as guess_the_ai_frontend/src/lib/privyConfig.ts — one list for all devices (no
-// shorter mobile-only list, which was hiding most wallets on phones).
-const privyWalletList = [
-  'metamask',
-  'coinbase_wallet',
-  'base_account',
-  'rainbow',
-  'phantom',
-  'zerion',
-  'cryptocom',
-  'uniswap',
-  'okx_wallet',
-  'bitget_wallet',
-  'universal_profile',
-  'wallet_connect',
-];
-
 // guess_the_ai_frontend does not pass walletConnectCloudProjectId — Privy uses dashboard + defaults.
 export const privyConfig: PrivyClientConfig = {
   appearance: {
@@ -47,7 +31,7 @@ export const privyConfig: PrivyClientConfig = {
     accentColor: '#ffc647' as `#${string}`,
     walletChainType: 'ethereum-only',
     showWalletLoginFirst: true,
-    walletList: privyWalletList as NonNullable<PrivyClientConfig['appearance']>['walletList'],
+    walletList: [...PRIVY_WALLET_LIST] as NonNullable<PrivyClientConfig['appearance']>['walletList'],
   },
   ...(canUseEmbeddedWallets
     ? {

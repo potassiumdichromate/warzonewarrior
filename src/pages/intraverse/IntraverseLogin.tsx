@@ -124,14 +124,14 @@ export default function IntraverseLogin() {
             console.warn('[intraverse] user-login failed for callback candidate', {
               candidateIndex: index,
               candidateCount: callbackData.idTokenCandidates.length,
-              tokenLength: idToken.length,
+              tokenLength: typeof idToken === 'string' ? idToken.length : String(idToken).length,
               ok: response.ok,
             });
           } catch (candidateError) {
             console.error('[intraverse] user-login request failed for callback candidate', {
               candidateIndex: index,
               candidateCount: callbackData.idTokenCandidates.length,
-              tokenLength: idToken.length,
+              tokenLength: typeof idToken === 'string' ? idToken.length : String(idToken).length,
               error: candidateError,
             });
           }
