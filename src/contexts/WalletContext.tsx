@@ -95,6 +95,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [isNFTOwner, setIsNFTOwner] = useState(false);
   const backendLoginSentRef = useRef(null);
   const backendLoginSentFromConnectedRef = useRef(null);
+  const logoutInProgressRef = useRef(false);
   const [privyAddress, setPrivyAddress] = useState(null);
   const [storedSession, setStoredSession] = useState(readStoredSession);
   const [playerProfile, setPlayerProfile] = useState<any | null>(null);
@@ -141,9 +142,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [privyAddress, wagmiAddress]);
   
-  // Handle disconnection — always clears local state first so user is
-  // logged out even if Privy's server-side logout returns 400.
+  // Handle disconnection — clears all local state, attempts Privy logout,
+  // then forces a full page reload to flush any stale Privy SDK state.
   const handleDisconnect = useCallback(async () => {
+    logoutInProgressRef.current = true;
     backendLoginSentRef.current = null;
     backendLoginSentFromConnectedRef.current = null;
     setIsNFTOwner(false);
@@ -168,6 +170,9 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     if (privyLogout) {
       try { await privyLogout(); } catch {}
     }
+
+    // Force reload so Privy SDK re-initializes fresh (prevents auto-re-login race)
+    window.location.href = '/';
   }, [disconnect, privyLogout]);
 
   useEffect(() => {
@@ -543,6 +548,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
   // When a Privy session is authenticated, mirror it into our wallet state
   useEffect(() => {
+    if (logoutInProgressRef.current) return;
     if (!privyReady || !privyAuthenticated) return;
     trace('privySession:authenticated', {
       privyReady,
@@ -591,8 +597,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   }, [privyReady, privyAuthenticated, privyUser, privyWallets, getPrimaryPrivyAddress, setUserToken]);
 
   // Mobile fallback: if wallet is connected but Privy auth is delayed, still try backend login by address.
-  // This unblocks gameplay flows that only require wallet address + backend token.
   useEffect(() => {
+    if (logoutInProgressRef.current) return;
     if (!privyReady || privyAuthenticated) return;
     const connectedAddr = Array.isArray(privyWallets) ? privyWallets[0]?.address : undefined;
     trace('privyConnectedFallback:check', {
