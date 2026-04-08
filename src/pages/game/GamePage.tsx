@@ -3,7 +3,7 @@ import './GamePage.css';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../../contexts/WalletContext';
 import { buildApiUrl } from '../../config/api';
-import { ChevronLeft, Maximize2, Minimize2 } from 'lucide-react';
+import { Home, Maximize2, Minimize2 } from 'lucide-react';
 import centerImage from "../../assets/images/abc1.png";
 import gameBackground from '../../assets/hero-web3.png';
 import ThemedBackButton from '../../components/ThemedBackButton';
@@ -12,6 +12,18 @@ export const Game = () => {
   const [isLoading, setIsLoading]   = useState(true);
   const [showIframe, setShowIframe] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [controlsVisible, setControlsVisible] = useState(false);
+  const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showControls = useCallback(() => {
+    setControlsVisible(true);
+    if (controlsTimerRef.current) clearTimeout(controlsTimerRef.current);
+    controlsTimerRef.current = setTimeout(() => setControlsVisible(false), 3500);
+  }, []);
+
+  useEffect(() => {
+    return () => { if (controlsTimerRef.current) clearTimeout(controlsTimerRef.current); };
+  }, []);
   const [openRounds, setOpenRounds]   = useState([]);   // rounds with active intervals
   const [selectedRound, setSelectedRound] = useState(null); // { id, name }
   const [showRoundPicker, setShowRoundPicker] = useState(false);
@@ -253,17 +265,28 @@ export const Game = () => {
         </div>
       )}
 
-      {/* Absolute overlay controls */}
+      {/* Floating controls — bottom-right, hidden until tapped */}
       {showIframe && (
-        <>
+        <div
+          className={`game-controls-tray${controlsVisible ? ' visible' : ''}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Tap-target that reveals the buttons */}
           <button
             type="button"
-            className="game-overlay-button game-overlay-button--back"
+            className="game-controls-toggle"
+            onClick={showControls}
+            aria-label="Show controls"
+          />
+
+          <button
+            type="button"
+            className="game-overlay-button game-overlay-button--home"
             onClick={() => navigate('/')}
-            aria-label="Back to home"
-            title="Back"
+            aria-label="Home"
+            title="Home"
           >
-            <ChevronLeft className="game-overlay-button__icon" />
+            <Home className="game-overlay-button__icon" />
           </button>
           <button
             type="button"
@@ -278,7 +301,7 @@ export const Game = () => {
               <Maximize2 className="game-overlay-button__icon" />
             )}
           </button>
-        </>
+        </div>
       )}
 
       {/* Game iframe — full container */}

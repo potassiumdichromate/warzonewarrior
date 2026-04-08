@@ -559,7 +559,7 @@ export default function LoginModal({
       setShowMobileContinue(true)
       setWalletFlowPending(false)
       setError('')
-      setStatusMessage('If your wallet opened and connected, tap "Continue Login" to finish authentication.')
+      setStatusMessage('')
       reopenDialog()
     }, 12000)
   }, [authenticated, clearMobileConnectWatchdog, pushDebug])
@@ -583,6 +583,7 @@ export default function LoginModal({
       if (authenticatedRef.current) {
         pushDebug('connectWallet:onSuccess already authenticated, closing')
         setStatusMessage('')
+        dialogSuppressedRef.current = false
         onClose?.()
         return
       }
@@ -610,7 +611,7 @@ export default function LoginModal({
             setWalletFlowPending(false)
             setShowMobileContinue(true)
             setError('')
-            setStatusMessage('Wallet connected. Tap "Continue Login" to complete authentication.')
+            setStatusMessage('')
             reopenDialog()
           }, 3000)
         }
@@ -655,13 +656,20 @@ export default function LoginModal({
     onError: (err: any) => setError((err?.message ?? err?.code ?? String(err)) || 'Email login error'),
   })
 
-  // Privy modal login (use for wallet auth so `authenticated` becomes true)
+  // Privy modal login (use for wallet auth so `authenticated` becomes true).
+  // login() handles the full flow (connect + SIWE sign), so when onComplete fires
+  // the user is fully authenticated — clear walletFlowPending so the auth effect
+  // can close the modal normally instead of waiting for the redundant wallet flow.
   const { login } = useLogin({
     onComplete: () => {
-      pushDebug('privy:login onComplete')
+      pushDebug('privy:login onComplete — clearing walletFlowPending')
+      setWalletFlowPending(false)
+      walletFlowInFlightRef.current = false
     },
     onError: (errorCode: any) => {
       pushDebug('privy:login onError', errorCode)
+      setWalletFlowPending(false)
+      walletFlowInFlightRef.current = false
       setStatusMessage('')
       if (errorCode === 'exited_auth_flow' || String(errorCode).includes('exited_auth_flow')) {
         setError('')
@@ -702,7 +710,8 @@ export default function LoginModal({
   const connectWith = async (wallet: WalletId) => {
     try {
       setError('')
-      setStatusMessage('Approve the sign-in request in your wallet to continue.')
+      setStatusMessage('')
+      closeDialogForPrivyFlow()
       await connectWallet({ walletList: [wallet] })
     } catch (err: any) {
       console.error('connectWith error', err)
@@ -801,12 +810,10 @@ export default function LoginModal({
       }
       try {
         pushDebug(`mobile continue: ${label}.loginOrLink start`, { address: wallet.address })
-        // Hide the button immediately so user doesn't double-tap while waiting for wallet signature.
-        // loginOrLink() on WalletConnect dispatches a deep-link to the wallet app and returns
-        // quickly — the actual auth completes when the user signs in their wallet app and returns.
         setShowMobileContinue(false)
         setError('')
-        setStatusMessage('Check your wallet app and approve the signature request to sign in.')
+        setStatusMessage('')
+        closeDialogForPrivyFlow()
         await wallet.loginOrLink()
         pushDebug(`mobile continue: ${label}.loginOrLink returned`, {
           authenticated: authenticatedRef.current,
@@ -855,7 +862,8 @@ export default function LoginModal({
     })
     clearMobileContinuePendingTimer()
     setShowMobileContinue(false)
-    setStatusMessage('Choose a wallet in Privy, then approve the sign-in request in your wallet.')
+    setStatusMessage('')
+    closeDialogForPrivyFlow()
     try {
       login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
     } catch (err: any) {
@@ -1006,9 +1014,13 @@ export default function LoginModal({
       onClose?.()
       return
     }
-    // No wallet yet → keep modal open; email/social triggers auto createWallet in separate effect
-    pushDebug('auth:no address keep modal open')
+    // No wallet yet → keep modal open; email/social triggers auto createWallet in separate effect.
+    // Make sure dialog is visible so user can see the "creating wallet" state.
+    pushDebug('auth:no address keep modal open, ensuring dialog visible')
     setLoginMethod((prev) => prev ?? deriveAuthMethodFromUser(user) ?? 'email')
+    if (dialogSuppressedRef.current) {
+      reopenDialog()
+    }
   }, [ready, authenticated, user, onClose])
 
   // Wallet flow: connect -> switch chain -> sign (for wallet login path only)
@@ -1025,9 +1037,7 @@ export default function LoginModal({
       try {
         setWalletFlowBusy(true)
         setError('')
-        if (!isMobileDevice) {
-          setStatusMessage('Approve the network and signature request in MetaMask to finish login.')
-        }
+        setStatusMessage('')
 
         if (isMobileDevice) {
           // On mobile, avoid extra post-login switch/sign prompts.
