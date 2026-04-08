@@ -635,42 +635,6 @@ export default function LoginModal({
     typeof window !== 'undefined' &&
     Boolean((window as unknown as { ethereum?: unknown }).ethereum)
 
-  const ensureInjectedChain = async () => {
-    const ethereum = (window as Window & { ethereum?: any }).ethereum
-    if (!ethereum?.request) return true
-    const chainIdHex = `0x${targetChainId.toString(16)}`
-    try {
-      const current = await ethereum.request({ method: 'eth_chainId' })
-      if (typeof current === 'string' && current.toLowerCase() === chainIdHex.toLowerCase()) {
-        return true
-      }
-      await ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: chainIdHex }],
-      })
-      return true
-    } catch (err: any) {
-      if (err?.code === 4902) {
-        try {
-          await ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [{
-              chainId: chainIdHex,
-              chainName: 'Somnia',
-              nativeCurrency: { name: 'Somnia', symbol: 'SOMI', decimals: 18 },
-              rpcUrls: ['https://api.infra.mainnet.somnia.network'],
-              blockExplorerUrls: ['https://explorer.somnia.network/'],
-            }],
-          })
-          return true
-        } catch {
-          return false
-        }
-      }
-      return false
-    }
-  }
-
   const runEmbeddedWalletCreation = useCallback(async () => {
     setError('')
     setCreating(true)
@@ -709,15 +673,6 @@ export default function LoginModal({
       clearMobileContinuePendingTimer()
       closeDialogForPrivyFlow()
       loginFlowActiveRef.current = true
-      if (hasInjectedWallet) {
-        const switched = await ensureInjectedChain()
-        if (!switched) {
-          setWalletFlowBusy(false)
-          setError('Please switch your wallet to the Somnia network and try again.')
-          reopenDialog()
-          return
-        }
-      }
       login({ loginMethods: ['wallet'], walletChainType: 'ethereum-only' })
     } catch (err: any) {
       loginFlowActiveRef.current = false
@@ -756,15 +711,6 @@ export default function LoginModal({
       setShowMobileContinue(false)
       clearMobileConnectWatchdog()
       closeDialogForPrivyFlow()
-      if (hasInjectedWallet) {
-        const switched = await ensureInjectedChain()
-        if (!switched) {
-          setWalletFlowBusy(false)
-          setError('Please switch your wallet to the Somnia network and try again.')
-          reopenDialog()
-          return
-        }
-      }
       trace('walletPress:privyModal')
       pushDebug('connect: privy modal wallet login')
       loginFlowActiveRef.current = true
