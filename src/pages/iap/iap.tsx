@@ -19,6 +19,15 @@ import coin1000Image from '../../assets/images/1000-coins.png';
 import coin2000Image from '../../assets/images/2000-coins.png';
 import gunTeslaMiniImage from '../../assets/images/gun-tesla-mini-clean.png';
 import gunScarHImage from '../../assets/images/gun-scar-h-clean.png';
+import gun100Image from '../../assets/images/gun100.png';
+import gun101Image from '../../assets/images/gun101.png';
+import gun102Image from '../../assets/images/gun102.png';
+import gun103Image from '../../assets/images/gun103.png';
+import gun104Image from '../../assets/images/gun104.png';
+import gun105Image from '../../assets/images/gun105.png';
+import gun106Image from '../../assets/images/gun106.png';
+import gun107Image from '../../assets/images/gun107.png';
+import gun108Image from '../../assets/images/gun108.png';
 import './iap.css';
 import { getMarketplacePurchaseStatus, getPlayerProfile, updateMarketplaceData } from '../../utils/api';
 import { useAccount, useChainId, useWaitForTransactionReceipt, useWalletClient } from 'wagmi';
@@ -40,6 +49,15 @@ const GUN_PRICES_ETH = {
   'Sniper Rifle': '2.4',
   'Tesla Mini': '3',
   'AWP': '4',
+  'Spread': '5',
+  'Chaser': '6',
+  'Famas': '7',
+  'Laser': '8',
+  'Split': '9',
+  'Fireball': '10',
+  'Tesla': '12',
+  'Kame Power': '13',
+  'Flame Thrower': '15',
 };
 
 const GUN_IDS = {
@@ -49,6 +67,15 @@ const GUN_IDS = {
   'Bullpup': 6,
   'Sniper Rifle': 7,
   'Tesla Mini': 8,
+  'Spread': 100,
+  'Chaser': 101,
+  'Famas': 102,
+  'Laser': 103,
+  'Split': 104,
+  'Fireball': 105,
+  'Tesla': 106,
+  'Kame Power': 107,
+  'Flame Thrower': 108,
 };
 
 const GUN_NAME_BY_ID = Object.fromEntries(
@@ -93,6 +120,15 @@ const IAP_GUNS_DATA = [
   { id: 4, image: gunAwpImage, detailImage: gunAwpImage, name: 'Sniper Rifle', value: 'Sniper Rifle', type: 'Guns' as const },
   { id: 5, image: gunTeslaMiniImage, detailImage: gunTeslaMiniImage, name: 'Tesla Mini', value: 'Tesla Mini', type: 'Guns' as const },
   { id: 6, image: gunScarHImage, detailImage: gunScarHImage, name: 'ScarH', value: 'ScarH', type: 'Guns' as const },
+  { id: 100, image: gun100Image, detailImage: gun100Image, name: 'Spread', value: 'Spread', type: 'Guns' as const },
+  { id: 101, image: gun101Image, detailImage: gun101Image, name: 'Chaser', value: 'Chaser', type: 'Guns' as const },
+  { id: 102, image: gun102Image, detailImage: gun102Image, name: 'Famas', value: 'Famas', type: 'Guns' as const },
+  { id: 103, image: gun103Image, detailImage: gun103Image, name: 'Laser', value: 'Laser', type: 'Guns' as const },
+  { id: 104, image: gun104Image, detailImage: gun104Image, name: 'Split', value: 'Split', type: 'Guns' as const },
+  { id: 105, image: gun105Image, detailImage: gun105Image, name: 'Fireball', value: 'Fireball', type: 'Guns' as const },
+  { id: 106, image: gun106Image, detailImage: gun106Image, name: 'Tesla', value: 'Tesla', type: 'Guns' as const },
+  { id: 107, image: gun107Image, detailImage: gun107Image, name: 'Kame Power', value: 'Kame Power', type: 'Guns' as const },
+  { id: 108, image: gun108Image, detailImage: gun108Image, name: 'Flame Thrower', value: 'Flame Thrower', type: 'Guns' as const },
 ];
 
 function buildItemsByCategory(ownedGuns: string[]): Record<IapMarketCategory, IapMarketDisplayItem[]> {
