@@ -738,7 +738,25 @@ export function HomePage() {
             ) : homeTournaments.length > 0 ? (
               <div data-gsap="stagger-children" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto mb-10">
                 {homeTournaments.map((t, i) => {
-                  const isLive = t.status === "RUNNING";
+                  const now = Date.now();
+                  const startMs = Number(t.startDate || 0);
+                  const endMs = Number(t.endDate || 0);
+                  const normalizedStatus = String(t.status || "").toUpperCase();
+                  const isLiveStatus = ["RUNNING", "ACTIVE", "LIVE", "IN_PROGRESS"].includes(normalizedStatus);
+                  const isEndedStatus = ["COMPLETED", "ENDED", "FINISHED", "DONE", "CLOSED"].includes(normalizedStatus);
+                  const isUpcomingStatus = ["UPCOMING", "SCHEDULED", "PENDING"].includes(normalizedStatus);
+                  const isLive = isLiveStatus || (
+                    Number.isFinite(startMs) && startMs > 0 &&
+                    Number.isFinite(endMs) && endMs > 0 &&
+                    startMs <= now && now <= endMs
+                  );
+                  const isPastTournament =
+                    isEndedStatus ||
+                    (Number.isFinite(endMs) && endMs > 0 && endMs < now);
+                  const isUpcomingTournament =
+                    !isPastTournament &&
+                    (isUpcomingStatus || (Number.isFinite(startMs) && startMs > now));
+                  const displayStatus = isPastTournament ? "ENDED" : isLive ? "ACTIVE" : isUpcomingTournament ? "UPCOMING" : "UPCOMING";
                   const roundCount = (t.rounds || []).length;
                   const fmtDate = (ms?: number) => ms ? new Date(ms).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "TBA";
 
@@ -748,21 +766,34 @@ export function HomePage() {
                       className="group cursor-pointer"
                     >
                       <Link to="/tournament">
-                        <div className={`rounded-2xl overflow-hidden border-2 transition-all ${
-                          isLive ? "border-gold/40 shadow-lg shadow-gold/10" : "border-metal/50 hover:border-gold/30"
+                        <div className={`rounded-2xl overflow-hidden border transition-all duration-300 ${
+                          isLive
+                            ? "border-gold/45 shadow-[0_0_35px_rgba(255,198,71,0.18)]"
+                            : isPastTournament
+                              ? "border-border/60"
+                              : "border-border/80 hover:border-gold/35 hover:shadow-[0_0_28px_rgba(255,198,71,0.14)]"
                         }`} style={{
-                          background: "linear-gradient(180deg, rgba(31,21,14,0.98) 0%, rgba(12,9,8,0.98) 100%)",
+                          background: "linear-gradient(180deg, rgba(34,24,16,0.96) 0%, rgba(14,11,10,0.98) 100%)",
                         }}>
                           {/* Image */}
                           <div className="relative h-40 sm:h-48 overflow-hidden">
-                            <img src={t.image} alt={t.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+                            <img
+                              src={t.image}
+                              alt={t.name}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              loading="lazy"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-transparent" />
                             <div className="absolute top-3 left-3 flex items-center gap-2">
                               <span className={`px-2.5 py-1 rounded-full font-russo text-[10px] tracking-widest ${
-                                isLive ? "bg-gold text-background" : "bg-background/80 border border-border text-muted-foreground"
+                                isLive
+                                  ? "bg-gold text-background"
+                                  : isPastTournament
+                                    ? "bg-rose-500/20 border border-rose-400/40 text-rose-200"
+                                    : "bg-sky-500/20 border border-sky-400/40 text-sky-200"
                               }`}>
                                 {isLive && <Crown className="w-3 h-3 inline mr-1" />}
-                                {t.status}
+                                {displayStatus}
                               </span>
                             </div>
                             <div className="absolute inset-x-0 bottom-0 p-4">
@@ -772,18 +803,20 @@ export function HomePage() {
                           </div>
 
                           {/* Info */}
-                          <div className="p-4">
-                            <div className="grid grid-cols-2 gap-2 mb-3">
-                              <div className="rounded-lg border border-border bg-card/30 px-3 py-2">
+                          <div className="p-4 sm:p-5">
+                            <div className="grid grid-cols-2 gap-2.5 mb-3">
+                              <div className="rounded-xl border border-border/70 bg-background/35 px-3 py-2.5">
                                 <div className="font-russo text-[9px] tracking-widest text-muted-foreground">ROUNDS</div>
                                 <div className="font-orbitron text-sm font-bold text-foreground">{roundCount}</div>
                               </div>
-                              <div className="rounded-lg border border-border bg-card/30 px-3 py-2">
+                              <div className="rounded-xl border border-border/70 bg-background/35 px-3 py-2.5">
                                 <div className="font-russo text-[9px] tracking-widest text-muted-foreground">STATUS</div>
-                                <div className={`font-orbitron text-sm font-bold ${isLive ? "text-gold" : "text-muted-foreground"}`}>{isLive ? "LIVE" : "PENDING"}</div>
+                                <div className={`font-orbitron text-sm font-bold ${isLive ? "text-gold" : isPastTournament ? "text-rose-300" : "text-sky-300"}`}>
+                                  {displayStatus}
+                                </div>
                               </div>
                             </div>
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between border-t border-border/50 pt-3">
                               <span className="font-rajdhani text-xs text-muted-foreground">View details</span>
                               <ArrowRight className="w-4 h-4 text-gold group-hover:translate-x-1 transition-transform" />
                             </div>

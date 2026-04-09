@@ -1323,7 +1323,7 @@
 /* ── Cards grid ─────────────────────────────────────────────────────────── */
 .t-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 12px;
   align-items: start;
 }
@@ -1331,10 +1331,10 @@
 /* ── Tournament panel ────────────────────────────────────────────────────── */
 .t-card {
   position: relative;
-  border-radius: 18px;
-  border: 1px solid rgba(233, 178, 81, 0.24);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 211, 133, 0.24);
   background:
-    linear-gradient(180deg, rgba(42, 25, 14, 0.94) 0%, rgba(17, 12, 10, 0.96) 100%);
+    linear-gradient(180deg, rgba(36, 24, 16, 0.96) 0%, rgba(14, 11, 10, 0.98) 100%);
   backdrop-filter: blur(12px);
   padding: 14px;
   display: flex;
@@ -1342,11 +1342,13 @@
   gap: 10px;
   transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
   box-shadow:
-    0 20px 38px rgba(0, 0, 0, 0.34),
+    0 22px 48px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(255, 221, 162, 0.04),
     inset 0 1px 0 rgba(255, 224, 163, 0.12);
   overflow: hidden;
   cursor: pointer;
 }
+
 
 .t-card--skeleton {
   cursor: default;
@@ -1361,11 +1363,12 @@
 }
 
 .t-card:hover {
-  border-color: rgba(245, 181, 73, 0.42);
+  border-color: rgba(255, 203, 108, 0.45);
   transform: translateY(-4px);
   box-shadow:
-    0 24px 48px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(245, 181, 73, 0.1),
+    0 28px 52px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(255, 203, 108, 0.14),
+    0 0 28px rgba(255, 198, 71, 0.12),
     inset 0 1px 0 rgba(255, 224, 163, 0.18);
 }
 
@@ -1391,7 +1394,7 @@
 .t-card-cover {
   position: relative;
   margin: -14px -14px 10px;
-  height: 120px;
+  height: 142px;
   overflow: hidden;
   border-bottom: 1px solid rgba(233, 178, 81, 0.16);
 }
@@ -1403,11 +1406,12 @@
   display: block;
 }
 
+
 .t-card-cover-overlay {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(17, 12, 10, 0.08) 0%, rgba(17, 12, 10, 0.2) 45%, rgba(17, 12, 10, 0.88) 100%);
+    linear-gradient(180deg, rgba(17, 12, 10, 0.06) 0%, rgba(17, 12, 10, 0.26) 42%, rgba(17, 12, 10, 0.9) 100%);
 }
 
 .t-card-status-pill {
@@ -1426,21 +1430,21 @@
 }
 
 .t-card-status-pill.running {
-  background: rgba(63, 157, 84, 0.18);
-  border-color: rgba(90, 192, 112, 0.34);
-  color: #9ee39f;
+  background: rgba(245, 181, 73, 0.2);
+  border-color: rgba(245, 181, 73, 0.5);
+  color: #ffe2a1;
 }
 
 .t-card-status-pill.upcoming {
-  background: rgba(245, 181, 73, 0.14);
-  border-color: rgba(245, 181, 73, 0.34);
-  color: #ffd58b;
+  background: rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #bae6fd;
 }
 
 .t-card-status-pill.finished {
-  background: rgba(119, 97, 68, 0.2);
-  border-color: rgba(181, 154, 116, 0.24);
-  color: #d8c2a0;
+  background: rgba(251, 113, 133, 0.2);
+  border-color: rgba(251, 113, 133, 0.45);
+  color: #fecdd3;
 }
 
 .t-card-status-meta {
@@ -1469,6 +1473,9 @@
   font-weight: 800;
   line-height: 1.2;
   color: #fff2c7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .t-card-date {
@@ -1652,18 +1659,21 @@
   -webkit-backdrop-filter: blur(12px);
   z-index: 9999;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  /* Clear fixed header (~56–64px) + notch; scroll if modal is tall */
   padding: max(88px, calc(env(safe-area-inset-top, 0px) + 64px)) 16px max(24px, env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 }
 
 .t-modal {
-  width: 100%;
-  max-width: 540px;
-  margin-bottom: 24px;
+  width: min(860px, 92vw);
+  height: min(540px, 62vh);
+  max-width: 860px;
+  max-height: 62vh;
+  margin: 0 auto;
+  box-sizing: border-box;
   border-radius: 22px;
   border: 1px solid rgba(245, 200, 120, 0.22);
   background: linear-gradient(165deg, rgba(38, 32, 28, 0.98) 0%, rgba(18, 16, 14, 0.99) 55%, rgba(12, 11, 10, 1) 100%);
@@ -1675,6 +1685,13 @@
     0 0 0 1px rgba(255, 200, 100, 0.06),
     0 28px 90px rgba(0, 0, 0, 0.55),
     0 0 80px rgba(212, 160, 60, 0.08);
+}
+
+.t-modal-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 42%) minmax(0, 58%);
+  height: 100%;
+  overflow: hidden;
 }
 
 .t-modal-hazard-bar {
@@ -1692,10 +1709,14 @@
 
 .t-modal-hero {
   position: relative;
-  min-height: 200px;
-  height: 200px;
+  min-height: 100%;
+  height: 100%;
   overflow: hidden;
   flex-shrink: 0;
+}
+
+.t-modal-hero--past .t-modal-hero-img {
+  filter: grayscale(35%) blur(1.6px);
 }
 
 .t-modal-hero--fallback {
@@ -1735,8 +1756,8 @@
 
 .t-modal-close-floating {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: 16px;
+  right: 16px;
   z-index: 3;
   width: 42px;
   height: 42px;
@@ -1765,15 +1786,6 @@
 .t-modal-close-icon {
   width: 20px;
   height: 20px;
-}
-
-.t-modal-hero-content {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 18px 22px 20px;
-  z-index: 2;
 }
 
 .t-modal-status {
@@ -1845,11 +1857,12 @@
 }
 
 .t-modal-body {
-  padding: 20px 22px 24px;
+  padding: 24px 24px 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  flex-shrink: 0;
+  max-height: none;
+  overflow-y: auto;
 }
 
 .t-modal-summary {
@@ -2149,28 +2162,34 @@
   }
 
   .t-card-cover {
-    height: 100px;
+    height: 128px;
   }
 
   .t-skeleton-cover {
-    height: 100px;
+    height: 128px;
   }
 
   .t-modal {
+    width: min(96vw, 640px);
+    height: min(92vh, 820px);
+    max-height: 92vh;
     border-radius: 18px;
   }
 
+  .t-modal-layout {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
   .t-modal-hero {
-    min-height: 168px;
-    height: 168px;
+    min-height: 190px;
+    height: 190px;
   }
 
   .t-modal-body {
     padding: 16px 16px 20px;
-  }
-
-  .t-modal-hero-content {
-    padding: 14px 16px 16px;
+    max-height: none;
+    overflow: visible;
   }
 
   .t-modal-title {

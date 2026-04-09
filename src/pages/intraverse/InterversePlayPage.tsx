@@ -44,12 +44,34 @@ function isRoundActive(round) {
   return round.intervals.some(iv => now >= iv.startDate && now <= iv.endDate);
 }
 
+function deriveTournamentState(tournament) {
+  const now = Date.now();
+  const startMs = Number(tournament?.startDate || 0);
+  const endMs = Number(tournament?.endDate || 0);
+  const normalizedStatus = String(tournament?.status || '').toUpperCase();
+  const isLiveStatus = ['RUNNING', 'ACTIVE', 'LIVE', 'IN_PROGRESS'].includes(normalizedStatus);
+  const isEndedStatus = ['COMPLETED', 'ENDED', 'FINISHED', 'DONE', 'CLOSED'].includes(normalizedStatus);
+  const isUpcomingStatus = ['UPCOMING', 'SCHEDULED', 'PENDING'].includes(normalizedStatus);
+  const isPast =
+    isEndedStatus || (Number.isFinite(endMs) && endMs > 0 && endMs < now);
+  const isActive =
+    !isPast &&
+    (isLiveStatus ||
+      (Number.isFinite(startMs) && startMs > 0 &&
+        Number.isFinite(endMs) && endMs > 0 &&
+        startMs <= now && now <= endMs));
+  const isUpcoming =
+    !isPast && !isActive && (isUpcomingStatus || (Number.isFinite(startMs) && startMs > now));
+  const displayStatus = isPast ? 'ENDED' : isActive ? 'ACTIVE' : 'UPCOMING';
+  const statusClass = isPast ? 'finished' : isActive ? 'running' : 'upcoming';
+  return { isPast, isActive, isUpcoming, displayStatus, statusClass };
+}
+
 /* ─── Rounds Modal ───────────────────────────────────────────────────────── */
 function RoundsModal({ tournament, onClose }) {
   const activeRound = (tournament.rounds || []).find(isRoundActive);
   const roundCount = tournament.rounds?.length || 0;
-  const statusKey = String(tournament.status || '').toLowerCase();
-  const statusVariant = ['running', 'upcoming', 'finished'].includes(statusKey) ? statusKey : 'default';
+  const state = deriveTournamentState(tournament);
 
   return (
     <div className="t-modal-overlay" onClick={onClose} role="presentation">
@@ -64,23 +86,27 @@ function RoundsModal({ tournament, onClose }) {
         transition={{ type: 'spring', stiffness: 320, damping: 26 }}
       >
         <div className="t-modal-hazard-bar" aria-hidden />
-        <div className={`t-modal-hero ${tournament.image ? '' : 't-modal-hero--fallback'}`}>
-          {tournament.image && (
-            <img src={tournament.image} alt="" className="t-modal-hero-img" />
-          )}
-          <div className="t-modal-hero-overlay" />
-          <div className="t-modal-hero-grid" aria-hidden />
-          <button
-            type="button"
-            className="t-modal-close-floating"
-            onClick={onClose}
-            aria-label="Close"
-          >
-            <X className="t-modal-close-icon" strokeWidth={2.5} />
-          </button>
-          <div className="t-modal-hero-content">
-            <span className={`t-modal-status t-modal-status--${statusVariant}`}>
-              {tournament.status || 'Tournament'}
+        <button
+          type="button"
+          className="t-modal-close-floating"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <X className="t-modal-close-icon" strokeWidth={2.5} />
+        </button>
+
+        <div className="t-modal-layout">
+          <div className={`t-modal-hero ${tournament.image ? '' : 't-modal-hero--fallback'} ${state.isPast ? 't-modal-hero--past' : ''}`}>
+            {tournament.image && (
+              <img src={tournament.image} alt="" className="t-modal-hero-img" />
+            )}
+            <div className="t-modal-hero-overlay" />
+            <div className="t-modal-hero-grid" aria-hidden />
+          </div>
+
+          <div className="t-modal-body">
+            <span className={`t-modal-status t-modal-status--${state.statusClass}`}>
+              {state.displayStatus}
             </span>
             <h3 id="t-modal-title" className="t-modal-title">
               {tournament.name}
@@ -89,10 +115,7 @@ function RoundsModal({ tournament, onClose }) {
               <CalendarRange className="t-modal-subtitle-icon" aria-hidden />
               {fmtDate(tournament.startDate)} — {fmtDate(tournament.endDate)}
             </p>
-          </div>
-        </div>
 
-        <div className="t-modal-body">
           <div className="t-modal-summary">
             <div className="t-modal-summary-card">
               <Layers className="t-modal-summary-icon" aria-hidden />
@@ -157,6 +180,7 @@ function RoundsModal({ tournament, onClose }) {
               );
             })}
           </div>
+          </div>
         </div>
       </motion.div>
     </div>
@@ -170,7 +194,7 @@ function TournamentCard({ t, walletAddress }) {
   const [pointsLoading, setPointsLoading] = useState(false);
 
   const activeRound = (t.rounds || []).find(isRoundActive);
-  const statusClass = String(t.status || '').toLowerCase();
+  const state = deriveTournamentState(t);
   const roundCount = t.rounds?.length || 0;
 
   useEffect(() => {
@@ -218,7 +242,7 @@ function TournamentCard({ t, walletAddress }) {
           </div>
         )}
         <div className="t-card-status-row">
-          <span className={`t-card-status-pill ${statusClass}`}>{t.status || 'Tournament'}</span>
+          <span className={`t-card-status-pill ${state.statusClass}`}>{state.displayStatus}</span>
           <span className="t-card-status-meta">{roundCount} {roundCount === 1 ? 'Round' : 'Rounds'}</span>
         </div>
         <div className="t-card-top">
@@ -463,12 +487,6 @@ export default function InterversePlayPage() {
             />
 
             <div className="container mx-auto px-4 relative z-10 pb-28 pt-6 sm:pt-8">
-              {!isConnected && (
-                <div className="iplay-wallet-warn mb-6">
-                  Connect your wallet to see your saved coin delta on live rounds.
-                </div>
-              )}
-
               {loading && (
                 <div className="t-loading-state">
                   <p className="wz-loading-label">Loading tournaments</p>
@@ -483,7 +501,7 @@ export default function InterversePlayPage() {
                   <TournamentSection title="Active Tournaments" tournaments={active} walletAddress={address} />
                   <TournamentSection title="Upcoming Tournaments" tournaments={upcoming} walletAddress={address} />
                   <TournamentSection title="Previous Tournaments" tournaments={previous} walletAddress={address} />
-                  <TournamentSection title="Other Tournaments" tournaments={others} walletAddress={address} />
+                  <TournamentSection title="Tournament" tournaments={others} walletAddress={address} />
                   {tournaments.length === 0 && (
                     <div className="intraverse-feedback-card">No tournaments found.</div>
                   )}
