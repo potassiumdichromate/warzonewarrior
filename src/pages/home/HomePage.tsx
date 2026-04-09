@@ -17,6 +17,7 @@ import soldierCard from "@/assets/soldier-card-1-clean.png";
 import soldierCardTwo from "@/assets/soldier-card-2.png";
 import soldierCardThree from "@/assets/soldier-card-3.png";
 import logo from "@/assets/logo.png";
+import gameManualPdf from "@/assets/images/Game-manual.pdf";
 
 // Decorative game assets
 import decoLamp from "@/assets/deco-lamp.png";
@@ -407,6 +408,16 @@ export function HomePage() {
                 <a href="#game-features" className="w-full">
                   <GameButton variant="metal" size="lg" className="w-full h-9 px-4 text-xs sm:h-14 sm:px-8 sm:text-base">
                     EXPLORE GAME
+                  </GameButton>
+                </a>
+                <a
+                  href={gameManualPdf}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="col-span-2 w-full"
+                >
+                  <GameButton variant="metal" size="lg" className="w-full h-9 px-4 text-xs sm:h-14 sm:px-8 sm:text-base">
+                    GAME MANUAL
                   </GameButton>
                 </a>
               </motion.div>
