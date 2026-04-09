@@ -87,10 +87,10 @@ const IAP_GEMS_DATA = [
 ];
 
 const IAP_GUNS_DATA = [
-  { id: 1, image: gunAwpImage, detailImage: gunAwpImage, name: 'AWP', value: 'AWP', type: 'Guns' as const },
+  { id: 1, image: gunSniperRifleImage , detailImage: gunSniperRifleImage , name: 'AWP', value: 'AWP', type: 'Guns' as const },
   { id: 2, image: gunBullpupImage, detailImage: gunBullpupImage, name: 'Bullpup', value: 'Bullpup', type: 'Guns' as const },
   { id: 3, image: gunShotgunImage, detailImage: gunShotgunImage, name: 'Shotgun', value: 'Shotgun', type: 'Guns' as const },
-  { id: 4, image: gunSniperRifleImage, detailImage: gunSniperRifleImage, name: 'Sniper Rifle', value: 'Sniper Rifle', type: 'Guns' as const },
+  { id: 4, image: gunAwpImage, detailImage: gunAwpImage, name: 'Sniper Rifle', value: 'Sniper Rifle', type: 'Guns' as const },
   { id: 5, image: gunTeslaMiniImage, detailImage: gunTeslaMiniImage, name: 'Tesla Mini', value: 'Tesla Mini', type: 'Guns' as const },
   { id: 6, image: gunScarHImage, detailImage: gunScarHImage, name: 'ScarH', value: 'ScarH', type: 'Guns' as const },
 ];

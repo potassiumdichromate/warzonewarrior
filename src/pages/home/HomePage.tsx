@@ -414,9 +414,9 @@ export function HomePage() {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }}
                 className="flex gap-8 sm:gap-10"
               >
-                <HUDStat value="50K+" label="PLAYERS" />
-                <HUDStat value="$2M+" label="EARNED" />
-                <HUDStat value="100K+" label="BATTLES" />
+                {/* <HUDStat value="50K+" label="PLAYERS" /> */}
+                {/* <HUDStat value="$2M+" label="EARNED" /> */}
+                {/* <HUDStat value="100K+" label="BATTLES" /> */}
               </motion.div>
             </div>
           </div>
