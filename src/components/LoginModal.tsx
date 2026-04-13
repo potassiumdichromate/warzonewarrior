@@ -1312,12 +1312,12 @@ export default function LoginModal({
                             </span>
                           </span>
                         </button>
-
+{/* 
                       <IntraverseButton
                         disabled={emailStep === 'enter-code' || intraverseLoading}
                         loading={intraverseLoading}
                         onClick={startIntraverseLogin}
-                      />
+                      /> */}
 
                       <GoogleButton
                         disabled={oauthLoading || emailStep === 'enter-code' || authDisabled || intraverseLoading}
