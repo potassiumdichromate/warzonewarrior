@@ -945,7 +945,16 @@ export function HomePage() {
                   ),
                 )}
               </div>
-              <p className="font-rajdhani text-xs text-muted-foreground">© 2026 Warzone Warriors. Powered by Somnia.</p>
+              <p className="font-rajdhani text-xs text-muted-foreground">
+                © 2026 Warzone Warriors. Powered by Somnia.
+                {" "}
+                <Link
+                  to="/game2"
+                  className="text-[8px] opacity-45 hover:opacity-70 underline underline-offset-2"
+                >
+                  upcoming
+                </Link>
+              </p>
             </div>
           </div>
         </footer>

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Home } from "./pages/home/index";
 import { Game } from "./pages/game/GamePage";
+import { Game2 } from "./pages/game/Game2Page";
 import { Leaderboard } from "./pages/leaderboard/index";
 import IAP from "./pages/iap/iap";
 import { WalletProvider } from './contexts/WalletContext';
@@ -33,6 +34,14 @@ function AppShell() {
                 <Game />
               </ProtectedRoute>
             } 
+          />
+          <Route
+            path="/game2"
+            element={
+              <ProtectedRoute>
+                <Game2 />
+              </ProtectedRoute>
+            }
           />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/iap" element={<IAP />} />
