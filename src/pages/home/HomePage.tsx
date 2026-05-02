@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { usePrivy } from "@privy-io/react-auth";
 import { useScrollAnimations, gsap } from "@/hooks/useGSAP";
 import { GameButton } from "@/components/ui/game-button";
-import { Trophy, ShoppingCart, ArrowRight, Play, ChevronDown, Map, Users, Shield, Menu, X, Swords, Zap, Star, Lock, Crosshair, Crown, CalendarDays, Copy, Check, LogOut, Wallet } from "lucide-react";
+import { Trophy, ShoppingCart, ArrowRight, Play, ChevronDown, Map, Users, Shield, Menu, X, Swords, Zap, Star, Lock, Crosshair, Crown, CalendarDays, Copy, Check, LogOut, Wallet, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useWallet } from "@/contexts/WalletContext";
 import { getTournaments } from "@/utils/api";
@@ -16,6 +16,8 @@ import marketplaceGuns from "@/assets/marketplace-guns.png";
 import soldierCard from "@/assets/soldier-card-1-clean.png";
 import soldierCardTwo from "@/assets/soldier-card-2.png";
 import soldierCardThree from "@/assets/soldier-card-3.png";
+import characterTwo from "@/assets/character2.png";
+import characterThree from "@/assets/character3.png";
 import logo from "@/assets/logo.png";
 import gameManualPdf from "@/assets/images/Game-manual.pdf";
 
@@ -50,6 +52,51 @@ const TOP_NAV_ORDER: Array<{ type: "hash"; section: Section } | { type: "tournam
 
 const MARQUEE_ITEMS = ["CAMPAIGN", "ARMORY", "CHARACTERS", "BATTLE", "EARN", "UPGRADE", "DOMINATE", "CONQUER"];
 
+const CHARACTERS = [
+  {
+    name: "HANDSOME MAN",
+    titleBase: "HANDSOME",
+    titleHighlight: "MAN",
+    description: "The original warrior. Equipped with a trusty pistol, red bandana, and unstoppable attitude.",
+    stats: [
+      { label: "DAMAGE", value: 65, color: "hsl(28,100%,50%)" },
+      { label: "SPEED", value: 80, color: "hsl(42,100%,50%)" },
+      { label: "DEFENSE", value: 45, color: "hsl(100,40%,35%)" },
+    ],
+    image: soldierCard,
+    locks: ["Shadow Dancer", "Oldman Tracer"],
+    scale: 1
+  },
+  {
+    name: "SHADOW DANCER",
+    titleBase: "SHADOW",
+    titleHighlight: "DANCER",
+    description: "A stealthy ninja warrior. Strikes from the darkness with lethal precision and unmatched agility.",
+    stats: [
+      { label: "DAMAGE", value: 85, color: "hsl(28,100%,50%)" },
+      { label: "SPEED", value: 95, color: "hsl(42,100%,50%)" },
+      { label: "DEFENSE", value: 30, color: "hsl(100,40%,35%)" },
+    ],
+    image: characterTwo,
+    locks: ["Handsome Man", "Oldman Tracer"],
+    scale: 1.4
+  },
+  {
+    name: "OLDMAN TRACER",
+    titleBase: "OLDMAN",
+    titleHighlight: "TRACER",
+    description: "A grizzled veteran with heavy firepower. Slow but packs a massive punch and impenetrable armor.",
+    stats: [
+      { label: "DAMAGE", value: 95, color: "hsl(28,100%,50%)" },
+      { label: "SPEED", value: 40, color: "hsl(42,100%,50%)" },
+      { label: "DEFENSE", value: 85, color: "hsl(100,40%,35%)" },
+    ],
+    image: characterThree,
+    locks: ["Handsome Man", "Shadow Dancer"],
+    scale: 1.4
+  }
+];
+
 export function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<Section>("home");
@@ -62,6 +109,14 @@ export function HomePage() {
   const [homeTournaments, setHomeTournaments] = useState<any[]>([]);
   const [tournamentsLoading, setTournamentsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [currentCharIdx, setCurrentCharIdx] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentCharIdx(prev => (prev === CHARACTERS.length - 1 ? 0 : prev + 1));
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
 
   const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "";
   const coins = Number(playerProfile?.PlayerResources?.coin ?? 0);
@@ -588,54 +643,90 @@ export function HomePage() {
             <div className="absolute inset-0 bg-background/65" />
           </div>
           <div className="absolute inset-0 z-0" style={{ background: "radial-gradient(ellipse at 30% 50%, hsl(28,100%,50%,0.08) 0%, transparent 60%)" }} />
+          <button
+            onClick={() => setCurrentCharIdx(prev => prev === 0 ? CHARACTERS.length - 1 : prev - 1)}
+            className="hidden sm:flex absolute left-[clamp(0.75rem,2vw,2.5rem)] top-1/2 -translate-y-1/2 z-20 h-[clamp(2.25rem,3.2vw,3rem)] w-[clamp(2.25rem,3.2vw,3rem)] items-center justify-center rounded-full bg-card/60 hover:bg-gold/20 border border-border transition-colors text-gold"
+          >
+            <ChevronLeft className="h-[clamp(1.1rem,1.6vw,1.5rem)] w-[clamp(1.1rem,1.6vw,1.5rem)]" />
+          </button>
+          <button 
+            onClick={() => setCurrentCharIdx(prev => prev === CHARACTERS.length - 1 ? 0 : prev + 1)}
+            className="hidden sm:flex absolute right-[clamp(0.75rem,2vw,2.5rem)] top-1/2 -translate-y-1/2 z-20 h-[clamp(2.25rem,3.2vw,3rem)] w-[clamp(2.25rem,3.2vw,3rem)] items-center justify-center rounded-full bg-card/60 hover:bg-gold/20 border border-border transition-colors text-gold"
+          >
+            <ChevronRight className="h-[clamp(1.1rem,1.6vw,1.5rem)] w-[clamp(1.1rem,1.6vw,1.5rem)]" />
+          </button>
           <div className="container mx-auto px-4 relative z-10">
-            <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 items-center gap-5 sm:gap-4 md:gap-6 lg:gap-8 max-w-6xl mx-auto relative">
               <motion.div data-gsap="fade-left" initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
-                className="flex-shrink-0 relative"
+                className="relative w-full h-[300px] sm:h-[360px] md:h-[420px] lg:h-[480px] flex justify-center items-center"
               >
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-40 h-8 rounded-full bg-gold/20 blur-xl" />
-                <motion.img src={soldierCard} alt="Handsome Man" className="w-48 sm:w-64 md:w-72 drop-shadow-2xl relative z-10"
-                  animate={{ y: [0, -10, 0] }} transition={{ duration: 3, repeat: Infinity }}
-                  style={{ filter: "drop-shadow(0 20px 40px hsl(28,100%,50%,0.3))" }}
-                  loading="lazy"
-                />
+                <div className="relative">
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-40 h-8 rounded-full bg-gold/20 blur-xl" />
+                  <motion.img 
+                    key={currentCharIdx}
+                    src={CHARACTERS[currentCharIdx].image} 
+                    alt={CHARACTERS[currentCharIdx].name} 
+                    className="w-52 sm:w-56 md:w-64 lg:w-80 drop-shadow-2xl relative z-10"
+                    initial={{ opacity: 0, scale: CHARACTERS[currentCharIdx].scale * 0.9 }}
+                    animate={{ opacity: 1, scale: CHARACTERS[currentCharIdx].scale, y: [0, -10, 0] }} 
+                    transition={{ opacity: { duration: 0.3 }, scale: { duration: 0.3 }, y: { duration: 3, repeat: Infinity } }}
+                    style={{ filter: "drop-shadow(0 20px 40px hsl(28,100%,50%,0.3))" }}
+                    loading="lazy"
+                  />
+                </div>
               </motion.div>
-              <motion.div data-gsap="fade-right" initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+              <motion.div data-gsap="fade-right" initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="w-full min-w-0 text-center sm:text-left">
                 <p className="font-russo text-xs tracking-[0.3em] text-gold mb-2">MEET YOUR WARRIOR</p>
-                <h2 className="font-orbitron text-3xl sm:text-4xl md:text-5xl font-black text-foreground mb-4">
-                  HANDSOME <span className="text-gradient-gold">MAN</span>
-                </h2>
-                <p className="font-rajdhani text-base sm:text-lg text-muted-foreground mb-6 max-w-md leading-relaxed">
-                  The original warrior. Equipped with a trusty pistol, red bandana, and unstoppable attitude. 
-                  Unlock Shadow Dancer and Oldman Tracer as you progress.
-                </p>
+                <motion.h2 
+                  key={`title-${currentCharIdx}`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="font-orbitron text-3xl sm:text-[2rem] md:text-4xl lg:text-5xl font-black text-foreground mb-4"
+                >
+                  {CHARACTERS[currentCharIdx].titleBase} <span className="text-gradient-gold">{CHARACTERS[currentCharIdx].titleHighlight}</span>
+                </motion.h2>
+                <motion.p 
+                  key={`desc-${currentCharIdx}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="font-rajdhani text-base sm:text-lg text-muted-foreground mb-6 max-w-md mx-auto sm:mx-0 leading-relaxed min-h-16"
+                >
+                  {CHARACTERS[currentCharIdx].description}
+                </motion.p>
                 
-                {/* Stat bars like the armory screen */}
-                <div className="space-y-3 mb-6 max-w-xs">
-                  {[
-                    { label: "DAMAGE", value: 65, color: "hsl(28,100%,50%)" },
-                    { label: "SPEED", value: 80, color: "hsl(42,100%,50%)" },
-                    { label: "DEFENSE", value: 45, color: "hsl(100,40%,35%)" },
-                  ].map(stat => (
+                {/* Stat bars */}
+                <div className="space-y-3 mb-6 max-w-xs sm:max-w-sm mx-auto sm:mx-0">
+                  {CHARACTERS[currentCharIdx].stats.map(stat => (
                     <div key={stat.label}>
                       <div className="flex justify-between mb-1">
                         <span className="font-russo text-[10px] text-muted-foreground">{stat.label}</span>
                         <span className="font-orbitron text-[10px] text-gold">{stat.value}%</span>
                       </div>
                       <div className="h-2 rounded-full bg-muted/50 overflow-hidden border border-border/50">
-                        <motion.div initial={{ width: 0 }} whileInView={{ width: `${stat.value}%` }} viewport={{ once: true }} transition={{ duration: 1, delay: 0.3 }}
-                          className="h-full rounded-full" style={{ background: `linear-gradient(90deg, ${stat.color}, ${stat.color}80)`, boxShadow: `0 0 8px ${stat.color}60` }} />
+                        <motion.div 
+                          key={`stat-${currentCharIdx}-${stat.label}`}
+                          initial={{ width: 0 }} 
+                          animate={{ width: `${stat.value}%` }} 
+                          transition={{ duration: 1 }}
+                          className="h-full rounded-full" 
+                          style={{ background: `linear-gradient(90deg, ${stat.color}, ${stat.color}80)`, boxShadow: `0 0 8px ${stat.color}60` }} 
+                        />
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <div className="flex gap-3 mb-6">
-                  {["Shadow Dancer", "Oldman Tracer"].map(name => (
-                    <div key={name} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card/40">
+                <div className="flex flex-wrap justify-center sm:justify-start gap-3 mb-6 min-h-[36px]">
+                  {CHARACTERS[currentCharIdx].locks.map(name => (
+                    <motion.div 
+                      key={`lock-${currentCharIdx}-${name}`}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card/40"
+                    >
                       <Lock className="w-3.5 h-3.5 text-muted-foreground" />
                       <span className="font-rajdhani text-xs text-muted-foreground">{name}</span>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
 
